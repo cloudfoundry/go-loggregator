@@ -3,8 +3,8 @@ package loggregator_v2_test
 import (
 	"time"
 
+	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
-	"github.com/cloudfoundry-incubator/diego-loggregator/loggregator_v2"
 	lfake "github.com/cloudfoundry/dropsonde/log_sender/fake"
 	mfake "github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
@@ -249,12 +249,12 @@ var _ = Describe("Client", func() {
 				Expect(env.SourceId).To(Equal("app-id"))
 				Expect(env.InstanceId).To(Equal("source-instance"))
 
-				ts := time.Unix(0, env.GetTimestamp())
+				ts := time.Unix(0, env.Timestamp)
 				Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 				log := env.GetLog()
 				Expect(log).NotTo(BeNil())
-				Expect(log.GetPayload()).To(Equal([]byte("message")))
-				Expect(log.Type).To(Equal(loggregator_v2.OUT))
+				Expect(log.Payload).To(Equal([]byte("message")))
+				Expect(log.Type).To(Equal(loggregator_v2.Log_OUT))
 			})
 
 			It("sends app error logs", func() {
@@ -275,12 +275,12 @@ var _ = Describe("Client", func() {
 				Expect(env.SourceId).To(Equal("app-id"))
 				Expect(env.InstanceId).To(Equal("source-instance"))
 
-				ts := time.Unix(0, env.GetTimestamp())
+				ts := time.Unix(0, env.Timestamp)
 				Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 				log := env.GetLog()
 				Expect(log).NotTo(BeNil())
-				Expect(log.GetPayload()).To(Equal([]byte("message")))
-				Expect(log.Type).To(Equal(loggregator_v2.ERR))
+				Expect(log.Payload).To(Equal([]byte("message")))
+				Expect(log.Type).To(Equal(loggregator_v2.Log_ERR))
 			})
 
 			It("sends app metrics", func() {
@@ -307,18 +307,18 @@ var _ = Describe("Client", func() {
 				Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
 				Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
 
-				ts := time.Unix(0, env.GetTimestamp())
+				ts := time.Unix(0, env.Timestamp)
 				Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 				metrics := env.GetGauge()
 				Expect(metrics).NotTo(BeNil())
-				Expect(env.GetSourceId()).To(Equal("app-id"))
+				Expect(env.SourceId).To(Equal("app-id"))
 				Expect(metrics.GetMetrics()).To(HaveLen(6))
-				Expect(metrics.GetMetrics()["instance_index"].GetValue()).To(Equal(5.0))
-				Expect(metrics.GetMetrics()["cpu"].GetValue()).To(Equal(10.0))
-				Expect(metrics.GetMetrics()["memory"].GetValue()).To(Equal(10.0))
-				Expect(metrics.GetMetrics()["disk"].GetValue()).To(Equal(10.0))
-				Expect(metrics.GetMetrics()["memory_quota"].GetValue()).To(Equal(20.0))
-				Expect(metrics.GetMetrics()["disk_quota"].GetValue()).To(Equal(20.0))
+				Expect(metrics.GetMetrics()["instance_index"].Value).To(Equal(5.0))
+				Expect(metrics.GetMetrics()["cpu"].Value).To(Equal(10.0))
+				Expect(metrics.GetMetrics()["memory"].Value).To(Equal(10.0))
+				Expect(metrics.GetMetrics()["disk"].Value).To(Equal(10.0))
+				Expect(metrics.GetMetrics()["memory_quota"].Value).To(Equal(20.0))
+				Expect(metrics.GetMetrics()["disk_quota"].Value).To(Equal(20.0))
 			})
 
 			Context("when component metrics are emitted", func() {
@@ -337,12 +337,12 @@ var _ = Describe("Client", func() {
 					Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
 					Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
 
-					ts := time.Unix(0, env.GetTimestamp())
+					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 					message := env.GetGauge()
 					Expect(message).NotTo(BeNil())
-					Expect(message.GetMetrics()["test-name"].GetValue()).To(Equal(float64(1)))
-					Expect(message.GetMetrics()["test-name"].GetUnit()).To(Equal("nanos"))
+					Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(1)))
+					Expect(message.GetMetrics()["test-name"].Unit).To(Equal("nanos"))
 				})
 
 				It("sends mebibytes info", func() {
@@ -360,12 +360,12 @@ var _ = Describe("Client", func() {
 					Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
 					Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
 
-					ts := time.Unix(0, env.GetTimestamp())
+					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 					message := env.GetGauge()
 					Expect(message).NotTo(BeNil())
-					Expect(message.GetMetrics()["test-name"].GetValue()).To(Equal(float64(10)))
-					Expect(message.GetMetrics()["test-name"].GetUnit()).To(Equal("MiB"))
+					Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(10)))
+					Expect(message.GetMetrics()["test-name"].Unit).To(Equal("MiB"))
 				})
 
 				It("sends metrics info", func() {
@@ -377,12 +377,12 @@ var _ = Describe("Client", func() {
 					env, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
 
-					ts := time.Unix(0, env.GetTimestamp())
+					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 					message := env.GetGauge()
 					Expect(message).NotTo(BeNil())
-					Expect(message.GetMetrics()["test-name"].GetValue()).To(Equal(float64(11)))
-					Expect(message.GetMetrics()["test-name"].GetUnit()).To(Equal("Metric"))
+					Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(11)))
+					Expect(message.GetMetrics()["test-name"].Unit).To(Equal("Metric"))
 				})
 
 				It("sends requests per second info", func() {
@@ -394,11 +394,11 @@ var _ = Describe("Client", func() {
 					env, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
 
-					ts := time.Unix(0, env.GetTimestamp())
+					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 					message := env.GetGauge()
 					Expect(message).NotTo(BeNil())
-					Expect(message.GetMetrics()["test-name"].GetValue()).To(Equal(float64(11)))
+					Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(11)))
 				})
 
 				It("sends bytes per second info", func() {
@@ -410,12 +410,12 @@ var _ = Describe("Client", func() {
 					env, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
 
-					ts := time.Unix(0, env.GetTimestamp())
+					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 					message := env.GetGauge()
 					Expect(message).NotTo(BeNil())
-					Expect(message.GetMetrics()["test-name"].GetValue()).To(Equal(float64(10)))
-					Expect(message.GetMetrics()["test-name"].GetUnit()).To(Equal("B/s"))
+					Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(10)))
+					Expect(message.GetMetrics()["test-name"].Unit).To(Equal("B/s"))
 				})
 
 				It("increments counter", func() {
@@ -427,11 +427,11 @@ var _ = Describe("Client", func() {
 					env, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
 
-					ts := time.Unix(0, env.GetTimestamp())
+					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 					message := env.GetCounter()
 					Expect(message).NotTo(BeNil())
-					Expect(message.GetName()).To(Equal("test-name"))
+					Expect(message.Name).To(Equal("test-name"))
 					Expect(message.GetDelta()).To(Equal(uint64(1)))
 				})
 
@@ -463,16 +463,16 @@ var _ = Describe("Client", func() {
 
 						message := env.GetGauge()
 						Expect(message).NotTo(BeNil())
-						Expect(message.GetMetrics()["test-metric"].GetValue()).To(Equal(float64(1)))
-						Expect(message.GetMetrics()["test-metric"].GetUnit()).To(Equal("Metric"))
-						Expect(message.GetMetrics()["test-duration"].GetValue()).To(Equal(float64(2 * time.Second)))
-						Expect(message.GetMetrics()["test-duration"].GetUnit()).To(Equal("nanos"))
-						Expect(message.GetMetrics()["test-mebibytes"].GetValue()).To(Equal(float64(3)))
-						Expect(message.GetMetrics()["test-mebibytes"].GetUnit()).To(Equal("MiB"))
-						Expect(message.GetMetrics()["test-bytespersec"].GetValue()).To(Equal(float64(4)))
-						Expect(message.GetMetrics()["test-bytespersec"].GetUnit()).To(Equal("B/s"))
-						Expect(message.GetMetrics()["test-requestspersec"].GetValue()).To(Equal(float64(5)))
-						Expect(message.GetMetrics()["test-requestspersec"].GetUnit()).To(Equal("Req/s"))
+						Expect(message.GetMetrics()["test-metric"].Value).To(Equal(float64(1)))
+						Expect(message.GetMetrics()["test-metric"].Unit).To(Equal("Metric"))
+						Expect(message.GetMetrics()["test-duration"].Value).To(Equal(float64(2 * time.Second)))
+						Expect(message.GetMetrics()["test-duration"].Unit).To(Equal("nanos"))
+						Expect(message.GetMetrics()["test-mebibytes"].Value).To(Equal(float64(3)))
+						Expect(message.GetMetrics()["test-mebibytes"].Unit).To(Equal("MiB"))
+						Expect(message.GetMetrics()["test-bytespersec"].Value).To(Equal(float64(4)))
+						Expect(message.GetMetrics()["test-bytespersec"].Unit).To(Equal("B/s"))
+						Expect(message.GetMetrics()["test-requestspersec"].Value).To(Equal(float64(5)))
+						Expect(message.GetMetrics()["test-requestspersec"].Unit).To(Equal("Req/s"))
 					})
 
 				})

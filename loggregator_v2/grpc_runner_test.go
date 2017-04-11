@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/localip"
-	"github.com/cloudfoundry-incubator/diego-loggregator/loggregator_v2"
-	"github.com/cloudfoundry-incubator/diego-loggregator/loggregator_v2/fakes"
+	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/loggregator_v2/fakes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

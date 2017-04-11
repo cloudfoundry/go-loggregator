@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry-incubator/diego-loggregator/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
 )
 
 type FakeIngressServer struct {
