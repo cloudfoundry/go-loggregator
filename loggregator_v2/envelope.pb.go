@@ -81,6 +81,27 @@ func (m *Envelope) GetMessage() isEnvelope_Message {
 	return nil
 }
 
+func (m *Envelope) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *Envelope) GetSourceId() string {
+	if m != nil {
+		return m.SourceId
+	}
+	return ""
+}
+
+func (m *Envelope) GetInstanceId() string {
+	if m != nil {
+		return m.InstanceId
+	}
+	return ""
+}
+
 func (m *Envelope) GetTags() map[string]*Value {
 	if m != nil {
 		return m.Tags
@@ -376,6 +397,20 @@ func (m *Log) String() string            { return proto.CompactTextString(m) }
 func (*Log) ProtoMessage()               {}
 func (*Log) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
+func (m *Log) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *Log) GetType() Log_Type {
+	if m != nil {
+		return m.Type
+	}
+	return Log_OUT
+}
+
 type Counter struct {
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// Types that are valid to be assigned to Value:
@@ -408,6 +443,13 @@ func (m *Counter) GetValue() isCounter_Value {
 		return m.Value
 	}
 	return nil
+}
+
+func (m *Counter) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
 }
 
 func (m *Counter) GetDelta() uint64 {
@@ -514,6 +556,20 @@ func (m *GaugeValue) String() string            { return proto.CompactTextString
 func (*GaugeValue) ProtoMessage()               {}
 func (*GaugeValue) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
+func (m *GaugeValue) GetUnit() string {
+	if m != nil {
+		return m.Unit
+	}
+	return ""
+}
+
+func (m *GaugeValue) GetValue() float64 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
 type Timer struct {
 	Name  string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	Start int64  `protobuf:"varint,2,opt,name=start" json:"start,omitempty"`
@@ -524,6 +580,27 @@ func (m *Timer) Reset()                    { *m = Timer{} }
 func (m *Timer) String() string            { return proto.CompactTextString(m) }
 func (*Timer) ProtoMessage()               {}
 func (*Timer) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+
+func (m *Timer) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Timer) GetStart() int64 {
+	if m != nil {
+		return m.Start
+	}
+	return 0
+}
+
+func (m *Timer) GetStop() int64 {
+	if m != nil {
+		return m.Stop
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*Envelope)(nil), "loggregator.v2.Envelope")
