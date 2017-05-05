@@ -2,11 +2,7 @@ package loggregator_v2
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"time"
 
 	"google.golang.org/grpc"
@@ -28,46 +24,21 @@ type envelopeWithResponseChannel struct {
 type Connector func() (IngressClient, error)
 
 func newGrpcClient(logger lager.Logger, config MetronConfig) (*grpcClient, error) {
+	tlsConfig, err := newTLSConfig(config.CACertPath, config.CertPath, config.KeyPath)
+	if err != nil {
+		return nil, err
+	}
+
 	address := fmt.Sprintf("localhost:%d", config.APIPort)
 	logger.Info("creating-grpc-client", lager.Data{"address": address})
-	cert, err := tls.LoadX509KeyPair(config.CertPath, config.KeyPath)
-	if err != nil {
-		logger.Error("cannot-load-certs", err)
-		return nil, err
-	}
-	tlsConfig := &tls.Config{
-		ServerName:         "metron",
-		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: false,
-	}
-	caCertBytes, err := ioutil.ReadFile(config.CACertPath)
-	if err != nil {
-		logger.Error("failed-to-read-ca-cert", err)
-		return nil, err
-	}
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM(caCertBytes); !ok {
-		logger.Error("failed-to-append-ca-cert", err)
-		return nil, errors.New("cannot parse ca cert")
-	}
-	tlsConfig.RootCAs = caCertPool
-
-	connector := func() (IngressClient, error) {
-		conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-		if err != nil {
-			return nil, err
-		}
-
-		return NewIngressClient(conn), nil
-	}
-	ingressClient, err := connector()
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		return nil, err
 	}
 
 	client := &grpcClient{
 		logger:           logger.Session("grpc-client"),
-		ingressClient:    ingressClient,
+		ingressClient:    NewIngressClient(conn),
 		config:           config,
 		envelopes:        make(chan *envelopeWithResponseChannel),
 		batchedEnvelopes: make(chan *envelopeWithResponseChannel),
