@@ -3,8 +3,6 @@ package loggregator_v2
 import (
 	"time"
 
-	"code.cloudfoundry.org/lager"
-
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -53,9 +51,9 @@ type MetronConfig struct {
 	DropsondePort int    `json:"dropsonde_port"`
 }
 
-func NewClient(logger lager.Logger, config MetronConfig) (Client, error) {
+func NewClient(config MetronConfig) (Client, error) {
 	if config.UseV2API {
-		return newGrpcClient(logger, config)
+		return newGrpcClient(config)
 	}
 
 	return newDropsondeClient()

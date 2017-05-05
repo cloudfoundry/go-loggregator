@@ -8,8 +8,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"code.cloudfoundry.org/lager"
-
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -23,21 +21,19 @@ type envelopeWithResponseChannel struct {
 
 type Connector func() (IngressClient, error)
 
-func newGrpcClient(logger lager.Logger, config MetronConfig) (*grpcClient, error) {
+func newGrpcClient(config MetronConfig) (*grpcClient, error) {
 	tlsConfig, err := newTLSConfig(config.CACertPath, config.CertPath, config.KeyPath)
 	if err != nil {
 		return nil, err
 	}
 
 	address := fmt.Sprintf("localhost:%d", config.APIPort)
-	logger.Info("creating-grpc-client", lager.Data{"address": address})
 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		return nil, err
 	}
 
 	client := &grpcClient{
-		logger:           logger.Session("grpc-client"),
 		ingressClient:    NewIngressClient(conn),
 		config:           config,
 		envelopes:        make(chan *envelopeWithResponseChannel),
@@ -51,7 +47,6 @@ func newGrpcClient(logger lager.Logger, config MetronConfig) (*grpcClient, error
 }
 
 type grpcClient struct {
-	logger           lager.Logger
 	ingressClient    IngressClient
 	sender           Ingress_SenderClient
 	batchSender      Ingress_BatchSenderClient
@@ -70,7 +65,6 @@ func (c *grpcClient) startSender() {
 			var err error
 			c.sender, err = c.ingressClient.Sender(context.Background())
 			if err != nil {
-				c.logger.Error("failed-to-create-grpc-sender", err)
 				errCh <- err
 				continue
 			}
@@ -92,7 +86,6 @@ func (c *grpcClient) startBatchSender() {
 			var err error
 			c.batchSender, err = c.ingressClient.BatchSender(context.Background())
 			if err != nil {
-				c.logger.Error("failed-to-create-grpc-sender", err)
 				errCh <- err
 				continue
 			}

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
-	"code.cloudfoundry.org/lager/lagertest"
 	lfake "github.com/cloudfoundry/dropsonde/log_sender/fake"
 	mfake "github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
@@ -23,17 +22,12 @@ type testHandler struct{}
 var _ = Describe("Client", func() {
 	var (
 		config    loggregator_v2.MetronConfig
-		logger    *lagertest.TestLogger
 		client    loggregator_v2.Client
 		clientErr error
 	)
 
-	BeforeEach(func() {
-		logger = lagertest.NewTestLogger("loggregator-client")
-	})
-
 	JustBeforeEach(func() {
-		client, clientErr = loggregator_v2.NewClient(logger, config)
+		client, clientErr = loggregator_v2.NewClient(config)
 	})
 
 	Context("when v2 api is disabled", func() {
