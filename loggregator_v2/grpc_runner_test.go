@@ -8,19 +8,20 @@ import (
 	"net"
 	"os"
 
-	"code.cloudfoundry.org/localip"
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2/fakes"
+	"code.cloudfoundry.org/localip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 type GrpcRunner struct {
-	serverCert string
-	serverKey  string
-	caCert     string
-	receivers  chan loggregator_v2.Ingress_SenderServer
-	port       int
+	serverCert     string
+	serverKey      string
+	caCert         string
+	receivers      chan loggregator_v2.Ingress_SenderServer
+	batchReceivers chan loggregator_v2.Ingress_BatchSenderServer
+	port           int
 }
 
 func NewGRPCRunner(serverCert, serverKey, caCert string) (*GrpcRunner, error) {
@@ -30,11 +31,12 @@ func NewGRPCRunner(serverCert, serverKey, caCert string) (*GrpcRunner, error) {
 	}
 
 	return &GrpcRunner{
-		serverCert: serverCert,
-		serverKey:  serverKey,
-		caCert:     caCert,
-		receivers:  make(chan loggregator_v2.Ingress_SenderServer),
-		port:       int(port),
+		serverCert:     serverCert,
+		serverKey:      serverKey,
+		caCert:         caCert,
+		receivers:      make(chan loggregator_v2.Ingress_SenderServer),
+		batchReceivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
+		port:           int(port),
 	}, nil
 }
 
@@ -44,6 +46,10 @@ func (grpcRunner *GrpcRunner) Port() int {
 
 func (grpcRunner *GrpcRunner) Receivers() chan loggregator_v2.Ingress_SenderServer {
 	return grpcRunner.receivers
+}
+
+func (grpcRunner *GrpcRunner) BatchReceivers() chan loggregator_v2.Ingress_BatchSenderServer {
+	return grpcRunner.batchReceivers
 }
 
 func (grpcRunner *GrpcRunner) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -70,6 +76,10 @@ func (grpcRunner *GrpcRunner) Run(signals <-chan os.Signal, ready chan<- struct{
 	senderServer := &fakes.FakeIngressServer{}
 	senderServer.SenderStub = func(recv loggregator_v2.Ingress_SenderServer) error {
 		grpcRunner.receivers <- recv
+		return nil
+	}
+	senderServer.BatchSenderStub = func(recv loggregator_v2.Ingress_BatchSenderServer) error {
+		grpcRunner.batchReceivers <- recv
 		return nil
 	}
 	loggregator_v2.RegisterIngressServer(server, senderServer)

@@ -107,6 +107,7 @@ var _ = Describe("Client", func() {
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100.1, Unit: "Req/s"}))
 		})
+
 		Context("when batcher is used", func() {
 			var batcher loggregator_v2.Batcher
 			JustBeforeEach(func() {
@@ -145,9 +146,10 @@ var _ = Describe("Client", func() {
 
 	Context("when v2 api is enabled", func() {
 		var (
-			receivers   chan loggregator_v2.Ingress_SenderServer
-			grpcRunner  *GrpcRunner
-			grpcProcess ifrit.Process
+			receivers      chan loggregator_v2.Ingress_SenderServer
+			batchReceivers chan loggregator_v2.Ingress_BatchSenderServer
+			grpcRunner     *GrpcRunner
+			grpcProcess    ifrit.Process
 		)
 
 		BeforeEach(func() {
@@ -166,6 +168,7 @@ var _ = Describe("Client", func() {
 				JobOrigin:     "test-origin",
 			}
 			receivers = grpcRunner.Receivers()
+			batchReceivers = grpcRunner.BatchReceivers()
 		})
 
 		AfterEach(func() {
@@ -235,10 +238,15 @@ var _ = Describe("Client", func() {
 				Consistently(func() error {
 					return client.SendAppLog("app-id", "message", "source-type", "source-instance")
 				}).Should(Succeed())
-				var recv loggregator_v2.Ingress_SenderServer
-				Eventually(receivers).Should(Receive(&recv))
-				env, err := recv.Recv()
+				var recv loggregator_v2.Ingress_BatchSenderServer
+				Eventually(batchReceivers).Should(Receive(&recv))
+				envBatch, err := recv.Recv()
 				Expect(err).NotTo(HaveOccurred())
+
+				allEnvelopes := envBatch.Batch
+				Expect(len(allEnvelopes)).To(Equal(1))
+
+				env := allEnvelopes[0]
 
 				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -435,7 +443,7 @@ var _ = Describe("Client", func() {
 					Expect(message.GetDelta()).To(Equal(uint64(1)))
 				})
 
-				Context("when batcher is used", func() {
+				Context("when gauge batcher is used", func() {
 					var batcher loggregator_v2.Batcher
 					JustBeforeEach(func() {
 						batcher = client.Batcher()
@@ -474,8 +482,8 @@ var _ = Describe("Client", func() {
 						Expect(message.GetMetrics()["test-requestspersec"].Value).To(Equal(float64(5)))
 						Expect(message.GetMetrics()["test-requestspersec"].Unit).To(Equal("Req/s"))
 					})
-
 				})
+
 			})
 
 			Context("when the server goes away and comes back", func() {

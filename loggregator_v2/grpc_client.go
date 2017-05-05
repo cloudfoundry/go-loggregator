@@ -20,26 +20,32 @@ type envelopeWithResponseChannel struct {
 type Connector func() (IngressClient, error)
 
 type grpcClient struct {
-	logger        lager.Logger
-	ingressClient IngressClient
-	sender        Ingress_SenderClient
-	envelopes     chan *envelopeWithResponseChannel
-	connector     Connector
-	config        *MetronConfig
+	logger           lager.Logger
+	ingressClient    IngressClient
+	sender           Ingress_SenderClient
+	batchSender      Ingress_BatchSenderClient
+	envelopes        chan *envelopeWithResponseChannel
+	batchedEnvelopes chan *envelopeWithResponseChannel
+	connector        Connector
+	config           *MetronConfig
 }
 
 func NewGrpcClient(logger lager.Logger, config *MetronConfig, ingressClient IngressClient) *grpcClient {
 	client := &grpcClient{
-		logger:        logger.Session("grpc-client"),
-		ingressClient: ingressClient,
-		config:        config,
-		envelopes:     make(chan *envelopeWithResponseChannel),
+		logger:           logger.Session("grpc-client"),
+		ingressClient:    ingressClient,
+		config:           config,
+		envelopes:        make(chan *envelopeWithResponseChannel),
+		batchedEnvelopes: make(chan *envelopeWithResponseChannel),
 	}
-	go client.start()
+	go client.startSender()
+
+	go client.startBatchSender()
+
 	return client
 }
 
-func (c *grpcClient) start() {
+func (c *grpcClient) startSender() {
 	for {
 		envelopeWithResponseChannel := <-c.envelopes
 		envelope := envelopeWithResponseChannel.envelope
@@ -56,6 +62,28 @@ func (c *grpcClient) start() {
 		err := c.sender.Send(envelope)
 		if err != nil {
 			c.sender = nil
+		}
+		errCh <- err
+	}
+}
+
+func (c *grpcClient) startBatchSender() {
+	for {
+		envelopeWithResponseChannel := <-c.batchedEnvelopes
+		envelope := envelopeWithResponseChannel.envelope
+		errCh := envelopeWithResponseChannel.errCh
+		if c.batchSender == nil {
+			var err error
+			c.batchSender, err = c.ingressClient.BatchSender(context.Background())
+			if err != nil {
+				c.logger.Error("failed-to-create-grpc-sender", err)
+				errCh <- err
+				continue
+			}
+		}
+		err := c.batchSender.Send(&EnvelopeBatch{Batch: []*Envelope{envelope}})
+		if err != nil {
+			c.batchSender = nil
 		}
 		errCh <- err
 	}
@@ -117,6 +145,20 @@ func (c *grpcClient) send(envelope *Envelope) error {
 	return err
 }
 
+func (c *grpcClient) sendInBatch(envelope *Envelope) error {
+	c.addEnvelopeTags(envelope)
+
+	e := &envelopeWithResponseChannel{
+		envelope: envelope,
+		errCh:    make(chan error),
+	}
+	defer close(e.errCh)
+
+	c.batchedEnvelopes <- e
+	err := <-e.errCh
+	return err
+}
+
 func (c *grpcClient) Batcher() Batcher {
 	return &grpcBatcher{
 		c:       c,
@@ -125,7 +167,7 @@ func (c *grpcClient) Batcher() Batcher {
 }
 
 func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) error {
-	return c.send(c.createLogEnvelope(appID, message, sourceType, sourceInstance, Log_OUT))
+	return c.sendInBatch(c.createLogEnvelope(appID, message, sourceType, sourceInstance, Log_OUT))
 }
 
 func (c *grpcClient) SendAppErrorLog(appID, message, sourceType, sourceInstance string) error {
