@@ -96,7 +96,7 @@ func (c *grpcClient) send(envelope *Envelope) error {
 
 func (c *grpcClient) Batcher() Batcher {
 	return &grpcBatcher{
-		c:       c,
+		client:  c,
 		metrics: make(map[string]*GaugeValue),
 	}
 }
