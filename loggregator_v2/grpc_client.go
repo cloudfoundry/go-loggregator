@@ -73,50 +73,15 @@ func (c *grpcClient) startSender() {
 	}
 }
 
-func newTextValue(t string) *Value {
-	return &Value{Data: &Value_Text{Text: t}}
-}
-
-func newGaugeValue(f float64) *GaugeValue {
-	return &GaugeValue{Value: f}
-}
-
-func newGaugeValueFromUInt64(i uint64) *GaugeValue {
-	return newGaugeValue(float64(i))
-}
-
-func (c *grpcClient) addEnvelopeTags(env *Envelope) {
-	if env.Tags == nil {
-		env.Tags = make(map[string]*Value)
-	}
-	env.Tags["deployment"] = newTextValue(c.config.JobDeployment)
-	env.Tags["job"] = newTextValue(c.config.JobName)
-	env.Tags["index"] = newTextValue(c.config.JobIndex)
-	env.Tags["ip"] = newTextValue(c.config.JobIP)
-	env.Tags["origin"] = newTextValue(c.config.JobOrigin)
-}
-
-func (c *grpcClient) createLogEnvelope(appID, message, sourceType, sourceInstance string, logType Log_Type) *Envelope {
-	env := &Envelope{
-		Timestamp:  time.Now().UnixNano(),
-		SourceId:   appID,
-		InstanceId: sourceInstance,
-		Message: &Envelope_Log{
-			Log: &Log{
-				Payload: []byte(message),
-				Type:    logType,
-			},
-		},
-		Tags: map[string]*Value{
-			"source_type":     newTextValue(sourceType),
-			"source_instance": newTextValue(sourceInstance),
-		},
-	}
-	return env
-}
-
 func (c *grpcClient) send(envelope *Envelope) error {
-	c.addEnvelopeTags(envelope)
+	if envelope.Tags == nil {
+		envelope.Tags = make(map[string]*Value)
+	}
+	envelope.Tags["deployment"] = newTextValue(c.config.JobDeployment)
+	envelope.Tags["job"] = newTextValue(c.config.JobName)
+	envelope.Tags["index"] = newTextValue(c.config.JobIndex)
+	envelope.Tags["ip"] = newTextValue(c.config.JobIP)
+	envelope.Tags["origin"] = newTextValue(c.config.JobOrigin)
 
 	e := &envelopeWithResponseChannel{
 		envelope: envelope,
@@ -137,11 +102,11 @@ func (c *grpcClient) Batcher() Batcher {
 }
 
 func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) error {
-	return c.send(c.createLogEnvelope(appID, message, sourceType, sourceInstance, Log_OUT))
+	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, Log_OUT))
 }
 
 func (c *grpcClient) SendAppErrorLog(appID, message, sourceType, sourceInstance string) error {
-	return c.send(c.createLogEnvelope(appID, message, sourceType, sourceInstance, Log_ERR))
+	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, Log_ERR))
 }
 
 func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
