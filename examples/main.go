@@ -1,15 +1,13 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
-	"code.cloudfoundry.org/lager"
 )
 
 func main() {
-
-	logger := lager.NewLogger("example-app")
 	metronCfg := loggregator_v2.MetronConfig{
 		UseV2API:      true,
 		APIPort:       3458,
@@ -23,14 +21,14 @@ func main() {
 		JobOrigin:     "example-deployment",
 	}
 
-	client, err := loggregator_v2.NewClient(logger, metronCfg)
+	client, err := loggregator_v2.NewClient(metronCfg)
 
 	if err != nil {
-		logger.Fatal("Could not create client", err)
+		log.Fatal("Could not create client", err)
 	}
 
 	err = client.SendMetric("some-metric-name", 1234)
 	if err != nil {
-		logger.Error("Unable to send metric", err)
+		log.Fatal("Unable to send metric", err)
 	}
 }
