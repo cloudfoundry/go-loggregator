@@ -1,0 +1,5 @@
+#!/bin/bash
+
+pushd loggregator_v2
+go test -run '[^?(vendor)]'
+popd
