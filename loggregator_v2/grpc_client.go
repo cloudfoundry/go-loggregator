@@ -122,7 +122,7 @@ func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
 	return c.send(env)
 }
 
-func (c *grpcClient) sendEnvelope(metrics map[string]*GaugeValue) error {
+func (c *grpcClient) sendGauge(metrics map[string]*GaugeValue) error {
 	return c.send(&Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &Envelope_Gauge{
@@ -139,7 +139,7 @@ func (c *grpcClient) SendDuration(name string, duration time.Duration) error {
 		Unit:  "nanos",
 		Value: float64(duration),
 	}
-	return c.sendEnvelope(metrics)
+	return c.sendGauge(metrics)
 }
 
 func (c *grpcClient) SendMebiBytes(name string, mebibytes int) error {
@@ -148,7 +148,7 @@ func (c *grpcClient) SendMebiBytes(name string, mebibytes int) error {
 		Unit:  "MiB",
 		Value: float64(mebibytes),
 	}
-	return c.sendEnvelope(metrics)
+	return c.sendGauge(metrics)
 }
 
 func (c *grpcClient) SendMetric(name string, value int) error {
@@ -157,7 +157,7 @@ func (c *grpcClient) SendMetric(name string, value int) error {
 		Unit:  "Metric",
 		Value: float64(value),
 	}
-	return c.sendEnvelope(metrics)
+	return c.sendGauge(metrics)
 }
 
 func (c *grpcClient) SendBytesPerSecond(name string, value float64) error {
@@ -166,7 +166,7 @@ func (c *grpcClient) SendBytesPerSecond(name string, value float64) error {
 		Unit:  "B/s",
 		Value: float64(value),
 	}
-	return c.sendEnvelope(metrics)
+	return c.sendGauge(metrics)
 }
 
 func (c *grpcClient) SendRequestsPerSecond(name string, value float64) error {
@@ -175,7 +175,7 @@ func (c *grpcClient) SendRequestsPerSecond(name string, value float64) error {
 		Unit:  "Req/s",
 		Value: float64(value),
 	}
-	return c.sendEnvelope(metrics)
+	return c.sendGauge(metrics)
 }
 
 func (c *grpcClient) IncrementCounter(name string) error {
