@@ -11,24 +11,25 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-//go:generate counterfeiter -o fakes/fake_ingress_server.go . IngressServer
-//go:generate counterfeiter -o fakes/fake_ingress_sender_server.go . Ingress_SenderServer
-
 type envelopeWithResponseChannel struct {
 	envelope *Envelope
 	errCh    chan error
 }
 
-type Connector func() (IngressClient, error)
-
 func newGrpcClient(config MetronConfig) (*grpcClient, error) {
-	tlsConfig, err := newTLSConfig(config.CACertPath, config.CertPath, config.KeyPath)
+	tlsConfig, err := newTLSConfig(
+		config.CACertPath,
+		config.CertPath,
+		config.KeyPath,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	address := fmt.Sprintf("localhost:%d", config.APIPort)
-	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	conn, err := grpc.Dial(
+		fmt.Sprintf("localhost:%d", config.APIPort),
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,6 @@ type grpcClient struct {
 	batchSender      Ingress_BatchSenderClient
 	envelopes        chan *envelopeWithResponseChannel
 	batchedEnvelopes chan *envelopeWithResponseChannel
-	connector        Connector
 	config           MetronConfig
 }
 
