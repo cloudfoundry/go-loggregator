@@ -16,12 +16,11 @@ import (
 )
 
 type GrpcRunner struct {
-	serverCert     string
-	serverKey      string
-	caCert         string
-	receivers      chan loggregator_v2.Ingress_SenderServer
-	batchReceivers chan loggregator_v2.Ingress_BatchSenderServer
-	port           int
+	serverCert string
+	serverKey  string
+	caCert     string
+	receivers  chan loggregator_v2.Ingress_BatchSenderServer
+	port       int
 }
 
 func NewGRPCRunner(serverCert, serverKey, caCert string) (*GrpcRunner, error) {
@@ -31,12 +30,11 @@ func NewGRPCRunner(serverCert, serverKey, caCert string) (*GrpcRunner, error) {
 	}
 
 	return &GrpcRunner{
-		serverCert:     serverCert,
-		serverKey:      serverKey,
-		caCert:         caCert,
-		receivers:      make(chan loggregator_v2.Ingress_SenderServer),
-		batchReceivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
-		port:           int(port),
+		serverCert: serverCert,
+		serverKey:  serverKey,
+		caCert:     caCert,
+		receivers:  make(chan loggregator_v2.Ingress_BatchSenderServer),
+		port:       int(port),
 	}, nil
 }
 
@@ -44,12 +42,8 @@ func (grpcRunner *GrpcRunner) Port() int {
 	return grpcRunner.port
 }
 
-func (grpcRunner *GrpcRunner) Receivers() chan loggregator_v2.Ingress_SenderServer {
+func (grpcRunner *GrpcRunner) Receivers() chan loggregator_v2.Ingress_BatchSenderServer {
 	return grpcRunner.receivers
-}
-
-func (grpcRunner *GrpcRunner) BatchReceivers() chan loggregator_v2.Ingress_BatchSenderServer {
-	return grpcRunner.batchReceivers
 }
 
 func (grpcRunner *GrpcRunner) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -74,12 +68,8 @@ func (grpcRunner *GrpcRunner) Run(signals <-chan os.Signal, ready chan<- struct{
 	server := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
 
 	senderServer := &fakes.FakeIngressServer{}
-	senderServer.SenderStub = func(recv loggregator_v2.Ingress_SenderServer) error {
-		grpcRunner.receivers <- recv
-		return nil
-	}
 	senderServer.BatchSenderStub = func(recv loggregator_v2.Ingress_BatchSenderServer) error {
-		grpcRunner.batchReceivers <- recv
+		grpcRunner.receivers <- recv
 		return nil
 	}
 	loggregator_v2.RegisterIngressServer(server, senderServer)

@@ -140,10 +140,9 @@ var _ = Describe("Client", func() {
 
 	Context("when v2 api is enabled", func() {
 		var (
-			receivers      chan loggregator_v2.Ingress_SenderServer
-			batchReceivers chan loggregator_v2.Ingress_BatchSenderServer
-			grpcRunner     *GrpcRunner
-			grpcProcess    ifrit.Process
+			receivers   chan loggregator_v2.Ingress_BatchSenderServer
+			grpcRunner  *GrpcRunner
+			grpcProcess ifrit.Process
 		)
 
 		BeforeEach(func() {
@@ -162,7 +161,6 @@ var _ = Describe("Client", func() {
 				JobOrigin:     "test-origin",
 			}
 			receivers = grpcRunner.Receivers()
-			batchReceivers = grpcRunner.BatchReceivers()
 		})
 
 		AfterEach(func() {
@@ -233,7 +231,7 @@ var _ = Describe("Client", func() {
 					return client.SendAppLog("app-id", "message", "source-type", "source-instance")
 				}).Should(Succeed())
 				var recv loggregator_v2.Ingress_BatchSenderServer
-				Eventually(batchReceivers).Should(Receive(&recv))
+				Eventually(receivers).Should(Receive(&recv))
 				envBatch, err := recv.Recv()
 				Expect(err).NotTo(HaveOccurred())
 
@@ -263,10 +261,12 @@ var _ = Describe("Client", func() {
 				Consistently(func() error {
 					return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
 				}).Should(Succeed())
-				var recv loggregator_v2.Ingress_SenderServer
+				var recv loggregator_v2.Ingress_BatchSenderServer
 				Eventually(receivers).Should(Receive(&recv))
-				env, err := recv.Recv()
+				envBatch, err := recv.Recv()
 				Expect(err).NotTo(HaveOccurred())
+				Expect(len(envBatch.Batch)).To(Equal(1))
+				env := envBatch.Batch[0]
 
 				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -298,10 +298,12 @@ var _ = Describe("Client", func() {
 				Consistently(func() error {
 					return client.SendAppMetrics(&metric)
 				}).Should(Succeed())
-				var recv loggregator_v2.Ingress_SenderServer
+				var recv loggregator_v2.Ingress_BatchSenderServer
 				Eventually(receivers).Should(Receive(&recv))
-				env, err := recv.Recv()
+				envBatch, err := recv.Recv()
 				Expect(err).NotTo(HaveOccurred())
+				Expect(len(envBatch.Batch)).To(Equal(1))
+				env := envBatch.Batch[0]
 
 				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -328,10 +330,12 @@ var _ = Describe("Client", func() {
 					Consistently(func() error {
 						return client.SendDuration("test-name", 1*time.Nanosecond)
 					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_SenderServer
+					var recv loggregator_v2.Ingress_BatchSenderServer
 					Eventually(receivers).Should(Receive(&recv))
-					env, err := recv.Recv()
+					envBatch, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
+					Expect(len(envBatch.Batch)).To(Equal(1))
+					env := envBatch.Batch[0]
 
 					Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 					Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -351,10 +355,12 @@ var _ = Describe("Client", func() {
 					Consistently(func() error {
 						return client.SendMebiBytes("test-name", 10)
 					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_SenderServer
+					var recv loggregator_v2.Ingress_BatchSenderServer
 					Eventually(receivers).Should(Receive(&recv))
-					env, err := recv.Recv()
+					envBatch, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
+					Expect(len(envBatch.Batch)).To(Equal(1))
+					env := envBatch.Batch[0]
 
 					Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 					Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -374,10 +380,12 @@ var _ = Describe("Client", func() {
 					Consistently(func() error {
 						return client.SendMetric("test-name", 11)
 					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_SenderServer
+					var recv loggregator_v2.Ingress_BatchSenderServer
 					Eventually(receivers).Should(Receive(&recv))
-					env, err := recv.Recv()
+					envBatch, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
+					Expect(len(envBatch.Batch)).To(Equal(1))
+					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -391,10 +399,12 @@ var _ = Describe("Client", func() {
 					Consistently(func() error {
 						return client.SendRequestsPerSecond("test-name", 11)
 					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_SenderServer
+					var recv loggregator_v2.Ingress_BatchSenderServer
 					Eventually(receivers).Should(Receive(&recv))
-					env, err := recv.Recv()
+					envBatch, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
+					Expect(len(envBatch.Batch)).To(Equal(1))
+					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -407,10 +417,12 @@ var _ = Describe("Client", func() {
 					Consistently(func() error {
 						return client.SendBytesPerSecond("test-name", 10)
 					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_SenderServer
+					var recv loggregator_v2.Ingress_BatchSenderServer
 					Eventually(receivers).Should(Receive(&recv))
-					env, err := recv.Recv()
+					envBatch, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
+					Expect(len(envBatch.Batch)).To(Equal(1))
+					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -424,10 +436,12 @@ var _ = Describe("Client", func() {
 					Consistently(func() error {
 						return client.IncrementCounter("test-name")
 					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_SenderServer
+					var recv loggregator_v2.Ingress_BatchSenderServer
 					Eventually(receivers).Should(Receive(&recv))
-					env, err := recv.Recv()
+					envBatch, err := recv.Recv()
 					Expect(err).NotTo(HaveOccurred())
+					Expect(len(envBatch.Batch)).To(Equal(1))
+					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -458,10 +472,12 @@ var _ = Describe("Client", func() {
 							return batcher.Send()
 						}).Should(Succeed())
 
-						var recv loggregator_v2.Ingress_SenderServer
+						var recv loggregator_v2.Ingress_BatchSenderServer
 						Eventually(receivers).Should(Receive(&recv))
-						env, err := recv.Recv()
+						envBatch, err := recv.Recv()
 						Expect(err).NotTo(HaveOccurred())
+						Expect(len(envBatch.Batch)).To(Equal(1))
+						env := envBatch.Batch[0]
 
 						message := env.GetGauge()
 						Expect(message).NotTo(BeNil())
