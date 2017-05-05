@@ -2,7 +2,15 @@ package loggregator_v2
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"fmt"
+	"io/ioutil"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/lager"
 
@@ -19,22 +27,44 @@ type envelopeWithResponseChannel struct {
 
 type Connector func() (IngressClient, error)
 
-type grpcClient struct {
-	logger           lager.Logger
-	ingressClient    IngressClient
-	sender           Ingress_SenderClient
-	batchSender      Ingress_BatchSenderClient
-	envelopes        chan *envelopeWithResponseChannel
-	batchedEnvelopes chan *envelopeWithResponseChannel
-	connector        Connector
-	config           *MetronConfig
-}
+func newGrpcClient(logger lager.Logger, config MetronConfig) (*grpcClient, error) {
+	address := fmt.Sprintf("localhost:%d", config.APIPort)
+	logger.Info("creating-grpc-client", lager.Data{"address": address})
+	cert, err := tls.LoadX509KeyPair(config.CertPath, config.KeyPath)
+	if err != nil {
+		logger.Error("cannot-load-certs", err)
+		return nil, err
+	}
+	tlsConfig := &tls.Config{
+		ServerName:         "metron",
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: false,
+	}
+	caCertBytes, err := ioutil.ReadFile(config.CACertPath)
+	if err != nil {
+		logger.Error("failed-to-read-ca-cert", err)
+		return nil, err
+	}
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM(caCertBytes); !ok {
+		logger.Error("failed-to-append-ca-cert", err)
+		return nil, errors.New("cannot parse ca cert")
+	}
+	tlsConfig.RootCAs = caCertPool
 
-func newGrpcClient(
-	logger lager.Logger,
-	config *MetronConfig,
-	ingressClient IngressClient,
-) *grpcClient {
+	connector := func() (IngressClient, error) {
+		conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+		if err != nil {
+			return nil, err
+		}
+
+		return NewIngressClient(conn), nil
+	}
+	ingressClient, err := connector()
+	if err != nil {
+		return nil, err
+	}
+
 	client := &grpcClient{
 		logger:           logger.Session("grpc-client"),
 		ingressClient:    ingressClient,
@@ -46,7 +76,18 @@ func newGrpcClient(
 	go client.startSender()
 	go client.startBatchSender()
 
-	return client
+	return client, nil
+}
+
+type grpcClient struct {
+	logger           lager.Logger
+	ingressClient    IngressClient
+	sender           Ingress_SenderClient
+	batchSender      Ingress_BatchSenderClient
+	envelopes        chan *envelopeWithResponseChannel
+	batchedEnvelopes chan *envelopeWithResponseChannel
+	connector        Connector
+	config           MetronConfig
 }
 
 func (c *grpcClient) startSender() {

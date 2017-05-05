@@ -1,18 +1,11 @@
 package loggregator_v2
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"errors"
-	"fmt"
-	"io/ioutil"
 	"time"
 
 	"code.cloudfoundry.org/lager"
 
 	"github.com/cloudfoundry/sonde-go/events"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 //go:generate bash scripts/generate_protos.sh
@@ -61,45 +54,9 @@ type MetronConfig struct {
 }
 
 func NewClient(logger lager.Logger, config MetronConfig) (Client, error) {
-	if !config.UseV2API {
-		return &dropsondeClient{}, nil
-	}
-	address := fmt.Sprintf("localhost:%d", config.APIPort)
-	logger.Info("creating-grpc-client", lager.Data{"address": address})
-	cert, err := tls.LoadX509KeyPair(config.CertPath, config.KeyPath)
-	if err != nil {
-		logger.Error("cannot-load-certs", err)
-		return nil, err
-	}
-	tlsConfig := &tls.Config{
-		ServerName:         "metron",
-		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: false,
-	}
-	caCertBytes, err := ioutil.ReadFile(config.CACertPath)
-	if err != nil {
-		logger.Error("failed-to-read-ca-cert", err)
-		return nil, err
-	}
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM(caCertBytes); !ok {
-		logger.Error("failed-to-append-ca-cert", err)
-		return nil, errors.New("cannot parse ca cert")
-	}
-	tlsConfig.RootCAs = caCertPool
-
-	connector := func() (IngressClient, error) {
-		conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-		if err != nil {
-			return nil, err
-		}
-
-		return NewIngressClient(conn), nil
-	}
-	ingressClient, err := connector()
-	if err != nil {
-		return nil, err
+	if config.UseV2API {
+		return newGrpcClient(logger, config)
 	}
 
-	return newGrpcClient(logger, &config, ingressClient), nil
+	return newDropsondeClient()
 }

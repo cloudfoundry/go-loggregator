@@ -8,6 +8,10 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
+func newDropsondeClient() (*dropsondeClient, error) {
+	return &dropsondeClient{}, nil
+}
+
 type dropsondeClient struct{}
 
 func (c *dropsondeClient) Batcher() Batcher {
