@@ -30,7 +30,11 @@ type grpcClient struct {
 	config           *MetronConfig
 }
 
-func newGrpcClient(logger lager.Logger, config *MetronConfig, ingressClient IngressClient) *grpcClient {
+func newGrpcClient(
+	logger lager.Logger,
+	config *MetronConfig,
+	ingressClient IngressClient,
+) *grpcClient {
 	client := &grpcClient{
 		logger:           logger.Session("grpc-client"),
 		ingressClient:    ingressClient,
@@ -38,8 +42,8 @@ func newGrpcClient(logger lager.Logger, config *MetronConfig, ingressClient Ingr
 		envelopes:        make(chan *envelopeWithResponseChannel),
 		batchedEnvelopes: make(chan *envelopeWithResponseChannel),
 	}
-	go client.startSender()
 
+	go client.startSender()
 	go client.startBatchSender()
 
 	return client
