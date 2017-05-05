@@ -94,13 +94,6 @@ func (c *grpcClient) send(envelope *Envelope) error {
 	return err
 }
 
-func (c *grpcClient) Batcher() Batcher {
-	return &grpcBatcher{
-		client:  c,
-		metrics: make(map[string]*GaugeValue),
-	}
-}
-
 func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) error {
 	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, Log_OUT))
 }
@@ -129,34 +122,60 @@ func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
 	return c.send(env)
 }
 
+func (c *grpcClient) sendEnvelope(metrics map[string]*GaugeValue) error {
+	return c.send(&Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &Envelope_Gauge{
+			Gauge: &Gauge{
+				Metrics: metrics,
+			},
+		},
+	})
+}
+
 func (c *grpcClient) SendDuration(name string, duration time.Duration) error {
-	b := c.Batcher()
-	b.SendDuration(name, duration)
-	return b.Send()
+	metrics := make(map[string]*GaugeValue)
+	metrics[name] = &GaugeValue{
+		Unit:  "nanos",
+		Value: float64(duration),
+	}
+	return c.sendEnvelope(metrics)
 }
 
 func (c *grpcClient) SendMebiBytes(name string, mebibytes int) error {
-	b := c.Batcher()
-	b.SendMebiBytes(name, mebibytes)
-	return b.Send()
+	metrics := make(map[string]*GaugeValue)
+	metrics[name] = &GaugeValue{
+		Unit:  "MiB",
+		Value: float64(mebibytes),
+	}
+	return c.sendEnvelope(metrics)
 }
 
 func (c *grpcClient) SendMetric(name string, value int) error {
-	b := c.Batcher()
-	b.SendMetric(name, value)
-	return b.Send()
+	metrics := make(map[string]*GaugeValue)
+	metrics[name] = &GaugeValue{
+		Unit:  "Metric",
+		Value: float64(value),
+	}
+	return c.sendEnvelope(metrics)
 }
 
 func (c *grpcClient) SendBytesPerSecond(name string, value float64) error {
-	b := c.Batcher()
-	b.SendBytesPerSecond(name, value)
-	return b.Send()
+	metrics := make(map[string]*GaugeValue)
+	metrics[name] = &GaugeValue{
+		Unit:  "B/s",
+		Value: float64(value),
+	}
+	return c.sendEnvelope(metrics)
 }
 
 func (c *grpcClient) SendRequestsPerSecond(name string, value float64) error {
-	b := c.Batcher()
-	b.SendRequestsPerSecond(name, value)
-	return b.Send()
+	metrics := make(map[string]*GaugeValue)
+	metrics[name] = &GaugeValue{
+		Unit:  "Req/s",
+		Value: float64(value),
+	}
+	return c.sendEnvelope(metrics)
 }
 
 func (c *grpcClient) IncrementCounter(name string) error {

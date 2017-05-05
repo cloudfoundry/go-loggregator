@@ -70,15 +70,6 @@ type FakeClient struct {
 	sendRequestsPerSecondReturnsOnCall map[int]struct {
 		result1 error
 	}
-	BatcherStub        func() loggregator_v2.Batcher
-	batcherMutex       sync.RWMutex
-	batcherArgsForCall []struct{}
-	batcherReturns     struct {
-		result1 loggregator_v2.Batcher
-	}
-	batcherReturnsOnCall map[int]struct {
-		result1 loggregator_v2.Batcher
-	}
 	IncrementCounterStub        func(name string) error
 	incrementCounterMutex       sync.RWMutex
 	incrementCounterArgsForCall []struct {
@@ -378,46 +369,6 @@ func (fake *FakeClient) SendRequestsPerSecondReturnsOnCall(i int, result1 error)
 	}{result1}
 }
 
-func (fake *FakeClient) Batcher() loggregator_v2.Batcher {
-	fake.batcherMutex.Lock()
-	ret, specificReturn := fake.batcherReturnsOnCall[len(fake.batcherArgsForCall)]
-	fake.batcherArgsForCall = append(fake.batcherArgsForCall, struct{}{})
-	fake.recordInvocation("Batcher", []interface{}{})
-	fake.batcherMutex.Unlock()
-	if fake.BatcherStub != nil {
-		return fake.BatcherStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.batcherReturns.result1
-}
-
-func (fake *FakeClient) BatcherCallCount() int {
-	fake.batcherMutex.RLock()
-	defer fake.batcherMutex.RUnlock()
-	return len(fake.batcherArgsForCall)
-}
-
-func (fake *FakeClient) BatcherReturns(result1 loggregator_v2.Batcher) {
-	fake.BatcherStub = nil
-	fake.batcherReturns = struct {
-		result1 loggregator_v2.Batcher
-	}{result1}
-}
-
-func (fake *FakeClient) BatcherReturnsOnCall(i int, result1 loggregator_v2.Batcher) {
-	fake.BatcherStub = nil
-	if fake.batcherReturnsOnCall == nil {
-		fake.batcherReturnsOnCall = make(map[int]struct {
-			result1 loggregator_v2.Batcher
-		})
-	}
-	fake.batcherReturnsOnCall[i] = struct {
-		result1 loggregator_v2.Batcher
-	}{result1}
-}
-
 func (fake *FakeClient) IncrementCounter(name string) error {
 	fake.incrementCounterMutex.Lock()
 	ret, specificReturn := fake.incrementCounterReturnsOnCall[len(fake.incrementCounterArgsForCall)]
@@ -629,8 +580,6 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.sendBytesPerSecondMutex.RUnlock()
 	fake.sendRequestsPerSecondMutex.RLock()
 	defer fake.sendRequestsPerSecondMutex.RUnlock()
-	fake.batcherMutex.RLock()
-	defer fake.batcherMutex.RUnlock()
 	fake.incrementCounterMutex.RLock()
 	defer fake.incrementCounterMutex.RUnlock()
 	fake.sendAppLogMutex.RLock()

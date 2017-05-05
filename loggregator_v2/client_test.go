@@ -101,41 +101,6 @@ var _ = Describe("Client", func() {
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100.1, Unit: "Req/s"}))
 		})
-
-		Context("when batcher is used", func() {
-			var batcher loggregator_v2.Batcher
-			JustBeforeEach(func() {
-				batcher = client.Batcher()
-			})
-
-			It("should send batched guage metrics", func() {
-				err := batcher.SendMetric("test-metric", 1)
-				Expect(err).NotTo(HaveOccurred())
-				err = batcher.SendDuration("test-duration", 2*time.Second)
-				Expect(err).NotTo(HaveOccurred())
-				err = batcher.SendMebiBytes("test-mebibytes", 3)
-				Expect(err).NotTo(HaveOccurred())
-				err = batcher.SendBytesPerSecond("test-bytespersec", float64(4))
-				Expect(err).NotTo(HaveOccurred())
-				err = batcher.SendRequestsPerSecond("test-requestspersec", float64(5))
-				Expect(err).NotTo(HaveOccurred())
-				Consistently(func() error {
-					return batcher.Send()
-				}).Should(Succeed())
-
-				Expect(metricSender.HasValue("test-metric")).To(BeTrue())
-				Expect(metricSender.GetValue("test-metric")).To(Equal(mfake.Metric{Value: 1, Unit: "Metric"}))
-				Expect(metricSender.HasValue("test-duration")).To(BeTrue())
-				Expect(metricSender.GetValue("test-duration")).To(Equal(mfake.Metric{Value: float64(2 * time.Second), Unit: "nanos"}))
-				Expect(metricSender.HasValue("test-mebibytes")).To(BeTrue())
-				Expect(metricSender.GetValue("test-mebibytes")).To(Equal(mfake.Metric{Value: 3, Unit: "MiB"}))
-				Expect(metricSender.HasValue("test-bytespersec")).To(BeTrue())
-				Expect(metricSender.GetValue("test-bytespersec")).To(Equal(mfake.Metric{Value: 4, Unit: "B/s"}))
-				Expect(metricSender.HasValue("test-requestspersec")).To(BeTrue())
-				Expect(metricSender.GetValue("test-requestspersec")).To(Equal(mfake.Metric{Value: 5, Unit: "Req/s"}))
-			})
-
-		})
 	})
 
 	Context("when v2 api is enabled", func() {
@@ -450,50 +415,6 @@ var _ = Describe("Client", func() {
 					Expect(message.Name).To(Equal("test-name"))
 					Expect(message.GetDelta()).To(Equal(uint64(1)))
 				})
-
-				Context("when gauge batcher is used", func() {
-					var batcher loggregator_v2.Batcher
-					JustBeforeEach(func() {
-						batcher = client.Batcher()
-					})
-
-					It("should send batched guage metrics", func() {
-						err := batcher.SendMetric("test-metric", 1)
-						Expect(err).NotTo(HaveOccurred())
-						err = batcher.SendDuration("test-duration", 2*time.Second)
-						Expect(err).NotTo(HaveOccurred())
-						err = batcher.SendMebiBytes("test-mebibytes", 3)
-						Expect(err).NotTo(HaveOccurred())
-						err = batcher.SendBytesPerSecond("test-bytespersec", float64(4))
-						Expect(err).NotTo(HaveOccurred())
-						err = batcher.SendRequestsPerSecond("test-requestspersec", float64(5))
-						Expect(err).NotTo(HaveOccurred())
-						Consistently(func() error {
-							return batcher.Send()
-						}).Should(Succeed())
-
-						var recv loggregator_v2.Ingress_BatchSenderServer
-						Eventually(receivers).Should(Receive(&recv))
-						envBatch, err := recv.Recv()
-						Expect(err).NotTo(HaveOccurred())
-						Expect(len(envBatch.Batch)).To(Equal(1))
-						env := envBatch.Batch[0]
-
-						message := env.GetGauge()
-						Expect(message).NotTo(BeNil())
-						Expect(message.GetMetrics()["test-metric"].Value).To(Equal(float64(1)))
-						Expect(message.GetMetrics()["test-metric"].Unit).To(Equal("Metric"))
-						Expect(message.GetMetrics()["test-duration"].Value).To(Equal(float64(2 * time.Second)))
-						Expect(message.GetMetrics()["test-duration"].Unit).To(Equal("nanos"))
-						Expect(message.GetMetrics()["test-mebibytes"].Value).To(Equal(float64(3)))
-						Expect(message.GetMetrics()["test-mebibytes"].Unit).To(Equal("MiB"))
-						Expect(message.GetMetrics()["test-bytespersec"].Value).To(Equal(float64(4)))
-						Expect(message.GetMetrics()["test-bytespersec"].Unit).To(Equal("B/s"))
-						Expect(message.GetMetrics()["test-requestspersec"].Value).To(Equal(float64(5)))
-						Expect(message.GetMetrics()["test-requestspersec"].Unit).To(Equal("Req/s"))
-					})
-				})
-
 			})
 
 			Context("when the server goes away and comes back", func() {

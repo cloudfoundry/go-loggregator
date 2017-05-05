@@ -14,10 +14,6 @@ func newDropsondeClient() (*dropsondeClient, error) {
 
 type dropsondeClient struct{}
 
-func (c *dropsondeClient) Batcher() Batcher {
-	return c
-}
-
 func (c *dropsondeClient) Send() error {
 	return nil
 }
