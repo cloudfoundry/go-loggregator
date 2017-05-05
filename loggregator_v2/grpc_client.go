@@ -30,7 +30,7 @@ type grpcClient struct {
 	config           *MetronConfig
 }
 
-func NewGrpcClient(logger lager.Logger, config *MetronConfig, ingressClient IngressClient) *grpcClient {
+func newGrpcClient(logger lager.Logger, config *MetronConfig, ingressClient IngressClient) *grpcClient {
 	client := &grpcClient{
 		logger:           logger.Session("grpc-client"),
 		ingressClient:    ingressClient,

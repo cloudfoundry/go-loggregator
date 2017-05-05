@@ -101,5 +101,5 @@ func NewClient(logger lager.Logger, config MetronConfig) (Client, error) {
 		return nil, err
 	}
 
-	return NewGrpcClient(logger, &config, ingressClient), nil
+	return newGrpcClient(logger, &config, ingressClient), nil
 }
