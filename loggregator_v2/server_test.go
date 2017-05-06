@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"os"
 
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2/fakes"
@@ -15,21 +14,24 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-type GrpcRunner struct {
+type TestServer struct {
 	serverCert string
 	serverKey  string
 	caCert     string
-	receivers  chan loggregator_v2.Ingress_BatchSenderServer
-	port       int
+
+	receivers chan loggregator_v2.Ingress_BatchSenderServer
+	port      int
+
+	grpcServer *grpc.Server
 }
 
-func NewGRPCRunner(serverCert, serverKey, caCert string) (*GrpcRunner, error) {
+func NewTestServer(serverCert, serverKey, caCert string) (*TestServer, error) {
 	port, err := localip.LocalPort()
 	if err != nil {
 		return nil, err
 	}
 
-	return &GrpcRunner{
+	return &TestServer{
 		serverCert: serverCert,
 		serverKey:  serverKey,
 		caCert:     caCert,
@@ -38,16 +40,16 @@ func NewGRPCRunner(serverCert, serverKey, caCert string) (*GrpcRunner, error) {
 	}, nil
 }
 
-func (grpcRunner *GrpcRunner) Port() int {
-	return grpcRunner.port
+func (t *TestServer) Port() int {
+	return t.port
 }
 
-func (grpcRunner *GrpcRunner) Receivers() chan loggregator_v2.Ingress_BatchSenderServer {
-	return grpcRunner.receivers
+func (t *TestServer) Receivers() chan loggregator_v2.Ingress_BatchSenderServer {
+	return t.receivers
 }
 
-func (grpcRunner *GrpcRunner) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
-	cert, err := tls.LoadX509KeyPair(grpcRunner.serverCert, grpcRunner.serverKey)
+func (t *TestServer) Start() error {
+	cert, err := tls.LoadX509KeyPair(t.serverCert, t.serverKey)
 	if err != nil {
 		return err
 	}
@@ -57,7 +59,7 @@ func (grpcRunner *GrpcRunner) Run(signals <-chan os.Signal, ready chan<- struct{
 		ClientAuth:         tls.RequestClientCert,
 		InsecureSkipVerify: false,
 	}
-	caCertBytes, err := ioutil.ReadFile(grpcRunner.caCert)
+	caCertBytes, err := ioutil.ReadFile(t.caCert)
 	if err != nil {
 		return err
 	}
@@ -65,30 +67,27 @@ func (grpcRunner *GrpcRunner) Run(signals <-chan os.Signal, ready chan<- struct{
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCertBytes)
 	tlsConfig.RootCAs = caCertPool
-	server := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
+	t.grpcServer = grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
 
 	senderServer := &fakes.FakeIngressServer{}
 	senderServer.BatchSenderStub = func(recv loggregator_v2.Ingress_BatchSenderServer) error {
-		grpcRunner.receivers <- recv
+		t.receivers <- recv
 		return nil
 	}
-	loggregator_v2.RegisterIngressServer(server, senderServer)
+	loggregator_v2.RegisterIngressServer(t.grpcServer, senderServer)
 
-	listener, err := net.Listen("tcp4", fmt.Sprintf("localhost:%d", grpcRunner.port))
+	listener, err := net.Listen("tcp4", fmt.Sprintf("localhost:%d", t.port))
 	if err != nil {
 		return err
 	}
 
-	errCh := make(chan error)
 	go func() {
-		errCh <- server.Serve(listener)
+		t.grpcServer.Serve(listener)
 	}()
-	close(ready)
-	select {
-	case <-signals:
-		server.Stop()
-		return nil
-	case err := <-errCh:
-		return err
-	}
+
+	return nil
+}
+
+func (t *TestServer) Stop() {
+	t.grpcServer.Stop()
 }

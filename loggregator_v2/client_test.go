@@ -13,8 +13,6 @@ import (
 	mfake "github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("Client", func() {
@@ -103,31 +101,32 @@ var _ = Describe("Client", func() {
 
 	Context("when v2 api is enabled", func() {
 		var (
-			receivers   chan loggregator_v2.Ingress_BatchSenderServer
-			grpcRunner  *GrpcRunner
-			grpcProcess ifrit.Process
+			receivers chan loggregator_v2.Ingress_BatchSenderServer
+			server    *TestServer
 		)
 
 		BeforeEach(func() {
 			var err error
-			grpcRunner, err = NewGRPCRunner("fixtures/metron.crt", "fixtures/metron.key", "fixtures/CA.crt")
+			server, err = NewTestServer("fixtures/metron.crt", "fixtures/metron.key", "fixtures/CA.crt")
 			Expect(err).NotTo(HaveOccurred())
-			grpcProcess = ginkgomon.Invoke(grpcRunner)
+
+			err = server.Start()
+			Expect(err).NotTo(HaveOccurred())
 
 			config = loggregator_v2.MetronConfig{
 				UseV2API:      true,
-				APIPort:       grpcRunner.Port(),
+				APIPort:       server.Port(),
 				JobDeployment: "cf-warden-diego",
 				JobName:       "rep",
 				JobIndex:      "0",
 				JobIP:         "10.244.34.6",
 				JobOrigin:     "test-origin",
 			}
-			receivers = grpcRunner.Receivers()
+			receivers = server.Receivers()
 		})
 
 		AfterEach(func() {
-			ginkgomon.Interrupt(grpcProcess)
+			server.Stop()
 		})
 
 		Context("the cert or key path are invalid", func() {
@@ -415,26 +414,20 @@ var _ = Describe("Client", func() {
 				})
 			})
 
-			Context("when the server goes away and comes back", func() {
-				JustBeforeEach(func() {
-					Expect(client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")).To(Succeed())
-					ginkgomon.Interrupt(grpcProcess)
+			It("reconnects when the server goes away and comes back", func() {
+				Expect(client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")).To(Succeed())
+				server.Stop()
 
-					// wait for the client to detect the error
-					Eventually(func() error {
-						return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-					}).ShouldNot(Succeed())
-					grpcProcess = ginkgomon.Invoke(grpcRunner)
+				Eventually(func() error {
+					return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
+				}).ShouldNot(Succeed())
 
-					// make sure the server stays up
-					Consistently(grpcProcess.Wait()).ShouldNot(Receive())
-				})
+				err := server.Start()
+				Expect(err).NotTo(HaveOccurred())
 
-				It("should reconnect", func() {
-					Eventually(func() error {
-						return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-					}).Should(Succeed())
-				})
+				Eventually(func() error {
+					return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
+				}, 5).Should(Succeed())
 			})
 		})
 	})
