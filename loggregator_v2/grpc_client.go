@@ -147,7 +147,7 @@ func (c *grpcClient) startSender() {
 		errCh := envelopeWithResponseChannel.errCh
 		if c.sender == nil {
 			var err error
-			c.sender, err = c.ingressClient.BatchSender(context.Background())
+			c.sender, err = c.ingressClient.BatchSender(context.TODO())
 			if err != nil {
 				errCh <- err
 				continue
