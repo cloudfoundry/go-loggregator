@@ -4,17 +4,17 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
-	lfake "github.com/cloudfoundry/dropsonde/log_sender/fake"
-	mfake "github.com/cloudfoundry/dropsonde/metric_sender/fake"
+	"github.com/cloudfoundry/dropsonde/logs"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
 
-	"github.com/cloudfoundry/dropsonde/logs"
+	lfake "github.com/cloudfoundry/dropsonde/log_sender/fake"
+	mfake "github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 type testHandler struct{}
