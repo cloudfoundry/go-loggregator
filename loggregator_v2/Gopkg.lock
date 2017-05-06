@@ -1,0 +1,79 @@
+memo = "065f1f0fed2135dfdf0cd6b77a31409b646c96dbbc656e077478f8328374decc"
+
+[[projects]]
+  branch = "master"
+  name = "code.cloudfoundry.org/localip"
+  packages = ["."]
+  revision = "b88ad0dea95cd41f302cf7eb6ed951efafaf47f2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/dropsonde"
+  packages = ["log_sender","log_sender/fake","logs","metric_sender","metric_sender/fake","metrics"]
+  revision = "94d065ef70ddc762eb2db986dce12e9ad4dbf335"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/sonde-go"
+  packages = ["events"]
+  revision = "78019103037ae46207993c8816e970d85bf1a9e4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gogo/protobuf"
+  packages = ["gogoproto","proto","protoc-gen-gogo/descriptor"]
+  revision = "30433562cfbf487fe1df7cd26c7bab168d2f14d0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/protobuf"
+  packages = ["proto","ptypes/any"]
+  revision = "18c9bb3261723cd5401db4d0c9fbc5c3b6c70fe8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/onsi/ginkgo"
+  packages = [".","config","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
+  revision = "83438ca4278f2f56757b9ab2cb15dd4f596d84e8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/onsi/gomega"
+  packages = [".","format","internal/assertion","internal/asyncassertion","internal/oraclematcher","internal/testingtsupport","matchers","matchers/support/goraph/bipartitegraph","matchers/support/goraph/edge","matchers/support/goraph/node","matchers/support/goraph/util","types"]
+  revision = "da367351331c75190afec7ed3a0c61e0016942ed"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
+  revision = "feeb485667d1fdabe727840fe00adc22431bc86e"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "9ccfe848b9db8435a24c424abbc07a921adf1df5"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/text"
+  packages = ["internal/gen","internal/triegen","internal/ucd","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
+  revision = "470f45bf29f4147d6fbd7dfd0a02a848e49f5bf4"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  revision = "411e09b969b1170a9f0c467558eb4c4c110d9c77"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/grpc"
+  packages = [".","codes","credentials","grpclb/grpc_lb_v1","grpclog","internal","keepalive","metadata","naming","peer","stats","status","tap","transport"]
+  revision = "ffa4ec7da24e8f4ee690d9aad2afad973e721d7b"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b"
