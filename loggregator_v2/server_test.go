@@ -15,13 +15,9 @@ import (
 )
 
 type TestServer struct {
-	serverCert string
-	serverKey  string
-	caCert     string
-
-	receivers chan loggregator_v2.Ingress_BatchSenderServer
-	port      int
-
+	receivers  chan loggregator_v2.Ingress_BatchSenderServer
+	port       int
+	tlsConfig  *tls.Config
 	grpcServer *grpc.Server
 }
 
@@ -31,12 +27,29 @@ func NewTestServer(serverCert, serverKey, caCert string) (*TestServer, error) {
 		return nil, err
 	}
 
+	cert, err := tls.LoadX509KeyPair(serverCert, serverKey)
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		ClientAuth:         tls.RequestClientCert,
+		InsecureSkipVerify: false,
+	}
+	caCertBytes, err := ioutil.ReadFile(caCert)
+	if err != nil {
+		return nil, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCertBytes)
+	tlsConfig.RootCAs = caCertPool
+
 	return &TestServer{
-		serverCert: serverCert,
-		serverKey:  serverKey,
-		caCert:     caCert,
-		receivers:  make(chan loggregator_v2.Ingress_BatchSenderServer),
-		port:       int(port),
+		tlsConfig: tlsConfig,
+		receivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
+		port:      int(port),
 	}, nil
 }
 
@@ -49,25 +62,11 @@ func (t *TestServer) Receivers() chan loggregator_v2.Ingress_BatchSenderServer {
 }
 
 func (t *TestServer) Start() error {
-	cert, err := tls.LoadX509KeyPair(t.serverCert, t.serverKey)
+	listener, err := net.Listen("tcp4", fmt.Sprintf("localhost:%d", t.port))
 	if err != nil {
 		return err
 	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{cert},
-		ClientAuth:         tls.RequestClientCert,
-		InsecureSkipVerify: false,
-	}
-	caCertBytes, err := ioutil.ReadFile(t.caCert)
-	if err != nil {
-		return err
-	}
-
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCertBytes)
-	tlsConfig.RootCAs = caCertPool
-	t.grpcServer = grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
+	t.grpcServer = grpc.NewServer(grpc.Creds(credentials.NewTLS(t.tlsConfig)))
 
 	senderServer := &fakes.FakeIngressServer{}
 	senderServer.BatchSenderStub = func(recv loggregator_v2.Ingress_BatchSenderServer) error {
@@ -75,11 +74,6 @@ func (t *TestServer) Start() error {
 		return nil
 	}
 	loggregator_v2.RegisterIngressServer(t.grpcServer, senderServer)
-
-	listener, err := net.Listen("tcp4", fmt.Sprintf("localhost:%d", t.port))
-	if err != nil {
-		return err
-	}
 
 	go func() {
 		t.grpcServer.Serve(listener)
