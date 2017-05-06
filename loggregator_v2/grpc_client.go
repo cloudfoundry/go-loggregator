@@ -11,11 +11,6 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-type envelopeWithResponseChannel struct {
-	envelope *Envelope
-	errCh    chan error
-}
-
 func newGrpcClient(config MetronConfig) (*grpcClient, error) {
 	tlsConfig, err := newTLSConfig(
 		config.CACertPath,
@@ -45,53 +40,16 @@ func newGrpcClient(config MetronConfig) (*grpcClient, error) {
 	return client, nil
 }
 
+type envelopeWithResponseChannel struct {
+	envelope *Envelope
+	errCh    chan error
+}
+
 type grpcClient struct {
 	ingressClient IngressClient
 	sender        Ingress_BatchSenderClient
 	envelopes     chan *envelopeWithResponseChannel
 	config        MetronConfig
-}
-
-func (c *grpcClient) startSender() {
-	for {
-		envelopeWithResponseChannel := <-c.envelopes
-		envelope := envelopeWithResponseChannel.envelope
-		errCh := envelopeWithResponseChannel.errCh
-		if c.sender == nil {
-			var err error
-			c.sender, err = c.ingressClient.BatchSender(context.Background())
-			if err != nil {
-				errCh <- err
-				continue
-			}
-		}
-		err := c.sender.Send(&EnvelopeBatch{Batch: []*Envelope{envelope}})
-		if err != nil {
-			c.sender = nil
-		}
-		errCh <- err
-	}
-}
-
-func (c *grpcClient) send(envelope *Envelope) error {
-	if envelope.Tags == nil {
-		envelope.Tags = make(map[string]*Value)
-	}
-	envelope.Tags["deployment"] = newTextValue(c.config.JobDeployment)
-	envelope.Tags["job"] = newTextValue(c.config.JobName)
-	envelope.Tags["index"] = newTextValue(c.config.JobIndex)
-	envelope.Tags["ip"] = newTextValue(c.config.JobIP)
-	envelope.Tags["origin"] = newTextValue(c.config.JobOrigin)
-
-	e := &envelopeWithResponseChannel{
-		envelope: envelope,
-		errCh:    make(chan error),
-	}
-	defer close(e.errCh)
-
-	c.envelopes <- e
-	err := <-e.errCh
-	return err
 }
 
 func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) error {
@@ -120,17 +78,6 @@ func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
 		},
 	}
 	return c.send(env)
-}
-
-func (c *grpcClient) sendGauge(metrics map[string]*GaugeValue) error {
-	return c.send(&Envelope{
-		Timestamp: time.Now().UnixNano(),
-		Message: &Envelope_Gauge{
-			Gauge: &Gauge{
-				Metrics: metrics,
-			},
-		},
-	})
 }
 
 func (c *grpcClient) SendDuration(name string, duration time.Duration) error {
@@ -191,4 +138,57 @@ func (c *grpcClient) IncrementCounter(name string) error {
 		},
 	}
 	return c.send(env)
+}
+
+func (c *grpcClient) startSender() {
+	for {
+		envelopeWithResponseChannel := <-c.envelopes
+		envelope := envelopeWithResponseChannel.envelope
+		errCh := envelopeWithResponseChannel.errCh
+		if c.sender == nil {
+			var err error
+			c.sender, err = c.ingressClient.BatchSender(context.Background())
+			if err != nil {
+				errCh <- err
+				continue
+			}
+		}
+		err := c.sender.Send(&EnvelopeBatch{Batch: []*Envelope{envelope}})
+		if err != nil {
+			c.sender = nil
+		}
+		errCh <- err
+	}
+}
+
+func (c *grpcClient) send(envelope *Envelope) error {
+	if envelope.Tags == nil {
+		envelope.Tags = make(map[string]*Value)
+	}
+	envelope.Tags["deployment"] = newTextValue(c.config.JobDeployment)
+	envelope.Tags["job"] = newTextValue(c.config.JobName)
+	envelope.Tags["index"] = newTextValue(c.config.JobIndex)
+	envelope.Tags["ip"] = newTextValue(c.config.JobIP)
+	envelope.Tags["origin"] = newTextValue(c.config.JobOrigin)
+
+	e := &envelopeWithResponseChannel{
+		envelope: envelope,
+		errCh:    make(chan error),
+	}
+	defer close(e.errCh)
+
+	c.envelopes <- e
+	err := <-e.errCh
+	return err
+}
+
+func (c *grpcClient) sendGauge(metrics map[string]*GaugeValue) error {
+	return c.send(&Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &Envelope_Gauge{
+			Gauge: &Gauge{
+				Metrics: metrics,
+			},
+		},
+	})
 }
