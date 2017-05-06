@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -xe
+
+pushd loggregator_v2 > /dev/null
+
+go get -u github.com/golang/dep/...
+
+dep ensure
+
+popd > /dev/null
