@@ -17,8 +17,6 @@ import (
 	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
-type testHandler struct{}
-
 var _ = Describe("Client", func() {
 	var (
 		config    loggregator_v2.MetronConfig
