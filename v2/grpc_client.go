@@ -1,60 +1,13 @@
 package v2
 
 import (
-	"context"
-	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/cloudfoundry/sonde-go/events"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
-
-func NewGrpcClient(config MetronConfig) (*grpcClient, error) {
-	tlsConfig, err := newTLSConfig(
-		config.CACertPath,
-		config.CertPath,
-		config.KeyPath,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	conn, err := grpc.Dial(
-		fmt.Sprintf("localhost:%d", config.APIPort),
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	client := &grpcClient{
-		ingressClient: loggregator_v2.NewIngressClient(conn),
-		config:        config,
-		envelopes:     make(chan *envelopeWithResponseChannel),
-	}
-
-	go client.startSender()
-
-	return client, nil
-}
-
-type MetronConfig struct {
-	UseV2API      bool   `json:"loggregator_use_v2_api"`
-	APIPort       int    `json:"loggregator_api_port"`
-	CACertPath    string `json:"loggregator_ca_path"`
-	CertPath      string `json:"loggregator_cert_path"`
-	KeyPath       string `json:"loggregator_key_path"`
-	JobDeployment string `json:"loggregator_job_deployment"`
-	JobName       string `json:"loggregator_job_name"`
-	JobIndex      string `json:"loggregator_job_index"`
-	JobIP         string `json:"loggregator_job_ip"`
-	JobOrigin     string `json:"loggregator_job_origin"`
-	DropsondePort int    `json:"dropsonde_port"`
-}
 
 type envelopeWithResponseChannel struct {
 	envelope *loggregator_v2.Envelope
@@ -62,10 +15,45 @@ type envelopeWithResponseChannel struct {
 }
 
 type grpcClient struct {
-	ingressClient loggregator_v2.IngressClient
+	batchStreamer BatchStreamer
 	sender        loggregator_v2.Ingress_BatchSenderClient
 	envelopes     chan *envelopeWithResponseChannel
-	config        MetronConfig
+	jobOpts       JobOpts
+}
+
+type JobOpts struct {
+	Deployment string
+	Name       string
+	Index      string
+	IP         string
+	Origin     string
+}
+
+type BatchStreamer interface {
+	BatchSender(ctx context.Context, opts ...grpc.CallOption) (loggregator_v2.Ingress_BatchSenderClient, error)
+}
+
+type v2Opt func(*grpcClient)
+
+func WithJobOpts(j JobOpts) func(*grpcClient) {
+	return func(c *grpcClient) {
+		c.jobOpts = j
+	}
+}
+
+func NewV2Client(b BatchStreamer, opts ...v2Opt) (*grpcClient, error) {
+	client := &grpcClient{
+		batchStreamer: b,
+		envelopes:     make(chan *envelopeWithResponseChannel),
+	}
+
+	for _, o := range opts {
+		o(client)
+	}
+
+	go client.startSender()
+
+	return client, nil
 }
 
 func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) error {
@@ -163,7 +151,7 @@ func (c *grpcClient) startSender() {
 		errCh := envelopeWithResponseChannel.errCh
 		if c.sender == nil {
 			var err error
-			c.sender, err = c.ingressClient.BatchSender(context.TODO())
+			c.sender, err = c.batchStreamer.BatchSender(context.TODO())
 			if err != nil {
 				errCh <- err
 				continue
@@ -181,11 +169,11 @@ func (c *grpcClient) send(envelope *loggregator_v2.Envelope) error {
 	if envelope.Tags == nil {
 		envelope.Tags = make(map[string]*loggregator_v2.Value)
 	}
-	envelope.Tags["deployment"] = newTextValue(c.config.JobDeployment)
-	envelope.Tags["job"] = newTextValue(c.config.JobName)
-	envelope.Tags["index"] = newTextValue(c.config.JobIndex)
-	envelope.Tags["ip"] = newTextValue(c.config.JobIP)
-	envelope.Tags["origin"] = newTextValue(c.config.JobOrigin)
+	envelope.Tags["deployment"] = newTextValue(c.jobOpts.Deployment)
+	envelope.Tags["job"] = newTextValue(c.jobOpts.Name)
+	envelope.Tags["index"] = newTextValue(c.jobOpts.Index)
+	envelope.Tags["ip"] = newTextValue(c.jobOpts.IP)
+	envelope.Tags["origin"] = newTextValue(c.jobOpts.Origin)
 
 	e := &envelopeWithResponseChannel{
 		envelope: envelope,

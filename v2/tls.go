@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 )
 
-func newTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+func NewTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, err

@@ -5,7 +5,6 @@ import (
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/v2"
 	"github.com/cloudfoundry/dropsonde/logs"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -19,7 +18,7 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		config    v2.MetronConfig
+		config    loggregator.MetronConfig
 		client    loggregator.Client
 		clientErr error
 	)
@@ -115,7 +114,7 @@ var _ = Describe("Client", func() {
 			err = server.Start()
 			Expect(err).NotTo(HaveOccurred())
 
-			config = v2.MetronConfig{
+			config = loggregator.MetronConfig{
 				UseV2API:      true,
 				APIPort:       server.Port(),
 				JobDeployment: "cf-warden-diego",
