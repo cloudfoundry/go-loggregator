@@ -1,9 +1,11 @@
-package loggregator_v2
+package v2
 
 import (
 	"context"
 	"fmt"
 	"time"
+
+	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -11,7 +13,7 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-func newGrpcClient(config MetronConfig) (*grpcClient, error) {
+func NewGrpcClient(config MetronConfig) (*grpcClient, error) {
 	tlsConfig, err := newTLSConfig(
 		config.CACertPath,
 		config.CertPath,
@@ -30,7 +32,7 @@ func newGrpcClient(config MetronConfig) (*grpcClient, error) {
 	}
 
 	client := &grpcClient{
-		ingressClient: NewIngressClient(conn),
+		ingressClient: loggregator_v2.NewIngressClient(conn),
 		config:        config,
 		envelopes:     make(chan *envelopeWithResponseChannel),
 	}
@@ -40,33 +42,47 @@ func newGrpcClient(config MetronConfig) (*grpcClient, error) {
 	return client, nil
 }
 
+type MetronConfig struct {
+	UseV2API      bool   `json:"loggregator_use_v2_api"`
+	APIPort       int    `json:"loggregator_api_port"`
+	CACertPath    string `json:"loggregator_ca_path"`
+	CertPath      string `json:"loggregator_cert_path"`
+	KeyPath       string `json:"loggregator_key_path"`
+	JobDeployment string `json:"loggregator_job_deployment"`
+	JobName       string `json:"loggregator_job_name"`
+	JobIndex      string `json:"loggregator_job_index"`
+	JobIP         string `json:"loggregator_job_ip"`
+	JobOrigin     string `json:"loggregator_job_origin"`
+	DropsondePort int    `json:"dropsonde_port"`
+}
+
 type envelopeWithResponseChannel struct {
-	envelope *Envelope
+	envelope *loggregator_v2.Envelope
 	errCh    chan error
 }
 
 type grpcClient struct {
-	ingressClient IngressClient
-	sender        Ingress_BatchSenderClient
+	ingressClient loggregator_v2.IngressClient
+	sender        loggregator_v2.Ingress_BatchSenderClient
 	envelopes     chan *envelopeWithResponseChannel
 	config        MetronConfig
 }
 
 func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) error {
-	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, Log_OUT))
+	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_OUT))
 }
 
 func (c *grpcClient) SendAppErrorLog(appID, message, sourceType, sourceInstance string) error {
-	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, Log_ERR))
+	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_ERR))
 }
 
 func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
-	env := &Envelope{
+	env := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		SourceId:  m.GetApplicationId(),
-		Message: &Envelope_Gauge{
-			Gauge: &Gauge{
-				Metrics: map[string]*GaugeValue{
+		Message: &loggregator_v2.Envelope_Gauge{
+			Gauge: &loggregator_v2.Gauge{
+				Metrics: map[string]*loggregator_v2.GaugeValue{
 					"instance_index": newGaugeValue(float64(m.GetInstanceIndex())),
 					"cpu":            newGaugeValue(m.GetCpuPercentage()),
 					"memory":         newGaugeValueFromUInt64(m.GetMemoryBytes()),
@@ -81,8 +97,8 @@ func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
 }
 
 func (c *grpcClient) SendDuration(name string, duration time.Duration) error {
-	metrics := make(map[string]*GaugeValue)
-	metrics[name] = &GaugeValue{
+	metrics := make(map[string]*loggregator_v2.GaugeValue)
+	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "nanos",
 		Value: float64(duration),
 	}
@@ -90,8 +106,8 @@ func (c *grpcClient) SendDuration(name string, duration time.Duration) error {
 }
 
 func (c *grpcClient) SendMebiBytes(name string, mebibytes int) error {
-	metrics := make(map[string]*GaugeValue)
-	metrics[name] = &GaugeValue{
+	metrics := make(map[string]*loggregator_v2.GaugeValue)
+	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "MiB",
 		Value: float64(mebibytes),
 	}
@@ -99,8 +115,8 @@ func (c *grpcClient) SendMebiBytes(name string, mebibytes int) error {
 }
 
 func (c *grpcClient) SendMetric(name string, value int) error {
-	metrics := make(map[string]*GaugeValue)
-	metrics[name] = &GaugeValue{
+	metrics := make(map[string]*loggregator_v2.GaugeValue)
+	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "Metric",
 		Value: float64(value),
 	}
@@ -108,8 +124,8 @@ func (c *grpcClient) SendMetric(name string, value int) error {
 }
 
 func (c *grpcClient) SendBytesPerSecond(name string, value float64) error {
-	metrics := make(map[string]*GaugeValue)
-	metrics[name] = &GaugeValue{
+	metrics := make(map[string]*loggregator_v2.GaugeValue)
+	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "B/s",
 		Value: float64(value),
 	}
@@ -117,8 +133,8 @@ func (c *grpcClient) SendBytesPerSecond(name string, value float64) error {
 }
 
 func (c *grpcClient) SendRequestsPerSecond(name string, value float64) error {
-	metrics := make(map[string]*GaugeValue)
-	metrics[name] = &GaugeValue{
+	metrics := make(map[string]*loggregator_v2.GaugeValue)
+	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "Req/s",
 		Value: float64(value),
 	}
@@ -126,12 +142,12 @@ func (c *grpcClient) SendRequestsPerSecond(name string, value float64) error {
 }
 
 func (c *grpcClient) IncrementCounter(name string) error {
-	env := &Envelope{
+	env := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
-		Message: &Envelope_Counter{
-			Counter: &Counter{
+		Message: &loggregator_v2.Envelope_Counter{
+			Counter: &loggregator_v2.Counter{
 				Name: name,
-				Value: &Counter_Delta{
+				Value: &loggregator_v2.Counter_Delta{
 					Delta: uint64(1),
 				},
 			},
@@ -153,7 +169,7 @@ func (c *grpcClient) startSender() {
 				continue
 			}
 		}
-		err := c.sender.Send(&EnvelopeBatch{Batch: []*Envelope{envelope}})
+		err := c.sender.Send(&loggregator_v2.EnvelopeBatch{Batch: []*loggregator_v2.Envelope{envelope}})
 		if err != nil {
 			c.sender = nil
 		}
@@ -161,9 +177,9 @@ func (c *grpcClient) startSender() {
 	}
 }
 
-func (c *grpcClient) send(envelope *Envelope) error {
+func (c *grpcClient) send(envelope *loggregator_v2.Envelope) error {
 	if envelope.Tags == nil {
-		envelope.Tags = make(map[string]*Value)
+		envelope.Tags = make(map[string]*loggregator_v2.Value)
 	}
 	envelope.Tags["deployment"] = newTextValue(c.config.JobDeployment)
 	envelope.Tags["job"] = newTextValue(c.config.JobName)
@@ -182,11 +198,11 @@ func (c *grpcClient) send(envelope *Envelope) error {
 	return err
 }
 
-func (c *grpcClient) sendGauge(metrics map[string]*GaugeValue) error {
-	return c.send(&Envelope{
+func (c *grpcClient) sendGauge(metrics map[string]*loggregator_v2.GaugeValue) error {
+	return c.send(&loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
-		Message: &Envelope_Gauge{
-			Gauge: &Gauge{
+		Message: &loggregator_v2.Envelope_Gauge{
+			Gauge: &loggregator_v2.Gauge{
 				Metrics: metrics,
 			},
 		},

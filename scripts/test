@@ -2,6 +2,4 @@
 
 set -ex
 
-pushd loggregator_v2 > /dev/null
-go test -run '[^?(vendor)]'
-popd > /dev/null
+go test -race -run '[^?(vendor)]'

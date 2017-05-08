@@ -1,9 +1,11 @@
-package loggregator_v2_test
+package loggregator_test
 
 import (
 	"time"
 
+	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v2"
 	"github.com/cloudfoundry/dropsonde/logs"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -17,13 +19,13 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		config    loggregator_v2.MetronConfig
-		client    loggregator_v2.Client
+		config    v2.MetronConfig
+		client    loggregator.Client
 		clientErr error
 	)
 
 	JustBeforeEach(func() {
-		client, clientErr = loggregator_v2.NewClient(config)
+		client, clientErr = loggregator.NewClient(config)
 	})
 
 	Context("when v2 api is disabled", func() {
@@ -113,7 +115,7 @@ var _ = Describe("Client", func() {
 			err = server.Start()
 			Expect(err).NotTo(HaveOccurred())
 
-			config = loggregator_v2.MetronConfig{
+			config = v2.MetronConfig{
 				UseV2API:      true,
 				APIPort:       server.Port(),
 				JobDeployment: "cf-warden-diego",

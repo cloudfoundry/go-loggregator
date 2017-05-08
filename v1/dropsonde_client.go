@@ -1,4 +1,4 @@
-package loggregator_v2
+package v1
 
 import (
 	"time"
@@ -8,7 +8,7 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-func newDropsondeClient() (*dropsondeClient, error) {
+func NewDropsondeClient() (*dropsondeClient, error) {
 	return &dropsondeClient{}, nil
 }
 

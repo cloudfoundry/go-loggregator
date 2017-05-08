@@ -1,4 +1,4 @@
-package loggregator_v2_test
+package loggregator_test
 
 import (
 	"io/ioutil"

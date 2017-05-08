@@ -1,4 +1,4 @@
-package loggregator_v2_test
+package loggregator_test
 
 import (
 	"crypto/tls"
@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"net"
 
+	"code.cloudfoundry.org/go-loggregator/fakes"
 	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/loggregator_v2/fakes"
 	"code.cloudfoundry.org/localip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

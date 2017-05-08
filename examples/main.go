@@ -4,11 +4,12 @@ import (
 	"log"
 	"os"
 
-	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
+	loggregator "code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator/v2"
 )
 
 func main() {
-	metronCfg := loggregator_v2.MetronConfig{
+	metronCfg := v2.MetronConfig{
 		UseV2API:      true,
 		APIPort:       3458,
 		CACertPath:    os.Getenv("CA_CERT_PATH"),
@@ -21,7 +22,7 @@ func main() {
 		JobOrigin:     "example-deployment",
 	}
 
-	client, err := loggregator_v2.NewClient(metronCfg)
+	client, err := loggregator.NewClient(metronCfg)
 
 	if err != nil {
 		log.Fatal("Could not create client", err)

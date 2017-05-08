@@ -5,7 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
+	loggregator "code.cloudfoundry.org/go-loggregator"
+
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -603,4 +604,4 @@ func (fake *FakeClient) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ loggregator_v2.Client = new(FakeClient)
+var _ loggregator.Client = new(FakeClient)
