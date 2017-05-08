@@ -8,7 +8,7 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-func NewDropsondeClient() (*dropsondeClient, error) {
+func NewClient() (*dropsondeClient, error) {
 	return &dropsondeClient{}, nil
 }
 

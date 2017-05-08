@@ -5,11 +5,10 @@ import (
 	"os"
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/v2"
 )
 
 func main() {
-	metronCfg := v2.MetronConfig{
+	metronCfg := loggregator.MetronConfig{
 		UseV2API:      true,
 		APIPort:       3458,
 		CACertPath:    os.Getenv("CA_CERT_PATH"),

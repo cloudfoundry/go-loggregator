@@ -71,11 +71,11 @@ func NewClient(config MetronConfig) (Client, error) {
 			Origin:     config.JobOrigin,
 		}
 
-		return v2.NewV2Client(
+		return v2.NewClient(
 			ingressClient,
 			v2.WithJobOpts(jobOpts),
 		)
 	}
 
-	return v1.NewDropsondeClient()
+	return v1.NewClient()
 }

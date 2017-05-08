@@ -41,7 +41,7 @@ func WithJobOpts(j JobOpts) func(*grpcClient) {
 	}
 }
 
-func NewV2Client(b BatchStreamer, opts ...v2Opt) (*grpcClient, error) {
+func NewClient(b BatchStreamer, opts ...v2Opt) (*grpcClient, error) {
 	client := &grpcClient{
 		batchStreamer: b,
 		envelopes:     make(chan *envelopeWithResponseChannel),
