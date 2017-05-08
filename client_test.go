@@ -4,7 +4,7 @@ import (
 	"time"
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/v2"
 	"github.com/cloudfoundry/dropsonde/logs"
 	"github.com/cloudfoundry/dropsonde/metrics"

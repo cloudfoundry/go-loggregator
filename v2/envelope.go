@@ -3,7 +3,7 @@ package v2
 import (
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 )
 
 func createLogEnvelope(appID, message, sourceType, sourceInstance string, logType loggregator_v2.Log_Type) *loggregator_v2.Envelope {
