@@ -8,7 +8,7 @@ This is a golang client library for the [Loggregator v2 API](https://github.com/
 
 This repository should be imported as:
 
-`import "code.cloudfoundry.org/go-loggregator/loggregator_v2"`
+`import loggregator "code.cloudfoundry.org/go-loggregator"`
 
 ## Example
 
