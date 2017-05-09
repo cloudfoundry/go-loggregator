@@ -75,9 +75,7 @@ func (t *TestServer) Start() error {
 	}
 	loggregator_v2.RegisterIngressServer(t.grpcServer, senderServer)
 
-	go func() {
-		t.grpcServer.Serve(listener)
-	}()
+	go t.grpcServer.Serve(listener)
 
 	return nil
 }
