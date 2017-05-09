@@ -130,36 +130,6 @@ var _ = Describe("Client", func() {
 			server.Stop()
 		})
 
-		Context("the cert or key path are invalid", func() {
-			BeforeEach(func() {
-				config.CertPath = "/some/invalid/path"
-			})
-
-			It("returns an error", func() {
-				Expect(clientErr).To(HaveOccurred(), "client didn't return an error")
-			})
-		})
-
-		Context("the ca cert path is invalid", func() {
-			BeforeEach(func() {
-				config.CACertPath = "/some/invalid/path"
-			})
-
-			It("returns an error", func() {
-				Expect(clientErr).To(HaveOccurred(), "client didn't return an error")
-			})
-		})
-
-		Context("the ca cert is invalid", func() {
-			BeforeEach(func() {
-				config.CACertPath = "fixtures/invalid-ca.crt"
-			})
-
-			It("returns an error", func() {
-				Expect(clientErr).To(HaveOccurred(), "client didn't return an error")
-			})
-		})
-
 		Context("cannot connect to the server", func() {
 			BeforeEach(func() {
 				config.CACertPath = "fixtures/CA.crt"
