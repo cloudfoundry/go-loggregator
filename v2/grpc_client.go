@@ -11,7 +11,6 @@ import (
 
 type envelopeWithResponseChannel struct {
 	envelope *loggregator_v2.Envelope
-	errCh    chan error
 }
 
 type grpcClient struct {
@@ -19,6 +18,9 @@ type grpcClient struct {
 	sender        loggregator_v2.Ingress_BatchSenderClient
 	envelopes     chan *envelopeWithResponseChannel
 	jobOpts       JobOpts
+
+	batchMaxSize uint
+	batchMaxWait time.Duration
 }
 
 type JobOpts struct {
@@ -45,6 +47,8 @@ func NewClient(b BatchStreamer, opts ...v2Opt) (*grpcClient, error) {
 	client := &grpcClient{
 		batchStreamer: b,
 		envelopes:     make(chan *envelopeWithResponseChannel),
+		batchMaxSize:  100,
+		batchMaxWait:  50 * time.Millisecond,
 	}
 
 	for _, o := range opts {
@@ -56,15 +60,15 @@ func NewClient(b BatchStreamer, opts ...v2Opt) (*grpcClient, error) {
 	return client, nil
 }
 
-func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) error {
-	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_OUT))
+func (c *grpcClient) SendAppLog(appID, message, sourceType, sourceInstance string) {
+	c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_OUT))
 }
 
-func (c *grpcClient) SendAppErrorLog(appID, message, sourceType, sourceInstance string) error {
-	return c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_ERR))
+func (c *grpcClient) SendAppErrorLog(appID, message, sourceType, sourceInstance string) {
+	c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_ERR))
 }
 
-func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
+func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) {
 	env := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		SourceId:  m.GetApplicationId(),
@@ -81,55 +85,55 @@ func (c *grpcClient) SendAppMetrics(m *events.ContainerMetric) error {
 			},
 		},
 	}
-	return c.send(env)
+	c.send(env)
 }
 
-func (c *grpcClient) SendDuration(name string, duration time.Duration) error {
+func (c *grpcClient) SendDuration(name string, duration time.Duration) {
 	metrics := make(map[string]*loggregator_v2.GaugeValue)
 	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "nanos",
 		Value: float64(duration),
 	}
-	return c.sendGauge(metrics)
+	c.sendGauge(metrics)
 }
 
-func (c *grpcClient) SendMebiBytes(name string, mebibytes int) error {
+func (c *grpcClient) SendMebiBytes(name string, mebibytes int) {
 	metrics := make(map[string]*loggregator_v2.GaugeValue)
 	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "MiB",
 		Value: float64(mebibytes),
 	}
-	return c.sendGauge(metrics)
+	c.sendGauge(metrics)
 }
 
-func (c *grpcClient) SendMetric(name string, value int) error {
+func (c *grpcClient) SendMetric(name string, value int) {
 	metrics := make(map[string]*loggregator_v2.GaugeValue)
 	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "Metric",
 		Value: float64(value),
 	}
-	return c.sendGauge(metrics)
+	c.sendGauge(metrics)
 }
 
-func (c *grpcClient) SendBytesPerSecond(name string, value float64) error {
+func (c *grpcClient) SendBytesPerSecond(name string, value float64) {
 	metrics := make(map[string]*loggregator_v2.GaugeValue)
 	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "B/s",
 		Value: float64(value),
 	}
-	return c.sendGauge(metrics)
+	c.sendGauge(metrics)
 }
 
-func (c *grpcClient) SendRequestsPerSecond(name string, value float64) error {
+func (c *grpcClient) SendRequestsPerSecond(name string, value float64) {
 	metrics := make(map[string]*loggregator_v2.GaugeValue)
 	metrics[name] = &loggregator_v2.GaugeValue{
 		Unit:  "Req/s",
 		Value: float64(value),
 	}
-	return c.sendGauge(metrics)
+	c.sendGauge(metrics)
 }
 
-func (c *grpcClient) IncrementCounter(name string) error {
+func (c *grpcClient) IncrementCounter(name string) {
 	env := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Counter{
@@ -141,31 +145,56 @@ func (c *grpcClient) IncrementCounter(name string) error {
 			},
 		},
 	}
-	return c.send(env)
+
+	c.send(env)
 }
 
 func (c *grpcClient) startSender() {
+	t := time.NewTimer(c.batchMaxWait)
+
+	var batch []*loggregator_v2.Envelope
 	for {
-		envelopeWithResponseChannel := <-c.envelopes
-		envelope := envelopeWithResponseChannel.envelope
-		errCh := envelopeWithResponseChannel.errCh
-		if c.sender == nil {
-			var err error
-			c.sender, err = c.batchStreamer.BatchSender(context.TODO())
-			if err != nil {
-				errCh <- err
-				continue
+		select {
+		case envelopeWithResponseChannel := <-c.envelopes:
+			batch = append(batch, envelopeWithResponseChannel.envelope)
+
+			if len(batch) >= int(c.batchMaxSize) {
+				c.flush(batch)
+				batch = nil
+			}
+
+			if !t.Stop() {
+				<-t.C
+			}
+		case <-t.C:
+			if len(batch) > 0 {
+				c.flush(batch)
+				batch = nil
 			}
 		}
-		err := c.sender.Send(&loggregator_v2.EnvelopeBatch{Batch: []*loggregator_v2.Envelope{envelope}})
-		if err != nil {
-			c.sender = nil
-		}
-		errCh <- err
+		t.Reset(c.batchMaxWait)
 	}
 }
 
-func (c *grpcClient) send(envelope *loggregator_v2.Envelope) error {
+func (c *grpcClient) flush(batch []*loggregator_v2.Envelope) error {
+	if c.sender == nil {
+		var err error
+		c.sender, err = c.batchStreamer.BatchSender(context.TODO())
+		if err != nil {
+			return err
+		}
+	}
+
+	err := c.sender.Send(&loggregator_v2.EnvelopeBatch{Batch: batch})
+	if err != nil {
+		c.sender = nil
+		return err
+	}
+
+	return nil
+}
+
+func (c *grpcClient) send(envelope *loggregator_v2.Envelope) {
 	if envelope.Tags == nil {
 		envelope.Tags = make(map[string]*loggregator_v2.Value)
 	}
@@ -177,17 +206,13 @@ func (c *grpcClient) send(envelope *loggregator_v2.Envelope) error {
 
 	e := &envelopeWithResponseChannel{
 		envelope: envelope,
-		errCh:    make(chan error),
 	}
-	defer close(e.errCh)
 
 	c.envelopes <- e
-	err := <-e.errCh
-	return err
 }
 
-func (c *grpcClient) sendGauge(metrics map[string]*loggregator_v2.GaugeValue) error {
-	return c.send(&loggregator_v2.Envelope{
+func (c *grpcClient) sendGauge(metrics map[string]*loggregator_v2.GaugeValue) {
+	c.send(&loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{

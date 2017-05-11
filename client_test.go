@@ -1,6 +1,7 @@
 package loggregator_test
 
 import (
+	"errors"
 	"time"
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
@@ -42,15 +43,13 @@ var _ = Describe("Client", func() {
 		})
 
 		It("sends app logs", func() {
-			err := client.SendAppLog("app-id", "message", "source-type", "source-instance")
-			Expect(err).NotTo(HaveOccurred())
+			client.SendAppLog("app-id", "message", "source-type", "source-instance")
 			Expect(logSender.GetLogs()).To(ConsistOf(lfake.Log{AppId: "app-id", Message: "message",
 				SourceType: "source-type", SourceInstance: "source-instance", MessageType: "OUT"}))
 		})
 
 		It("sends app error logs", func() {
-			err := client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-			Expect(err).NotTo(HaveOccurred())
+			client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
 			Expect(logSender.GetLogs()).To(ConsistOf(lfake.Log{AppId: "app-id", Message: "message",
 				SourceType: "source-type", SourceInstance: "source-instance", MessageType: "ERR"}))
 		})
@@ -59,42 +58,36 @@ var _ = Describe("Client", func() {
 			metric := events.ContainerMetric{
 				ApplicationId: proto.String("app-id"),
 			}
-			err := client.SendAppMetrics(&metric)
-			Expect(err).NotTo(HaveOccurred())
+			client.SendAppMetrics(&metric)
 			Expect(metricSender.Events()).To(ConsistOf(&metric))
 		})
 
 		It("sends component duration", func() {
-			err := client.SendDuration("test-name", 1*time.Nanosecond)
-			Expect(err).NotTo(HaveOccurred())
+			client.SendDuration("test-name", 1*time.Nanosecond)
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 1, Unit: "nanos"}))
 		})
 
 		It("sends component data in MebiBytes", func() {
-			err := client.SendMebiBytes("test-name", 100)
-			Expect(err).NotTo(HaveOccurred())
+			client.SendMebiBytes("test-name", 100)
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100, Unit: "MiB"}))
 		})
 
 		It("sends component metric", func() {
-			err := client.SendMetric("test-name", 1)
-			Expect(err).NotTo(HaveOccurred())
+			client.SendMetric("test-name", 1)
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 1, Unit: "Metric"}))
 		})
 
 		It("sends component bytes/sec", func() {
-			err := client.SendBytesPerSecond("test-name", 100.1)
-			Expect(err).NotTo(HaveOccurred())
+			client.SendBytesPerSecond("test-name", 100.1)
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100.1, Unit: "B/s"}))
 		})
 
 		It("sends component req/sec", func() {
-			err := client.SendRequestsPerSecond("test-name", 100.1)
-			Expect(err).NotTo(HaveOccurred())
+			client.SendRequestsPerSecond("test-name", 100.1)
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100.1, Unit: "Req/s"}))
 		})
@@ -130,23 +123,6 @@ var _ = Describe("Client", func() {
 			server.Stop()
 		})
 
-		Context("cannot connect to the server", func() {
-			BeforeEach(func() {
-				config.CACertPath = "fixtures/CA.crt"
-				config.CertPath = "fixtures/client.crt"
-				config.KeyPath = "fixtures/client.key"
-				config.APIPort = 1234
-			})
-
-			JustBeforeEach(func() {
-				Expect(clientErr).NotTo(HaveOccurred())
-			})
-
-			It("returns an error", func() {
-				Expect(client.SendAppLog("app-id", "message", "source-type", "source-instance")).NotTo(Succeed())
-			})
-		})
-
 		Context("when valid configuration is used", func() {
 			BeforeEach(func() {
 				config.CACertPath = "fixtures/CA.crt"
@@ -159,19 +135,22 @@ var _ = Describe("Client", func() {
 				Expect(client).NotTo(BeNil())
 			})
 
+			It("sends in batches", func() {
+				for i := 0; i < 10; i++ {
+					client.SendAppLog("app-id", "message", "source-type", "source-instance")
+				}
+
+				batch, err := getBatch(receivers)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(len(batch.Batch)).To(BeNumerically(">", 1))
+			})
+
 			It("sends app logs", func() {
-				Consistently(func() error {
-					return client.SendAppLog("app-id", "message", "source-type", "source-instance")
-				}).Should(Succeed())
-				var recv loggregator_v2.Ingress_BatchSenderServer
-				Eventually(receivers).Should(Receive(&recv))
-				envBatch, err := recv.Recv()
+				client.SendAppLog("app-id", "message", "source-type", "source-instance")
+
+				env, err := getEnvelopeAt(receivers, 0)
 				Expect(err).NotTo(HaveOccurred())
-
-				allEnvelopes := envBatch.Batch
-				Expect(len(allEnvelopes)).To(Equal(1))
-
-				env := allEnvelopes[0]
 
 				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -191,15 +170,10 @@ var _ = Describe("Client", func() {
 			})
 
 			It("sends app error logs", func() {
-				Consistently(func() error {
-					return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-				}).Should(Succeed())
-				var recv loggregator_v2.Ingress_BatchSenderServer
-				Eventually(receivers).Should(Receive(&recv))
-				envBatch, err := recv.Recv()
+				client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
+
+				env, err := getEnvelopeAt(receivers, 0)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(envBatch.Batch)).To(Equal(1))
-				env := envBatch.Batch[0]
 
 				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -228,15 +202,11 @@ var _ = Describe("Client", func() {
 					DiskBytesQuota:   proto.Uint64(20),
 					InstanceIndex:    proto.Int32(5),
 				}
-				Consistently(func() error {
-					return client.SendAppMetrics(&metric)
-				}).Should(Succeed())
-				var recv loggregator_v2.Ingress_BatchSenderServer
-				Eventually(receivers).Should(Receive(&recv))
-				envBatch, err := recv.Recv()
+
+				client.SendAppMetrics(&metric)
+
+				env, err := getEnvelopeAt(receivers, 0)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(envBatch.Batch)).To(Equal(1))
-				env := envBatch.Batch[0]
 
 				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -260,15 +230,10 @@ var _ = Describe("Client", func() {
 
 			Context("when component metrics are emitted", func() {
 				It("sends duration info", func() {
-					Consistently(func() error {
-						return client.SendDuration("test-name", 1*time.Nanosecond)
-					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_BatchSenderServer
-					Eventually(receivers).Should(Receive(&recv))
-					envBatch, err := recv.Recv()
+					client.SendDuration("test-name", 1*time.Nanosecond)
+
+					env, err := getEnvelopeAt(receivers, 0)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(envBatch.Batch)).To(Equal(1))
-					env := envBatch.Batch[0]
 
 					Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 					Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -285,15 +250,10 @@ var _ = Describe("Client", func() {
 				})
 
 				It("sends mebibytes info", func() {
-					Consistently(func() error {
-						return client.SendMebiBytes("test-name", 10)
-					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_BatchSenderServer
-					Eventually(receivers).Should(Receive(&recv))
-					envBatch, err := recv.Recv()
+					client.SendMebiBytes("test-name", 10)
+
+					env, err := getEnvelopeAt(receivers, 0)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(envBatch.Batch)).To(Equal(1))
-					env := envBatch.Batch[0]
 
 					Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
 					Expect(env.Tags["job"].GetText()).To(Equal("rep"))
@@ -310,15 +270,10 @@ var _ = Describe("Client", func() {
 				})
 
 				It("sends metrics info", func() {
-					Consistently(func() error {
-						return client.SendMetric("test-name", 11)
-					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_BatchSenderServer
-					Eventually(receivers).Should(Receive(&recv))
-					envBatch, err := recv.Recv()
+					client.SendMetric("test-name", 11)
+
+					env, err := getEnvelopeAt(receivers, 0)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(envBatch.Batch)).To(Equal(1))
-					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -329,15 +284,10 @@ var _ = Describe("Client", func() {
 				})
 
 				It("sends requests per second info", func() {
-					Consistently(func() error {
-						return client.SendRequestsPerSecond("test-name", 11)
-					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_BatchSenderServer
-					Eventually(receivers).Should(Receive(&recv))
-					envBatch, err := recv.Recv()
+					client.SendRequestsPerSecond("test-name", 11)
+
+					env, err := getEnvelopeAt(receivers, 0)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(envBatch.Batch)).To(Equal(1))
-					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -347,15 +297,10 @@ var _ = Describe("Client", func() {
 				})
 
 				It("sends bytes per second info", func() {
-					Consistently(func() error {
-						return client.SendBytesPerSecond("test-name", 10)
-					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_BatchSenderServer
-					Eventually(receivers).Should(Receive(&recv))
-					envBatch, err := recv.Recv()
+					client.SendBytesPerSecond("test-name", 10)
+
+					env, err := getEnvelopeAt(receivers, 0)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(envBatch.Batch)).To(Equal(1))
-					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -366,15 +311,10 @@ var _ = Describe("Client", func() {
 				})
 
 				It("increments counter", func() {
-					Consistently(func() error {
-						return client.IncrementCounter("test-name")
-					}).Should(Succeed())
-					var recv loggregator_v2.Ingress_BatchSenderServer
-					Eventually(receivers).Should(Receive(&recv))
-					envBatch, err := recv.Recv()
+					client.IncrementCounter("test-name")
+
+					env, err := getEnvelopeAt(receivers, 0)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(envBatch.Batch)).To(Equal(1))
-					env := envBatch.Batch[0]
 
 					ts := time.Unix(0, env.Timestamp)
 					Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
@@ -386,20 +326,55 @@ var _ = Describe("Client", func() {
 			})
 
 			It("reconnects when the server goes away and comes back", func() {
-				Expect(client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")).To(Succeed())
-				server.Stop()
+				client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
 
-				Eventually(func() error {
-					return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-				}).ShouldNot(Succeed())
-
-				err := server.Start()
+				envBatch, err := getBatch(receivers)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(envBatch.Batch).To(HaveLen(1))
 
-				Eventually(func() error {
-					return client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-				}, 5).Should(Succeed())
+				server.Stop()
+				Expect(server.Start()).To(Succeed())
+
+				Consistently(receivers).Should(BeEmpty())
+
+				closeCh := make(chan struct{})
+				go func() {
+					for {
+						select {
+						case <-closeCh:
+							break
+						default:
+							client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
+							time.Sleep(50 * time.Millisecond)
+						}
+					}
+				}()
+				defer close(closeCh)
+
+				envBatch, err = getBatch(receivers)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(envBatch.Batch).ToNot(BeEmpty())
 			})
 		})
 	})
 })
+
+func getBatch(receivers chan loggregator_v2.Ingress_BatchSenderServer) (*loggregator_v2.EnvelopeBatch, error) {
+	var recv loggregator_v2.Ingress_BatchSenderServer
+	Eventually(receivers, 3).Should(Receive(&recv))
+
+	return recv.Recv()
+}
+
+func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx int) (*loggregator_v2.Envelope, error) {
+	envBatch, err := getBatch(receivers)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(envBatch.Batch) < 1 {
+		return nil, errors.New("no envelopes")
+	}
+
+	return envBatch.Batch[idx], nil
+}

@@ -5,84 +5,47 @@ import (
 	"sync"
 	"time"
 
-	loggregator "code.cloudfoundry.org/go-loggregator"
-
+	"code.cloudfoundry.org/go-loggregator"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
 type FakeClient struct {
-	SendDurationStub        func(name string, value time.Duration) error
+	SendDurationStub        func(name string, value time.Duration)
 	sendDurationMutex       sync.RWMutex
 	sendDurationArgsForCall []struct {
 		name  string
 		value time.Duration
 	}
-	sendDurationReturns struct {
-		result1 error
-	}
-	sendDurationReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SendMebiBytesStub        func(name string, value int) error
+	SendMebiBytesStub        func(name string, value int)
 	sendMebiBytesMutex       sync.RWMutex
 	sendMebiBytesArgsForCall []struct {
 		name  string
 		value int
 	}
-	sendMebiBytesReturns struct {
-		result1 error
-	}
-	sendMebiBytesReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SendMetricStub        func(name string, value int) error
+	SendMetricStub        func(name string, value int)
 	sendMetricMutex       sync.RWMutex
 	sendMetricArgsForCall []struct {
 		name  string
 		value int
 	}
-	sendMetricReturns struct {
-		result1 error
-	}
-	sendMetricReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SendBytesPerSecondStub        func(name string, value float64) error
+	SendBytesPerSecondStub        func(name string, value float64)
 	sendBytesPerSecondMutex       sync.RWMutex
 	sendBytesPerSecondArgsForCall []struct {
 		name  string
 		value float64
 	}
-	sendBytesPerSecondReturns struct {
-		result1 error
-	}
-	sendBytesPerSecondReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SendRequestsPerSecondStub        func(name string, value float64) error
+	SendRequestsPerSecondStub        func(name string, value float64)
 	sendRequestsPerSecondMutex       sync.RWMutex
 	sendRequestsPerSecondArgsForCall []struct {
 		name  string
 		value float64
 	}
-	sendRequestsPerSecondReturns struct {
-		result1 error
-	}
-	sendRequestsPerSecondReturnsOnCall map[int]struct {
-		result1 error
-	}
-	IncrementCounterStub        func(name string) error
+	IncrementCounterStub        func(name string)
 	incrementCounterMutex       sync.RWMutex
 	incrementCounterArgsForCall []struct {
 		name string
 	}
-	incrementCounterReturns struct {
-		result1 error
-	}
-	incrementCounterReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SendAppLogStub        func(appID, message, sourceType, sourceInstance string) error
+	SendAppLogStub        func(appID, message, sourceType, sourceInstance string)
 	sendAppLogMutex       sync.RWMutex
 	sendAppLogArgsForCall []struct {
 		appID          string
@@ -90,13 +53,7 @@ type FakeClient struct {
 		sourceType     string
 		sourceInstance string
 	}
-	sendAppLogReturns struct {
-		result1 error
-	}
-	sendAppLogReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SendAppErrorLogStub        func(appID, message, sourceType, sourceInstance string) error
+	SendAppErrorLogStub        func(appID, message, sourceType, sourceInstance string)
 	sendAppErrorLogMutex       sync.RWMutex
 	sendAppErrorLogArgsForCall []struct {
 		appID          string
@@ -104,30 +61,17 @@ type FakeClient struct {
 		sourceType     string
 		sourceInstance string
 	}
-	sendAppErrorLogReturns struct {
-		result1 error
-	}
-	sendAppErrorLogReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SendAppMetricsStub        func(metrics *events.ContainerMetric) error
+	SendAppMetricsStub        func(metrics *events.ContainerMetric)
 	sendAppMetricsMutex       sync.RWMutex
 	sendAppMetricsArgsForCall []struct {
 		metrics *events.ContainerMetric
-	}
-	sendAppMetricsReturns struct {
-		result1 error
-	}
-	sendAppMetricsReturnsOnCall map[int]struct {
-		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeClient) SendDuration(name string, value time.Duration) error {
+func (fake *FakeClient) SendDuration(name string, value time.Duration) {
 	fake.sendDurationMutex.Lock()
-	ret, specificReturn := fake.sendDurationReturnsOnCall[len(fake.sendDurationArgsForCall)]
 	fake.sendDurationArgsForCall = append(fake.sendDurationArgsForCall, struct {
 		name  string
 		value time.Duration
@@ -135,12 +79,8 @@ func (fake *FakeClient) SendDuration(name string, value time.Duration) error {
 	fake.recordInvocation("SendDuration", []interface{}{name, value})
 	fake.sendDurationMutex.Unlock()
 	if fake.SendDurationStub != nil {
-		return fake.SendDurationStub(name, value)
+		fake.SendDurationStub(name, value)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendDurationReturns.result1
 }
 
 func (fake *FakeClient) SendDurationCallCount() int {
@@ -155,28 +95,8 @@ func (fake *FakeClient) SendDurationArgsForCall(i int) (string, time.Duration) {
 	return fake.sendDurationArgsForCall[i].name, fake.sendDurationArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendDurationReturns(result1 error) {
-	fake.SendDurationStub = nil
-	fake.sendDurationReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendDurationReturnsOnCall(i int, result1 error) {
-	fake.SendDurationStub = nil
-	if fake.sendDurationReturnsOnCall == nil {
-		fake.sendDurationReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendDurationReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendMebiBytes(name string, value int) error {
+func (fake *FakeClient) SendMebiBytes(name string, value int) {
 	fake.sendMebiBytesMutex.Lock()
-	ret, specificReturn := fake.sendMebiBytesReturnsOnCall[len(fake.sendMebiBytesArgsForCall)]
 	fake.sendMebiBytesArgsForCall = append(fake.sendMebiBytesArgsForCall, struct {
 		name  string
 		value int
@@ -184,12 +104,8 @@ func (fake *FakeClient) SendMebiBytes(name string, value int) error {
 	fake.recordInvocation("SendMebiBytes", []interface{}{name, value})
 	fake.sendMebiBytesMutex.Unlock()
 	if fake.SendMebiBytesStub != nil {
-		return fake.SendMebiBytesStub(name, value)
+		fake.SendMebiBytesStub(name, value)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendMebiBytesReturns.result1
 }
 
 func (fake *FakeClient) SendMebiBytesCallCount() int {
@@ -204,28 +120,8 @@ func (fake *FakeClient) SendMebiBytesArgsForCall(i int) (string, int) {
 	return fake.sendMebiBytesArgsForCall[i].name, fake.sendMebiBytesArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendMebiBytesReturns(result1 error) {
-	fake.SendMebiBytesStub = nil
-	fake.sendMebiBytesReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendMebiBytesReturnsOnCall(i int, result1 error) {
-	fake.SendMebiBytesStub = nil
-	if fake.sendMebiBytesReturnsOnCall == nil {
-		fake.sendMebiBytesReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendMebiBytesReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendMetric(name string, value int) error {
+func (fake *FakeClient) SendMetric(name string, value int) {
 	fake.sendMetricMutex.Lock()
-	ret, specificReturn := fake.sendMetricReturnsOnCall[len(fake.sendMetricArgsForCall)]
 	fake.sendMetricArgsForCall = append(fake.sendMetricArgsForCall, struct {
 		name  string
 		value int
@@ -233,12 +129,8 @@ func (fake *FakeClient) SendMetric(name string, value int) error {
 	fake.recordInvocation("SendMetric", []interface{}{name, value})
 	fake.sendMetricMutex.Unlock()
 	if fake.SendMetricStub != nil {
-		return fake.SendMetricStub(name, value)
+		fake.SendMetricStub(name, value)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendMetricReturns.result1
 }
 
 func (fake *FakeClient) SendMetricCallCount() int {
@@ -253,28 +145,8 @@ func (fake *FakeClient) SendMetricArgsForCall(i int) (string, int) {
 	return fake.sendMetricArgsForCall[i].name, fake.sendMetricArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendMetricReturns(result1 error) {
-	fake.SendMetricStub = nil
-	fake.sendMetricReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendMetricReturnsOnCall(i int, result1 error) {
-	fake.SendMetricStub = nil
-	if fake.sendMetricReturnsOnCall == nil {
-		fake.sendMetricReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendMetricReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendBytesPerSecond(name string, value float64) error {
+func (fake *FakeClient) SendBytesPerSecond(name string, value float64) {
 	fake.sendBytesPerSecondMutex.Lock()
-	ret, specificReturn := fake.sendBytesPerSecondReturnsOnCall[len(fake.sendBytesPerSecondArgsForCall)]
 	fake.sendBytesPerSecondArgsForCall = append(fake.sendBytesPerSecondArgsForCall, struct {
 		name  string
 		value float64
@@ -282,12 +154,8 @@ func (fake *FakeClient) SendBytesPerSecond(name string, value float64) error {
 	fake.recordInvocation("SendBytesPerSecond", []interface{}{name, value})
 	fake.sendBytesPerSecondMutex.Unlock()
 	if fake.SendBytesPerSecondStub != nil {
-		return fake.SendBytesPerSecondStub(name, value)
+		fake.SendBytesPerSecondStub(name, value)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendBytesPerSecondReturns.result1
 }
 
 func (fake *FakeClient) SendBytesPerSecondCallCount() int {
@@ -302,28 +170,8 @@ func (fake *FakeClient) SendBytesPerSecondArgsForCall(i int) (string, float64) {
 	return fake.sendBytesPerSecondArgsForCall[i].name, fake.sendBytesPerSecondArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendBytesPerSecondReturns(result1 error) {
-	fake.SendBytesPerSecondStub = nil
-	fake.sendBytesPerSecondReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendBytesPerSecondReturnsOnCall(i int, result1 error) {
-	fake.SendBytesPerSecondStub = nil
-	if fake.sendBytesPerSecondReturnsOnCall == nil {
-		fake.sendBytesPerSecondReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendBytesPerSecondReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendRequestsPerSecond(name string, value float64) error {
+func (fake *FakeClient) SendRequestsPerSecond(name string, value float64) {
 	fake.sendRequestsPerSecondMutex.Lock()
-	ret, specificReturn := fake.sendRequestsPerSecondReturnsOnCall[len(fake.sendRequestsPerSecondArgsForCall)]
 	fake.sendRequestsPerSecondArgsForCall = append(fake.sendRequestsPerSecondArgsForCall, struct {
 		name  string
 		value float64
@@ -331,12 +179,8 @@ func (fake *FakeClient) SendRequestsPerSecond(name string, value float64) error 
 	fake.recordInvocation("SendRequestsPerSecond", []interface{}{name, value})
 	fake.sendRequestsPerSecondMutex.Unlock()
 	if fake.SendRequestsPerSecondStub != nil {
-		return fake.SendRequestsPerSecondStub(name, value)
+		fake.SendRequestsPerSecondStub(name, value)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendRequestsPerSecondReturns.result1
 }
 
 func (fake *FakeClient) SendRequestsPerSecondCallCount() int {
@@ -351,40 +195,16 @@ func (fake *FakeClient) SendRequestsPerSecondArgsForCall(i int) (string, float64
 	return fake.sendRequestsPerSecondArgsForCall[i].name, fake.sendRequestsPerSecondArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendRequestsPerSecondReturns(result1 error) {
-	fake.SendRequestsPerSecondStub = nil
-	fake.sendRequestsPerSecondReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendRequestsPerSecondReturnsOnCall(i int, result1 error) {
-	fake.SendRequestsPerSecondStub = nil
-	if fake.sendRequestsPerSecondReturnsOnCall == nil {
-		fake.sendRequestsPerSecondReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendRequestsPerSecondReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) IncrementCounter(name string) error {
+func (fake *FakeClient) IncrementCounter(name string) {
 	fake.incrementCounterMutex.Lock()
-	ret, specificReturn := fake.incrementCounterReturnsOnCall[len(fake.incrementCounterArgsForCall)]
 	fake.incrementCounterArgsForCall = append(fake.incrementCounterArgsForCall, struct {
 		name string
 	}{name})
 	fake.recordInvocation("IncrementCounter", []interface{}{name})
 	fake.incrementCounterMutex.Unlock()
 	if fake.IncrementCounterStub != nil {
-		return fake.IncrementCounterStub(name)
+		fake.IncrementCounterStub(name)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.incrementCounterReturns.result1
 }
 
 func (fake *FakeClient) IncrementCounterCallCount() int {
@@ -399,28 +219,8 @@ func (fake *FakeClient) IncrementCounterArgsForCall(i int) string {
 	return fake.incrementCounterArgsForCall[i].name
 }
 
-func (fake *FakeClient) IncrementCounterReturns(result1 error) {
-	fake.IncrementCounterStub = nil
-	fake.incrementCounterReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) IncrementCounterReturnsOnCall(i int, result1 error) {
-	fake.IncrementCounterStub = nil
-	if fake.incrementCounterReturnsOnCall == nil {
-		fake.incrementCounterReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.incrementCounterReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendAppLog(appID string, message string, sourceType string, sourceInstance string) error {
+func (fake *FakeClient) SendAppLog(appID string, message string, sourceType string, sourceInstance string) {
 	fake.sendAppLogMutex.Lock()
-	ret, specificReturn := fake.sendAppLogReturnsOnCall[len(fake.sendAppLogArgsForCall)]
 	fake.sendAppLogArgsForCall = append(fake.sendAppLogArgsForCall, struct {
 		appID          string
 		message        string
@@ -430,12 +230,8 @@ func (fake *FakeClient) SendAppLog(appID string, message string, sourceType stri
 	fake.recordInvocation("SendAppLog", []interface{}{appID, message, sourceType, sourceInstance})
 	fake.sendAppLogMutex.Unlock()
 	if fake.SendAppLogStub != nil {
-		return fake.SendAppLogStub(appID, message, sourceType, sourceInstance)
+		fake.SendAppLogStub(appID, message, sourceType, sourceInstance)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendAppLogReturns.result1
 }
 
 func (fake *FakeClient) SendAppLogCallCount() int {
@@ -450,28 +246,8 @@ func (fake *FakeClient) SendAppLogArgsForCall(i int) (string, string, string, st
 	return fake.sendAppLogArgsForCall[i].appID, fake.sendAppLogArgsForCall[i].message, fake.sendAppLogArgsForCall[i].sourceType, fake.sendAppLogArgsForCall[i].sourceInstance
 }
 
-func (fake *FakeClient) SendAppLogReturns(result1 error) {
-	fake.SendAppLogStub = nil
-	fake.sendAppLogReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendAppLogReturnsOnCall(i int, result1 error) {
-	fake.SendAppLogStub = nil
-	if fake.sendAppLogReturnsOnCall == nil {
-		fake.sendAppLogReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendAppLogReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendAppErrorLog(appID string, message string, sourceType string, sourceInstance string) error {
+func (fake *FakeClient) SendAppErrorLog(appID string, message string, sourceType string, sourceInstance string) {
 	fake.sendAppErrorLogMutex.Lock()
-	ret, specificReturn := fake.sendAppErrorLogReturnsOnCall[len(fake.sendAppErrorLogArgsForCall)]
 	fake.sendAppErrorLogArgsForCall = append(fake.sendAppErrorLogArgsForCall, struct {
 		appID          string
 		message        string
@@ -481,12 +257,8 @@ func (fake *FakeClient) SendAppErrorLog(appID string, message string, sourceType
 	fake.recordInvocation("SendAppErrorLog", []interface{}{appID, message, sourceType, sourceInstance})
 	fake.sendAppErrorLogMutex.Unlock()
 	if fake.SendAppErrorLogStub != nil {
-		return fake.SendAppErrorLogStub(appID, message, sourceType, sourceInstance)
+		fake.SendAppErrorLogStub(appID, message, sourceType, sourceInstance)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendAppErrorLogReturns.result1
 }
 
 func (fake *FakeClient) SendAppErrorLogCallCount() int {
@@ -501,40 +273,16 @@ func (fake *FakeClient) SendAppErrorLogArgsForCall(i int) (string, string, strin
 	return fake.sendAppErrorLogArgsForCall[i].appID, fake.sendAppErrorLogArgsForCall[i].message, fake.sendAppErrorLogArgsForCall[i].sourceType, fake.sendAppErrorLogArgsForCall[i].sourceInstance
 }
 
-func (fake *FakeClient) SendAppErrorLogReturns(result1 error) {
-	fake.SendAppErrorLogStub = nil
-	fake.sendAppErrorLogReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendAppErrorLogReturnsOnCall(i int, result1 error) {
-	fake.SendAppErrorLogStub = nil
-	if fake.sendAppErrorLogReturnsOnCall == nil {
-		fake.sendAppErrorLogReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendAppErrorLogReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendAppMetrics(metrics *events.ContainerMetric) error {
+func (fake *FakeClient) SendAppMetrics(metrics *events.ContainerMetric) {
 	fake.sendAppMetricsMutex.Lock()
-	ret, specificReturn := fake.sendAppMetricsReturnsOnCall[len(fake.sendAppMetricsArgsForCall)]
 	fake.sendAppMetricsArgsForCall = append(fake.sendAppMetricsArgsForCall, struct {
 		metrics *events.ContainerMetric
 	}{metrics})
 	fake.recordInvocation("SendAppMetrics", []interface{}{metrics})
 	fake.sendAppMetricsMutex.Unlock()
 	if fake.SendAppMetricsStub != nil {
-		return fake.SendAppMetricsStub(metrics)
+		fake.SendAppMetricsStub(metrics)
 	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.sendAppMetricsReturns.result1
 }
 
 func (fake *FakeClient) SendAppMetricsCallCount() int {
@@ -547,25 +295,6 @@ func (fake *FakeClient) SendAppMetricsArgsForCall(i int) *events.ContainerMetric
 	fake.sendAppMetricsMutex.RLock()
 	defer fake.sendAppMetricsMutex.RUnlock()
 	return fake.sendAppMetricsArgsForCall[i].metrics
-}
-
-func (fake *FakeClient) SendAppMetricsReturns(result1 error) {
-	fake.SendAppMetricsStub = nil
-	fake.sendAppMetricsReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeClient) SendAppMetricsReturnsOnCall(i int, result1 error) {
-	fake.SendAppMetricsStub = nil
-	if fake.sendAppMetricsReturnsOnCall == nil {
-		fake.sendAppMetricsReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.sendAppMetricsReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
 }
 
 func (fake *FakeClient) Invocations() map[string][][]interface{} {
