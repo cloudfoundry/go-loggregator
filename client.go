@@ -26,17 +26,17 @@ type Client interface {
 	SendAppMetrics(metrics *events.ContainerMetric)
 }
 
-type MetronConfig struct {
-	UseV2API           bool   `json:"loggregator_use_v2_api"`
-	APIPort            int    `json:"loggregator_api_port"`
-	CACertPath         string `json:"loggregator_ca_path"`
-	CertPath           string `json:"loggregator_cert_path"`
-	KeyPath            string `json:"loggregator_key_path"`
-	JobDeployment      string `json:"loggregator_job_deployment"`
-	JobName            string `json:"loggregator_job_name"`
-	JobIndex           string `json:"loggregator_job_index"`
-	JobIP              string `json:"loggregator_job_ip"`
-	JobOrigin          string `json:"loggregator_job_origin"`
+type Config struct {
+	UseV2API           bool
+	APIPort            int
+	CACertPath         string
+	CertPath           string
+	KeyPath            string
+	JobDeployment      string
+	JobName            string
+	JobIndex           string
+	JobIP              string
+	JobOrigin          string
 	BatchMaxSize       uint
 	BatchFlushInterval time.Duration
 }
@@ -45,7 +45,7 @@ type MetronConfig struct {
 // Users can opt-in to using the v2 API through configuration.
 // If an opt-in feature is not required, the v1 and v2 clients are both
 // available for public use as well.
-func NewClient(config MetronConfig) (Client, error) {
+func NewClient(config Config) (Client, error) {
 	if config.UseV2API {
 		tlsConfig, err := v2.NewTLSConfig(
 			config.CACertPath,

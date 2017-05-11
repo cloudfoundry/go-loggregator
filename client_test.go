@@ -19,7 +19,7 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		config    loggregator.MetronConfig
+		config    loggregator.Config
 		client    loggregator.Client
 		clientErr error
 	)
@@ -107,7 +107,7 @@ var _ = Describe("Client", func() {
 			err = server.Start()
 			Expect(err).NotTo(HaveOccurred())
 
-			config = loggregator.MetronConfig{
+			config = loggregator.Config{
 				UseV2API:           true,
 				APIPort:            server.Port(),
 				JobDeployment:      "cf-warden-diego",
