@@ -108,13 +108,14 @@ var _ = Describe("Client", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			config = loggregator.MetronConfig{
-				UseV2API:      true,
-				APIPort:       server.Port(),
-				JobDeployment: "cf-warden-diego",
-				JobName:       "rep",
-				JobIndex:      "0",
-				JobIP:         "10.244.34.6",
-				JobOrigin:     "test-origin",
+				UseV2API:           true,
+				APIPort:            server.Port(),
+				JobDeployment:      "cf-warden-diego",
+				JobName:            "rep",
+				JobIndex:           "0",
+				JobIP:              "10.244.34.6",
+				JobOrigin:          "test-origin",
+				BatchFlushInterval: 50 * time.Millisecond,
 			}
 			receivers = server.Receivers()
 		})

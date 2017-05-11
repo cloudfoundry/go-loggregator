@@ -19,8 +19,8 @@ type grpcClient struct {
 	envelopes     chan *envelopeWithResponseChannel
 	jobOpts       JobOpts
 
-	batchMaxSize uint
-	batchMaxWait time.Duration
+	batchMaxSize       uint
+	batchFlushInterval time.Duration
 }
 
 type JobOpts struct {
@@ -35,20 +35,32 @@ type BatchStreamer interface {
 	BatchSender(ctx context.Context, opts ...grpc.CallOption) (loggregator_v2.Ingress_BatchSenderClient, error)
 }
 
-type v2Opt func(*grpcClient)
+type V2Option func(*grpcClient)
 
-func WithJobOpts(j JobOpts) func(*grpcClient) {
+func WithJobOpts(j JobOpts) V2Option {
 	return func(c *grpcClient) {
 		c.jobOpts = j
 	}
 }
 
-func NewClient(b BatchStreamer, opts ...v2Opt) (*grpcClient, error) {
+func WithBatchMaxSize(maxSize uint) V2Option {
+	return func(c *grpcClient) {
+		c.batchMaxSize = maxSize
+	}
+}
+
+func WithBatchFlushInterval(d time.Duration) V2Option {
+	return func(c *grpcClient) {
+		c.batchFlushInterval = d
+	}
+}
+
+func NewClient(b BatchStreamer, opts ...V2Option) (*grpcClient, error) {
 	client := &grpcClient{
-		batchStreamer: b,
-		envelopes:     make(chan *envelopeWithResponseChannel),
-		batchMaxSize:  100,
-		batchMaxWait:  50 * time.Millisecond,
+		batchStreamer:      b,
+		envelopes:          make(chan *envelopeWithResponseChannel),
+		batchMaxSize:       100,
+		batchFlushInterval: time.Second,
 	}
 
 	for _, o := range opts {
@@ -150,7 +162,7 @@ func (c *grpcClient) IncrementCounter(name string) {
 }
 
 func (c *grpcClient) startSender() {
-	t := time.NewTimer(c.batchMaxWait)
+	t := time.NewTimer(c.batchFlushInterval)
 
 	var batch []*loggregator_v2.Envelope
 	for {
@@ -172,7 +184,7 @@ func (c *grpcClient) startSender() {
 				batch = nil
 			}
 		}
-		t.Reset(c.batchMaxWait)
+		t.Reset(c.batchFlushInterval)
 	}
 }
 

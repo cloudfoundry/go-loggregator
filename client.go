@@ -27,16 +27,18 @@ type Client interface {
 }
 
 type MetronConfig struct {
-	UseV2API      bool   `json:"loggregator_use_v2_api"`
-	APIPort       int    `json:"loggregator_api_port"`
-	CACertPath    string `json:"loggregator_ca_path"`
-	CertPath      string `json:"loggregator_cert_path"`
-	KeyPath       string `json:"loggregator_key_path"`
-	JobDeployment string `json:"loggregator_job_deployment"`
-	JobName       string `json:"loggregator_job_name"`
-	JobIndex      string `json:"loggregator_job_index"`
-	JobIP         string `json:"loggregator_job_ip"`
-	JobOrigin     string `json:"loggregator_job_origin"`
+	UseV2API           bool   `json:"loggregator_use_v2_api"`
+	APIPort            int    `json:"loggregator_api_port"`
+	CACertPath         string `json:"loggregator_ca_path"`
+	CertPath           string `json:"loggregator_cert_path"`
+	KeyPath            string `json:"loggregator_key_path"`
+	JobDeployment      string `json:"loggregator_job_deployment"`
+	JobName            string `json:"loggregator_job_name"`
+	JobIndex           string `json:"loggregator_job_index"`
+	JobIP              string `json:"loggregator_job_ip"`
+	JobOrigin          string `json:"loggregator_job_origin"`
+	BatchMaxSize       uint
+	BatchFlushInterval time.Duration
 }
 
 // NewClient creates a connection to the Loggregator API.
@@ -71,10 +73,17 @@ func NewClient(config MetronConfig) (Client, error) {
 			Origin:     config.JobOrigin,
 		}
 
-		return v2.NewClient(
-			ingressClient,
-			v2.WithJobOpts(jobOpts),
-		)
+		opts := []v2.V2Option{v2.WithJobOpts(jobOpts)}
+
+		if config.BatchMaxSize != 0 {
+			opts = append(opts, v2.WithBatchMaxSize(config.BatchMaxSize))
+		}
+
+		if config.BatchFlushInterval != time.Duration(0) {
+			opts = append(opts, v2.WithBatchFlushInterval(config.BatchFlushInterval))
+		}
+
+		return v2.NewClient(ingressClient, opts...)
 	}
 
 	return v1.NewClient()
