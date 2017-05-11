@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	metronCfg := loggregator.MetronConfig{
+	metronCfg := loggregator.Config{
 		UseV2API:      true,
 		APIPort:       3458,
 		CACertPath:    os.Getenv("CA_CERT_PATH"),
@@ -27,8 +27,5 @@ func main() {
 		log.Fatal("Could not create client", err)
 	}
 
-	err = client.SendMetric("some-metric-name", 1234)
-	if err != nil {
-		log.Fatal("Unable to send metric", err)
-	}
+	client.SendMetric("some-metric-name", 1234)
 }

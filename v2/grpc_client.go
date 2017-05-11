@@ -33,7 +33,7 @@ type BatchStreamer interface {
 
 type V2Option func(*grpcClient)
 
-func WithJobOpts(j JobOptions) V2Option {
+func WithJobOptions(j JobOptions) V2Option {
 	return func(c *grpcClient) {
 		c.jobOpts = j
 	}
