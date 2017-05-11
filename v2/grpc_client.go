@@ -9,21 +9,17 @@ import (
 	"google.golang.org/grpc"
 )
 
-type envelopeWithResponseChannel struct {
-	envelope *loggregator_v2.Envelope
-}
-
 type grpcClient struct {
 	batchStreamer BatchStreamer
 	sender        loggregator_v2.Ingress_BatchSenderClient
-	envelopes     chan *envelopeWithResponseChannel
-	jobOpts       JobOpts
+	envelopes     chan *loggregator_v2.Envelope
+	jobOpts       JobOptions
 
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
 }
 
-type JobOpts struct {
+type JobOptions struct {
 	Deployment string
 	Name       string
 	Index      string
@@ -37,7 +33,7 @@ type BatchStreamer interface {
 
 type V2Option func(*grpcClient)
 
-func WithJobOpts(j JobOpts) V2Option {
+func WithJobOpts(j JobOptions) V2Option {
 	return func(c *grpcClient) {
 		c.jobOpts = j
 	}
@@ -58,7 +54,7 @@ func WithBatchFlushInterval(d time.Duration) V2Option {
 func NewClient(b BatchStreamer, opts ...V2Option) (*grpcClient, error) {
 	client := &grpcClient{
 		batchStreamer:      b,
-		envelopes:          make(chan *envelopeWithResponseChannel),
+		envelopes:          make(chan *loggregator_v2.Envelope),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
 	}
@@ -167,8 +163,8 @@ func (c *grpcClient) startSender() {
 	var batch []*loggregator_v2.Envelope
 	for {
 		select {
-		case envelopeWithResponseChannel := <-c.envelopes:
-			batch = append(batch, envelopeWithResponseChannel.envelope)
+		case env := <-c.envelopes:
+			batch = append(batch, env)
 
 			if len(batch) >= int(c.batchMaxSize) {
 				c.flush(batch)
@@ -216,11 +212,7 @@ func (c *grpcClient) send(envelope *loggregator_v2.Envelope) {
 	envelope.Tags["ip"] = newTextValue(c.jobOpts.IP)
 	envelope.Tags["origin"] = newTextValue(c.jobOpts.Origin)
 
-	e := &envelopeWithResponseChannel{
-		envelope: envelope,
-	}
-
-	c.envelopes <- e
+	c.envelopes <- envelope
 }
 
 func (c *grpcClient) sendGauge(metrics map[string]*loggregator_v2.GaugeValue) {
