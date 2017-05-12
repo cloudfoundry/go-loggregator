@@ -85,12 +85,58 @@ func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
 	return client, nil
 }
 
+type EmitLogOption func(*loggregator_v2.Envelope)
+
+func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
+	return func(e *loggregator_v2.Envelope) {
+		e.SourceId = appID
+		e.InstanceId = sourceInstance
+
+		// TODO: don't blow away the tags
+		e.Tags = map[string]*loggregator_v2.Value{
+			"source_type":     newTextValue(sourceType),
+			"source_instance": newTextValue(sourceInstance),
+		}
+	}
+}
+
+func WithStdout() EmitLogOption {
+	return func(e *loggregator_v2.Envelope) {
+		e.GetLog().Type = loggregator_v2.Log_OUT
+	}
+}
+
+func (c *Client) EmitLog(message string, opts ...EmitLogOption) {
+	e := &loggregator_v2.Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &loggregator_v2.Envelope_Log{
+			Log: &loggregator_v2.Log{
+				Payload: []byte(message),
+				Type:    loggregator_v2.Log_ERR,
+			},
+		},
+	}
+
+	for _, o := range opts {
+		o(e)
+	}
+
+	c.send(e)
+}
+
 func (c *Client) SendAppLog(appID, message, sourceType, sourceInstance string) {
-	c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_OUT))
+	c.EmitLog(
+		message,
+		WithAppInfo(appID, sourceType, sourceInstance),
+		WithStdout(),
+	)
 }
 
 func (c *Client) SendAppErrorLog(appID, message, sourceType, sourceInstance string) {
-	c.send(createLogEnvelope(appID, message, sourceType, sourceInstance, loggregator_v2.Log_ERR))
+	c.EmitLog(
+		message,
+		WithAppInfo(appID, sourceType, sourceInstance),
+	)
 }
 
 func (c *Client) SendAppMetrics(m *events.ContainerMetric) {
