@@ -38,11 +38,6 @@ var _ = Describe("GrpcClient", func() {
 		config = loggregator.Config{
 			UseV2API:           true,
 			APIPort:            server.Port(),
-			JobDeployment:      "cf-warden-diego",
-			JobName:            "rep",
-			JobIndex:           "0",
-			JobIP:              "10.244.34.6",
-			JobOrigin:          "test-origin",
 			BatchFlushInterval: 50 * time.Millisecond,
 		}
 		receivers = server.Receivers()
@@ -81,11 +76,6 @@ var _ = Describe("GrpcClient", func() {
 			env, err := getEnvelopeAt(receivers, 0)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
-			Expect(env.Tags["job"].GetText()).To(Equal("rep"))
-			Expect(env.Tags["index"].GetText()).To(Equal("0"))
-			Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
-			Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
 			Expect(env.Tags["source_instance"].GetText()).To(Equal("source-instance"))
 			Expect(env.SourceId).To(Equal("app-id"))
 			Expect(env.InstanceId).To(Equal("source-instance"))
@@ -104,11 +94,6 @@ var _ = Describe("GrpcClient", func() {
 			env, err := getEnvelopeAt(receivers, 0)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
-			Expect(env.Tags["job"].GetText()).To(Equal("rep"))
-			Expect(env.Tags["index"].GetText()).To(Equal("0"))
-			Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
-			Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
 			Expect(env.Tags["source_instance"].GetText()).To(Equal("source-instance"))
 			Expect(env.SourceId).To(Equal("app-id"))
 			Expect(env.InstanceId).To(Equal("source-instance"))
@@ -137,12 +122,6 @@ var _ = Describe("GrpcClient", func() {
 			env, err := getEnvelopeAt(receivers, 0)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
-			Expect(env.Tags["job"].GetText()).To(Equal("rep"))
-			Expect(env.Tags["index"].GetText()).To(Equal("0"))
-			Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
-			Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
-
 			ts := time.Unix(0, env.Timestamp)
 			Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 			metrics := env.GetGauge()
@@ -164,12 +143,6 @@ var _ = Describe("GrpcClient", func() {
 				env, err := getEnvelopeAt(receivers, 0)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
-				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
-				Expect(env.Tags["index"].GetText()).To(Equal("0"))
-				Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
-				Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
-
 				ts := time.Unix(0, env.Timestamp)
 				Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
 				message := env.GetGauge()
@@ -183,12 +156,6 @@ var _ = Describe("GrpcClient", func() {
 
 				env, err := getEnvelopeAt(receivers, 0)
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(env.Tags["deployment"].GetText()).To(Equal("cf-warden-diego"))
-				Expect(env.Tags["job"].GetText()).To(Equal("rep"))
-				Expect(env.Tags["index"].GetText()).To(Equal("0"))
-				Expect(env.Tags["ip"].GetText()).To(Equal("10.244.34.6"))
-				Expect(env.Tags["origin"].GetText()).To(Equal("test-origin"))
 
 				ts := time.Unix(0, env.Timestamp)
 				Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))

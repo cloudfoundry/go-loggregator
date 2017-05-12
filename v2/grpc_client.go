@@ -13,18 +13,9 @@ type grpcClient struct {
 	batchStreamer BatchStreamer
 	sender        loggregator_v2.Ingress_BatchSenderClient
 	envelopes     chan *loggregator_v2.Envelope
-	jobOpts       JobOptions
 
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
-}
-
-type JobOptions struct {
-	Deployment string
-	Name       string
-	Index      string
-	IP         string
-	Origin     string
 }
 
 type BatchStreamer interface {
@@ -32,12 +23,6 @@ type BatchStreamer interface {
 }
 
 type Option func(*grpcClient)
-
-func WithJobOptions(j JobOptions) Option {
-	return func(c *grpcClient) {
-		c.jobOpts = j
-	}
-}
 
 func WithBatchMaxSize(maxSize uint) Option {
 	return func(c *grpcClient) {
@@ -206,12 +191,6 @@ func (c *grpcClient) send(envelope *loggregator_v2.Envelope) {
 	if envelope.Tags == nil {
 		envelope.Tags = make(map[string]*loggregator_v2.Value)
 	}
-	envelope.Tags["deployment"] = newTextValue(c.jobOpts.Deployment)
-	envelope.Tags["job"] = newTextValue(c.jobOpts.Name)
-	envelope.Tags["index"] = newTextValue(c.jobOpts.Index)
-	envelope.Tags["ip"] = newTextValue(c.jobOpts.IP)
-	envelope.Tags["origin"] = newTextValue(c.jobOpts.Origin)
-
 	c.envelopes <- envelope
 }
 

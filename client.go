@@ -72,15 +72,7 @@ func newV2Client(config Config) (Client, error) {
 	}
 	ingressClient := loggregator_v2.NewIngressClient(conn)
 
-	jobOpts := v2.JobOptions{
-		Deployment: config.JobDeployment,
-		Name:       config.JobName,
-		Index:      config.JobIndex,
-		IP:         config.JobIP,
-		Origin:     config.JobOrigin,
-	}
-
-	opts := []v2.Option{v2.WithJobOptions(jobOpts)}
+	var opts []v2.Option
 
 	if config.BatchMaxSize != 0 {
 		opts = append(opts, v2.WithBatchMaxSize(config.BatchMaxSize))
