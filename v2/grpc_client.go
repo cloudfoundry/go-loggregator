@@ -20,6 +20,7 @@ type grpcClient struct {
 
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
+	port               int
 }
 
 type Option func(*grpcClient)
@@ -36,26 +37,32 @@ func WithBatchFlushInterval(d time.Duration) Option {
 	}
 }
 
-func NewClient(tlsConfig *tls.Config, port int, opts ...Option) (*grpcClient, error) {
-	conn, err := grpc.Dial(
-		fmt.Sprintf("localhost:%d", port),
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-	)
-	if err != nil {
-		return nil, err
+func WithPort(port int) Option {
+	return func(c *grpcClient) {
+		c.port = port
 	}
-	ingressClient := loggregator_v2.NewIngressClient(conn)
+}
 
+func NewClient(tlsConfig *tls.Config, opts ...Option) (*grpcClient, error) {
 	client := &grpcClient{
-		conn:               ingressClient,
 		envelopes:          make(chan *loggregator_v2.Envelope),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
+		port:               8082,
 	}
 
 	for _, o := range opts {
 		o(client)
 	}
+
+	conn, err := grpc.Dial(
+		fmt.Sprintf("localhost:%d", client.port),
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	client.conn = loggregator_v2.NewIngressClient(conn)
 
 	go client.startSender()
 

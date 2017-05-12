@@ -68,5 +68,9 @@ func newV2Client(config Config) (Client, error) {
 		opts = append(opts, v2.WithBatchFlushInterval(config.BatchFlushInterval))
 	}
 
-	return v2.NewClient(tlsConfig, config.APIPort, opts...)
+	if config.APIPort != 0 {
+		opts = append(opts, v2.WithPort(config.APIPort))
+	}
+
+	return v2.NewClient(tlsConfig, opts...)
 }
