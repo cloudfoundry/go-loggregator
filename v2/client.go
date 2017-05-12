@@ -3,6 +3,8 @@ package v2
 import (
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"time"
 
 	"google.golang.org/grpc"
@@ -13,6 +15,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+type Logger interface {
+	Printf(string, ...interface{})
+}
+
 type Client struct {
 	conn      loggregator_v2.IngressClient
 	sender    loggregator_v2.Ingress_BatchSenderClient
@@ -21,6 +27,8 @@ type Client struct {
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
 	port               int
+
+	logger Logger
 }
 
 type Option func(*Client)
@@ -43,12 +51,19 @@ func WithPort(port int) Option {
 	}
 }
 
+func WithLogger(l Logger) Option {
+	return func(c *Client) {
+		c.logger = l
+	}
+}
+
 func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
 	client := &Client{
-		envelopes:          make(chan *loggregator_v2.Envelope),
+		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
 		port:               8082,
+		logger:             log.New(ioutil.Discard, "", 0),
 	}
 
 	for _, o := range opts {
@@ -185,22 +200,24 @@ func (c *Client) startSender() {
 	}
 }
 
-func (c *Client) flush(batch []*loggregator_v2.Envelope) error {
+func (c *Client) flush(batch []*loggregator_v2.Envelope) {
 	if c.sender == nil {
 		var err error
 		c.sender, err = c.conn.BatchSender(context.TODO())
 		if err != nil {
-			return err
+			c.logger.Printf("Error while flushing: %s", err)
+			return
 		}
 	}
 
 	err := c.sender.Send(&loggregator_v2.EnvelopeBatch{Batch: batch})
 	if err != nil {
+		c.logger.Printf("Error while flushing: %s", err)
 		c.sender = nil
-		return err
+		return
 	}
 
-	return nil
+	return
 }
 
 func (c *Client) send(envelope *loggregator_v2.Envelope) {
