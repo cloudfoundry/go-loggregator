@@ -80,7 +80,7 @@ func newV2Client(config Config) (Client, error) {
 		Origin:     config.JobOrigin,
 	}
 
-	opts := []v2.V2Option{v2.WithJobOptions(jobOpts)}
+	opts := []v2.Option{v2.WithJobOptions(jobOpts)}
 
 	if config.BatchMaxSize != 0 {
 		opts = append(opts, v2.WithBatchMaxSize(config.BatchMaxSize))

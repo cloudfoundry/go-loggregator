@@ -31,27 +31,27 @@ type BatchStreamer interface {
 	BatchSender(ctx context.Context, opts ...grpc.CallOption) (loggregator_v2.Ingress_BatchSenderClient, error)
 }
 
-type V2Option func(*grpcClient)
+type Option func(*grpcClient)
 
-func WithJobOptions(j JobOptions) V2Option {
+func WithJobOptions(j JobOptions) Option {
 	return func(c *grpcClient) {
 		c.jobOpts = j
 	}
 }
 
-func WithBatchMaxSize(maxSize uint) V2Option {
+func WithBatchMaxSize(maxSize uint) Option {
 	return func(c *grpcClient) {
 		c.batchMaxSize = maxSize
 	}
 }
 
-func WithBatchFlushInterval(d time.Duration) V2Option {
+func WithBatchFlushInterval(d time.Duration) Option {
 	return func(c *grpcClient) {
 		c.batchFlushInterval = d
 	}
 }
 
-func NewClient(b BatchStreamer, opts ...V2Option) (*grpcClient, error) {
+func NewClient(b BatchStreamer, opts ...Option) (*grpcClient, error) {
 	client := &grpcClient{
 		batchStreamer:      b,
 		envelopes:          make(chan *loggregator_v2.Envelope),
