@@ -1,13 +1,8 @@
 package loggregator
 
 import (
-	"fmt"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
-	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/v1"
 	"code.cloudfoundry.org/go-loggregator/v2"
 
@@ -63,15 +58,6 @@ func newV2Client(config Config) (Client, error) {
 		return nil, err
 	}
 
-	conn, err := grpc.Dial(
-		fmt.Sprintf("localhost:%d", config.APIPort),
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-	)
-	if err != nil {
-		return nil, err
-	}
-	ingressClient := loggregator_v2.NewIngressClient(conn)
-
 	var opts []v2.Option
 
 	if config.BatchMaxSize != 0 {
@@ -82,5 +68,5 @@ func newV2Client(config Config) (Client, error) {
 		opts = append(opts, v2.WithBatchFlushInterval(config.BatchFlushInterval))
 	}
 
-	return v2.NewClient(ingressClient, opts...)
+	return v2.NewClient(tlsConfig, config.APIPort, opts...)
 }

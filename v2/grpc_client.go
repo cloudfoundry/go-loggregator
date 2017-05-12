@@ -1,25 +1,25 @@
 package v2
 
 import (
+	"crypto/tls"
+	"fmt"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 	"github.com/cloudfoundry/sonde-go/events"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 type grpcClient struct {
-	batchStreamer BatchStreamer
-	sender        loggregator_v2.Ingress_BatchSenderClient
-	envelopes     chan *loggregator_v2.Envelope
+	conn      loggregator_v2.IngressClient
+	sender    loggregator_v2.Ingress_BatchSenderClient
+	envelopes chan *loggregator_v2.Envelope
 
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
-}
-
-type BatchStreamer interface {
-	BatchSender(ctx context.Context, opts ...grpc.CallOption) (loggregator_v2.Ingress_BatchSenderClient, error)
 }
 
 type Option func(*grpcClient)
@@ -36,9 +36,18 @@ func WithBatchFlushInterval(d time.Duration) Option {
 	}
 }
 
-func NewClient(b BatchStreamer, opts ...Option) (*grpcClient, error) {
+func NewClient(tlsConfig *tls.Config, port int, opts ...Option) (*grpcClient, error) {
+	conn, err := grpc.Dial(
+		fmt.Sprintf("localhost:%d", port),
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	ingressClient := loggregator_v2.NewIngressClient(conn)
+
 	client := &grpcClient{
-		batchStreamer:      b,
+		conn:               ingressClient,
 		envelopes:          make(chan *loggregator_v2.Envelope),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
@@ -172,7 +181,7 @@ func (c *grpcClient) startSender() {
 func (c *grpcClient) flush(batch []*loggregator_v2.Envelope) error {
 	if c.sender == nil {
 		var err error
-		c.sender, err = c.batchStreamer.BatchSender(context.TODO())
+		c.sender, err = c.conn.BatchSender(context.TODO())
 		if err != nil {
 			return err
 		}
