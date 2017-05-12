@@ -62,7 +62,7 @@ func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
-		port:               8082,
+		port:               3458,
 		logger:             log.New(ioutil.Discard, "", 0),
 	}
 
