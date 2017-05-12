@@ -25,6 +25,9 @@ type Client interface {
 	SendAppMetrics(metrics *events.ContainerMetric) error
 }
 
+// Config is the shared configuration between v1 and v2 clients.
+// Deprecated: Config will be removed in the next major version.
+// Instead, create a v1 or v2 client directly.
 type Config struct {
 	APIPort            int
 	CACertPath         string
