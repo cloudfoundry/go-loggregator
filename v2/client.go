@@ -124,21 +124,6 @@ func (c *Client) EmitLog(message string, opts ...EmitLogOption) {
 	c.send(e)
 }
 
-func (c *Client) SendAppLog(appID, message, sourceType, sourceInstance string) {
-	c.EmitLog(
-		message,
-		WithAppInfo(appID, sourceType, sourceInstance),
-		WithStdout(),
-	)
-}
-
-func (c *Client) SendAppErrorLog(appID, message, sourceType, sourceInstance string) {
-	c.EmitLog(
-		message,
-		WithAppInfo(appID, sourceType, sourceInstance),
-	)
-}
-
 func (c *Client) SendAppMetrics(m *events.ContainerMetric) {
 	env := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),

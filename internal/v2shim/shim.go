@@ -52,14 +52,19 @@ func (c client) IncrementCounter(name string) error {
 }
 
 func (c client) SendAppLog(appID, message, sourceType, sourceInstance string) error {
-	c.client.SendAppLog(appID, message, sourceType, sourceInstance)
-
+	c.client.EmitLog(
+		message,
+		v2.WithAppInfo(appID, sourceType, sourceInstance),
+		v2.WithStdout(),
+	)
 	return nil
 }
 
 func (c client) SendAppErrorLog(appID, message, sourceType, sourceInstance string) error {
-	c.client.SendAppErrorLog(appID, message, sourceType, sourceInstance)
-
+	c.client.EmitLog(
+		message,
+		v2.WithAppInfo(appID, sourceType, sourceInstance),
+	)
 	return nil
 }
 

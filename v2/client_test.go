@@ -51,7 +51,11 @@ var _ = Describe("GrpcClient", func() {
 
 	It("sends in batches", func() {
 		for i := 0; i < 10; i++ {
-			client.SendAppLog("app-id", "message", "source-type", "source-instance")
+			client.EmitLog(
+				"message",
+				v2.WithAppInfo("app-id", "source-type", "source-instance"),
+				v2.WithStdout(),
+			)
 		}
 
 		batch, err := getBatch(receivers)
@@ -61,8 +65,11 @@ var _ = Describe("GrpcClient", func() {
 	})
 
 	It("sends app logs", func() {
-		client.SendAppLog("app-id", "message", "source-type", "source-instance")
-
+		client.EmitLog(
+			"message",
+			v2.WithAppInfo("app-id", "source-type", "source-instance"),
+			v2.WithStdout(),
+		)
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -79,7 +86,10 @@ var _ = Describe("GrpcClient", func() {
 	})
 
 	It("sends app error logs", func() {
-		client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
+		client.EmitLog(
+			"message",
+			v2.WithAppInfo("app-id", "source-type", "source-instance"),
+		)
 
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
@@ -212,8 +222,10 @@ var _ = Describe("GrpcClient", func() {
 	})
 
 	It("reconnects when the server goes away and comes back", func() {
-		client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-
+		client.EmitLog(
+			"message",
+			v2.WithAppInfo("app-id", "source-type", "source-instance"),
+		)
 		envBatch, err := getBatch(receivers)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(envBatch.Batch).To(HaveLen(1))
@@ -230,7 +242,11 @@ var _ = Describe("GrpcClient", func() {
 				case <-closeCh:
 					break
 				default:
-					client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
+					client.EmitLog(
+						"message",
+						v2.WithAppInfo("app-id", "source-type", "source-instance"),
+					)
+
 					time.Sleep(50 * time.Millisecond)
 				}
 			}
