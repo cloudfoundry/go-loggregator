@@ -1,3 +1,4 @@
+// Package v2 provides a gRPC client to send data to the Loggregator v2 API.
 package v2
 
 import (
@@ -14,10 +15,6 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 	"golang.org/x/net/context"
 )
-
-type Logger interface {
-	Printf(string, ...interface{})
-}
 
 type Client struct {
 	conn      loggregator_v2.IngressClient
@@ -49,6 +46,10 @@ func WithPort(port int) Option {
 	return func(c *Client) {
 		c.port = port
 	}
+}
+
+type Logger interface {
+	Printf(string, ...interface{})
 }
 
 func WithLogger(l Logger) Option {
