@@ -189,7 +189,7 @@ func (c *Client) SendRequestsPerSecond(name string, value float64) {
 	c.sendGauge(metrics)
 }
 
-func (c *Client) IncrementCounter(name string) {
+func (c *Client) EmitCounter(name string) {
 	env := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Counter{

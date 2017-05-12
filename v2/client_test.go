@@ -207,7 +207,7 @@ var _ = Describe("GrpcClient", func() {
 		})
 
 		It("increments counter", func() {
-			client.IncrementCounter("test-name")
+			client.EmitCounter("test-name")
 
 			env, err := getEnvelopeAt(receivers, 0)
 			Expect(err).NotTo(HaveOccurred())

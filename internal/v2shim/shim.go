@@ -46,7 +46,7 @@ func (c client) SendRequestsPerSecond(name string, value float64) error {
 }
 
 func (c client) IncrementCounter(name string) error {
-	c.client.IncrementCounter(name)
+	c.client.EmitCounter(name)
 
 	return nil
 }
