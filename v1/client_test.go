@@ -19,7 +19,6 @@ import (
 
 var _ = Describe("DropsondeClient", func() {
 	var (
-		config loggregator.Config
 		client loggregator.Client
 	)
 
@@ -38,7 +37,6 @@ var _ = Describe("DropsondeClient", func() {
 		BeforeEach(func() {
 			logSender = &lfake.FakeLogSender{}
 			metricSender = mfake.NewFakeMetricSender()
-			config.UseV2API = false
 			logs.Initialize(logSender)
 			metrics.Initialize(metricSender, nil)
 		})

@@ -6,7 +6,6 @@ import (
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
-	// . "code.cloudfoundry.org/go-loggregator/v2"
 
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
@@ -24,7 +23,7 @@ var _ = Describe("GrpcClient", func() {
 	)
 
 	JustBeforeEach(func() {
-		client, clientErr = loggregator.NewClient(config)
+		client, clientErr = loggregator.NewV2Client(config)
 	})
 
 	BeforeEach(func() {
@@ -36,7 +35,6 @@ var _ = Describe("GrpcClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		config = loggregator.Config{
-			UseV2API:           true,
 			APIPort:            server.Port(),
 			BatchFlushInterval: 50 * time.Millisecond,
 		}

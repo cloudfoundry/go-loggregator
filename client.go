@@ -10,6 +10,9 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
+// Client is the shared contract between v1 and v2 clients.
+// Deprecated: This interface will be removed in the next major version.
+// Instead, use the v1 or v2 clients directly.
 type Client interface {
 	SendDuration(name string, value time.Duration) error
 	SendMebiBytes(name string, value int) error
@@ -23,7 +26,6 @@ type Client interface {
 }
 
 type Config struct {
-	UseV2API           bool
 	APIPort            int
 	CACertPath         string
 	CertPath           string
@@ -37,19 +39,17 @@ type Config struct {
 	BatchFlushInterval time.Duration
 }
 
-// NewClient creates a connection to the Loggregator API.
-// Users can opt-in to using the v2 API through configuration.
-// If an opt-in feature is not required, the v1 and v2 clients are both
-// available for public use as well.
-func NewClient(config Config) (Client, error) {
-	if config.UseV2API {
-		return newV2Client(config)
-	}
-
+// NewV1Client creates a V1 connection to the Loggregator API.
+// Deprecated: NewV1Client will be removed in the next major version.
+// Instead, use v1.NewClient.
+func NewV1Client(config Config) (Client, error) {
 	return v1.NewClient()
 }
 
-func newV2Client(config Config) (Client, error) {
+// NewV2Client creates a V2 connection to the Loggregator API.
+// Deprecated: NewV2Client will be removed in the next major version.
+// Instead, use v2.NewClient.
+func NewV2Client(config Config) (Client, error) {
 	tlsConfig, err := v2.NewTLSConfig(
 		config.CACertPath,
 		config.CertPath,
