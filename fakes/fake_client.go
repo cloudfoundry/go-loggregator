@@ -10,42 +10,42 @@ import (
 )
 
 type FakeClient struct {
-	SendDurationStub        func(name string, value time.Duration)
+	SendDurationStub        func(name string, value time.Duration) error
 	sendDurationMutex       sync.RWMutex
 	sendDurationArgsForCall []struct {
 		name  string
 		value time.Duration
 	}
-	SendMebiBytesStub        func(name string, value int)
+	SendMebiBytesStub        func(name string, value int) error
 	sendMebiBytesMutex       sync.RWMutex
 	sendMebiBytesArgsForCall []struct {
 		name  string
 		value int
 	}
-	SendMetricStub        func(name string, value int)
+	SendMetricStub        func(name string, value int) error
 	sendMetricMutex       sync.RWMutex
 	sendMetricArgsForCall []struct {
 		name  string
 		value int
 	}
-	SendBytesPerSecondStub        func(name string, value float64)
+	SendBytesPerSecondStub        func(name string, value float64) error
 	sendBytesPerSecondMutex       sync.RWMutex
 	sendBytesPerSecondArgsForCall []struct {
 		name  string
 		value float64
 	}
-	SendRequestsPerSecondStub        func(name string, value float64)
+	SendRequestsPerSecondStub        func(name string, value float64) error
 	sendRequestsPerSecondMutex       sync.RWMutex
 	sendRequestsPerSecondArgsForCall []struct {
 		name  string
 		value float64
 	}
-	IncrementCounterStub        func(name string)
+	IncrementCounterStub        func(name string) error
 	incrementCounterMutex       sync.RWMutex
 	incrementCounterArgsForCall []struct {
 		name string
 	}
-	SendAppLogStub        func(appID, message, sourceType, sourceInstance string)
+	SendAppLogStub        func(appID, message, sourceType, sourceInstance string) error
 	sendAppLogMutex       sync.RWMutex
 	sendAppLogArgsForCall []struct {
 		appID          string
@@ -53,7 +53,7 @@ type FakeClient struct {
 		sourceType     string
 		sourceInstance string
 	}
-	SendAppErrorLogStub        func(appID, message, sourceType, sourceInstance string)
+	SendAppErrorLogStub        func(appID, message, sourceType, sourceInstance string) error
 	sendAppErrorLogMutex       sync.RWMutex
 	sendAppErrorLogArgsForCall []struct {
 		appID          string
@@ -61,7 +61,7 @@ type FakeClient struct {
 		sourceType     string
 		sourceInstance string
 	}
-	SendAppMetricsStub        func(metrics *events.ContainerMetric)
+	SendAppMetricsStub        func(metrics *events.ContainerMetric) error
 	sendAppMetricsMutex       sync.RWMutex
 	sendAppMetricsArgsForCall []struct {
 		metrics *events.ContainerMetric
@@ -70,7 +70,7 @@ type FakeClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeClient) SendDuration(name string, value time.Duration) {
+func (fake *FakeClient) SendDuration(name string, value time.Duration) error {
 	fake.sendDurationMutex.Lock()
 	fake.sendDurationArgsForCall = append(fake.sendDurationArgsForCall, struct {
 		name  string
@@ -81,6 +81,8 @@ func (fake *FakeClient) SendDuration(name string, value time.Duration) {
 	if fake.SendDurationStub != nil {
 		fake.SendDurationStub(name, value)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendDurationCallCount() int {
@@ -95,7 +97,7 @@ func (fake *FakeClient) SendDurationArgsForCall(i int) (string, time.Duration) {
 	return fake.sendDurationArgsForCall[i].name, fake.sendDurationArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendMebiBytes(name string, value int) {
+func (fake *FakeClient) SendMebiBytes(name string, value int) error {
 	fake.sendMebiBytesMutex.Lock()
 	fake.sendMebiBytesArgsForCall = append(fake.sendMebiBytesArgsForCall, struct {
 		name  string
@@ -106,6 +108,8 @@ func (fake *FakeClient) SendMebiBytes(name string, value int) {
 	if fake.SendMebiBytesStub != nil {
 		fake.SendMebiBytesStub(name, value)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendMebiBytesCallCount() int {
@@ -120,7 +124,7 @@ func (fake *FakeClient) SendMebiBytesArgsForCall(i int) (string, int) {
 	return fake.sendMebiBytesArgsForCall[i].name, fake.sendMebiBytesArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendMetric(name string, value int) {
+func (fake *FakeClient) SendMetric(name string, value int) error {
 	fake.sendMetricMutex.Lock()
 	fake.sendMetricArgsForCall = append(fake.sendMetricArgsForCall, struct {
 		name  string
@@ -131,6 +135,8 @@ func (fake *FakeClient) SendMetric(name string, value int) {
 	if fake.SendMetricStub != nil {
 		fake.SendMetricStub(name, value)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendMetricCallCount() int {
@@ -145,7 +151,7 @@ func (fake *FakeClient) SendMetricArgsForCall(i int) (string, int) {
 	return fake.sendMetricArgsForCall[i].name, fake.sendMetricArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendBytesPerSecond(name string, value float64) {
+func (fake *FakeClient) SendBytesPerSecond(name string, value float64) error {
 	fake.sendBytesPerSecondMutex.Lock()
 	fake.sendBytesPerSecondArgsForCall = append(fake.sendBytesPerSecondArgsForCall, struct {
 		name  string
@@ -156,6 +162,8 @@ func (fake *FakeClient) SendBytesPerSecond(name string, value float64) {
 	if fake.SendBytesPerSecondStub != nil {
 		fake.SendBytesPerSecondStub(name, value)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendBytesPerSecondCallCount() int {
@@ -170,7 +178,7 @@ func (fake *FakeClient) SendBytesPerSecondArgsForCall(i int) (string, float64) {
 	return fake.sendBytesPerSecondArgsForCall[i].name, fake.sendBytesPerSecondArgsForCall[i].value
 }
 
-func (fake *FakeClient) SendRequestsPerSecond(name string, value float64) {
+func (fake *FakeClient) SendRequestsPerSecond(name string, value float64) error {
 	fake.sendRequestsPerSecondMutex.Lock()
 	fake.sendRequestsPerSecondArgsForCall = append(fake.sendRequestsPerSecondArgsForCall, struct {
 		name  string
@@ -181,6 +189,8 @@ func (fake *FakeClient) SendRequestsPerSecond(name string, value float64) {
 	if fake.SendRequestsPerSecondStub != nil {
 		fake.SendRequestsPerSecondStub(name, value)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendRequestsPerSecondCallCount() int {
@@ -195,7 +205,7 @@ func (fake *FakeClient) SendRequestsPerSecondArgsForCall(i int) (string, float64
 	return fake.sendRequestsPerSecondArgsForCall[i].name, fake.sendRequestsPerSecondArgsForCall[i].value
 }
 
-func (fake *FakeClient) IncrementCounter(name string) {
+func (fake *FakeClient) IncrementCounter(name string) error {
 	fake.incrementCounterMutex.Lock()
 	fake.incrementCounterArgsForCall = append(fake.incrementCounterArgsForCall, struct {
 		name string
@@ -205,6 +215,8 @@ func (fake *FakeClient) IncrementCounter(name string) {
 	if fake.IncrementCounterStub != nil {
 		fake.IncrementCounterStub(name)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) IncrementCounterCallCount() int {
@@ -219,7 +231,7 @@ func (fake *FakeClient) IncrementCounterArgsForCall(i int) string {
 	return fake.incrementCounterArgsForCall[i].name
 }
 
-func (fake *FakeClient) SendAppLog(appID string, message string, sourceType string, sourceInstance string) {
+func (fake *FakeClient) SendAppLog(appID string, message string, sourceType string, sourceInstance string) error {
 	fake.sendAppLogMutex.Lock()
 	fake.sendAppLogArgsForCall = append(fake.sendAppLogArgsForCall, struct {
 		appID          string
@@ -232,6 +244,8 @@ func (fake *FakeClient) SendAppLog(appID string, message string, sourceType stri
 	if fake.SendAppLogStub != nil {
 		fake.SendAppLogStub(appID, message, sourceType, sourceInstance)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendAppLogCallCount() int {
@@ -246,7 +260,7 @@ func (fake *FakeClient) SendAppLogArgsForCall(i int) (string, string, string, st
 	return fake.sendAppLogArgsForCall[i].appID, fake.sendAppLogArgsForCall[i].message, fake.sendAppLogArgsForCall[i].sourceType, fake.sendAppLogArgsForCall[i].sourceInstance
 }
 
-func (fake *FakeClient) SendAppErrorLog(appID string, message string, sourceType string, sourceInstance string) {
+func (fake *FakeClient) SendAppErrorLog(appID string, message string, sourceType string, sourceInstance string) error {
 	fake.sendAppErrorLogMutex.Lock()
 	fake.sendAppErrorLogArgsForCall = append(fake.sendAppErrorLogArgsForCall, struct {
 		appID          string
@@ -259,6 +273,8 @@ func (fake *FakeClient) SendAppErrorLog(appID string, message string, sourceType
 	if fake.SendAppErrorLogStub != nil {
 		fake.SendAppErrorLogStub(appID, message, sourceType, sourceInstance)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendAppErrorLogCallCount() int {
@@ -273,7 +289,7 @@ func (fake *FakeClient) SendAppErrorLogArgsForCall(i int) (string, string, strin
 	return fake.sendAppErrorLogArgsForCall[i].appID, fake.sendAppErrorLogArgsForCall[i].message, fake.sendAppErrorLogArgsForCall[i].sourceType, fake.sendAppErrorLogArgsForCall[i].sourceInstance
 }
 
-func (fake *FakeClient) SendAppMetrics(metrics *events.ContainerMetric) {
+func (fake *FakeClient) SendAppMetrics(metrics *events.ContainerMetric) error {
 	fake.sendAppMetricsMutex.Lock()
 	fake.sendAppMetricsArgsForCall = append(fake.sendAppMetricsArgsForCall, struct {
 		metrics *events.ContainerMetric
@@ -283,6 +299,8 @@ func (fake *FakeClient) SendAppMetrics(metrics *events.ContainerMetric) {
 	if fake.SendAppMetricsStub != nil {
 		fake.SendAppMetricsStub(metrics)
 	}
+
+	return nil
 }
 
 func (fake *FakeClient) SendAppMetricsCallCount() int {

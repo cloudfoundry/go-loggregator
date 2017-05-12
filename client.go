@@ -3,6 +3,7 @@ package loggregator
 import (
 	"time"
 
+	"code.cloudfoundry.org/go-loggregator/internal/v2shim"
 	"code.cloudfoundry.org/go-loggregator/v1"
 	"code.cloudfoundry.org/go-loggregator/v2"
 
@@ -10,15 +11,15 @@ import (
 )
 
 type Client interface {
-	SendDuration(name string, value time.Duration)
-	SendMebiBytes(name string, value int)
-	SendMetric(name string, value int)
-	SendBytesPerSecond(name string, value float64)
-	SendRequestsPerSecond(name string, value float64)
-	IncrementCounter(name string)
-	SendAppLog(appID, message, sourceType, sourceInstance string)
-	SendAppErrorLog(appID, message, sourceType, sourceInstance string)
-	SendAppMetrics(metrics *events.ContainerMetric)
+	SendDuration(name string, value time.Duration) error
+	SendMebiBytes(name string, value int) error
+	SendMetric(name string, value int) error
+	SendBytesPerSecond(name string, value float64) error
+	SendRequestsPerSecond(name string, value float64) error
+	IncrementCounter(name string) error
+	SendAppLog(appID, message, sourceType, sourceInstance string) error
+	SendAppErrorLog(appID, message, sourceType, sourceInstance string) error
+	SendAppMetrics(metrics *events.ContainerMetric) error
 }
 
 type Config struct {
@@ -72,5 +73,10 @@ func newV2Client(config Config) (Client, error) {
 		opts = append(opts, v2.WithPort(config.APIPort))
 	}
 
-	return v2.NewClient(tlsConfig, opts...)
+	c, err := v2.NewClient(tlsConfig, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return v2shim.NewClient(c), nil
 }
