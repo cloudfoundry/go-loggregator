@@ -94,8 +94,8 @@ func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
 
 		// TODO: don't blow away the tags
 		e.Tags = map[string]*loggregator_v2.Value{
-			"source_type":     newTextValue(sourceType),
-			"source_instance": newTextValue(sourceInstance),
+			"source_type":     &loggregator_v2.Value{Data: &loggregator_v2.Value_Text{Text: sourceType}},
+			"source_instance": &loggregator_v2.Value{Data: &loggregator_v2.Value_Text{Text: sourceInstance}},
 		}
 	}
 }
@@ -121,76 +121,84 @@ func (c *Client) EmitLog(message string, opts ...EmitLogOption) {
 		o(e)
 	}
 
-	c.send(e)
+	c.envelopes <- e
 }
 
-func (c *Client) SendAppMetrics(m *events.ContainerMetric) {
-	env := &loggregator_v2.Envelope{
+type EmitGaugeOption func(*loggregator_v2.Envelope)
+
+func WithGaugeAppInfo(appID string) EmitGaugeOption {
+	return func(e *loggregator_v2.Envelope) {
+		e.SourceId = appID
+	}
+}
+
+func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
+	return func(e *loggregator_v2.Envelope) {
+		e.GetGauge().Metrics[name] = &loggregator_v2.GaugeValue{Value: value, Unit: unit}
+	}
+}
+
+func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
+	e := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
-		SourceId:  m.GetApplicationId(),
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"instance_index": newGaugeValue(float64(m.GetInstanceIndex())),
-					"cpu":            newGaugeValue(m.GetCpuPercentage()),
-					"memory":         newGaugeValueFromUInt64(m.GetMemoryBytes()),
-					"disk":           newGaugeValueFromUInt64(m.GetDiskBytes()),
-					"memory_quota":   newGaugeValueFromUInt64(m.GetMemoryBytesQuota()),
-					"disk_quota":     newGaugeValueFromUInt64(m.GetDiskBytesQuota()),
-				},
+				Metrics: make(map[string]*loggregator_v2.GaugeValue),
 			},
 		},
 	}
-	c.send(env)
+
+	for _, o := range opts {
+		o(e)
+	}
+
+	c.envelopes <- e
+}
+
+func (c *Client) SendAppMetrics(m *events.ContainerMetric) {
+	c.EmitGauge(
+		WithGaugeValue("instance_index", float64(m.GetInstanceIndex()), ""),
+		WithGaugeValue("cpu", m.GetCpuPercentage(), "percentage"),
+		WithGaugeValue("memory", float64(m.GetMemoryBytes()), "bytes"),
+		WithGaugeValue("disk", float64(m.GetDiskBytes()), "bytes"),
+		WithGaugeValue("memory_quota", float64(m.GetMemoryBytesQuota()), "bytes"),
+		WithGaugeValue("disk_quota", float64(m.GetDiskBytesQuota()), "bytes"),
+		WithGaugeAppInfo(m.GetApplicationId()),
+	)
 }
 
 func (c *Client) SendDuration(name string, duration time.Duration) {
-	metrics := make(map[string]*loggregator_v2.GaugeValue)
-	metrics[name] = &loggregator_v2.GaugeValue{
-		Unit:  "nanos",
-		Value: float64(duration),
-	}
-	c.sendGauge(metrics)
+	c.EmitGauge(
+		WithGaugeValue(name, float64(duration), "nanos"),
+	)
 }
 
 func (c *Client) SendMebiBytes(name string, mebibytes int) {
-	metrics := make(map[string]*loggregator_v2.GaugeValue)
-	metrics[name] = &loggregator_v2.GaugeValue{
-		Unit:  "MiB",
-		Value: float64(mebibytes),
-	}
-	c.sendGauge(metrics)
+	c.EmitGauge(
+		WithGaugeValue(name, float64(mebibytes), "MiB"),
+	)
 }
 
 func (c *Client) SendMetric(name string, value int) {
-	metrics := make(map[string]*loggregator_v2.GaugeValue)
-	metrics[name] = &loggregator_v2.GaugeValue{
-		Unit:  "Metric",
-		Value: float64(value),
-	}
-	c.sendGauge(metrics)
+	c.EmitGauge(
+		WithGaugeValue(name, float64(value), "Metric"),
+	)
 }
 
 func (c *Client) SendBytesPerSecond(name string, value float64) {
-	metrics := make(map[string]*loggregator_v2.GaugeValue)
-	metrics[name] = &loggregator_v2.GaugeValue{
-		Unit:  "B/s",
-		Value: float64(value),
-	}
-	c.sendGauge(metrics)
+	c.EmitGauge(
+		WithGaugeValue(name, value, "B/s"),
+	)
 }
 
 func (c *Client) SendRequestsPerSecond(name string, value float64) {
-	metrics := make(map[string]*loggregator_v2.GaugeValue)
-	metrics[name] = &loggregator_v2.GaugeValue{
-		Unit:  "Req/s",
-		Value: float64(value),
-	}
-	c.sendGauge(metrics)
+	c.EmitGauge(
+		WithGaugeValue(name, value, "Req/s"),
+	)
 }
 
 func (c *Client) EmitCounter(name string) {
-	env := &loggregator_v2.Envelope{
+	e := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Counter{
 			Counter: &loggregator_v2.Counter{
@@ -202,7 +210,7 @@ func (c *Client) EmitCounter(name string) {
 		},
 	}
 
-	c.send(env)
+	c.envelopes <- e
 }
 
 func (c *Client) startSender() {
@@ -250,22 +258,4 @@ func (c *Client) flush(batch []*loggregator_v2.Envelope) {
 	}
 
 	return
-}
-
-func (c *Client) send(envelope *loggregator_v2.Envelope) {
-	if envelope.Tags == nil {
-		envelope.Tags = make(map[string]*loggregator_v2.Value)
-	}
-	c.envelopes <- envelope
-}
-
-func (c *Client) sendGauge(metrics map[string]*loggregator_v2.GaugeValue) {
-	c.send(&loggregator_v2.Envelope{
-		Timestamp: time.Now().UnixNano(),
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: metrics,
-			},
-		},
-	})
 }
