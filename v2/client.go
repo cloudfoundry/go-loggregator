@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
-	"github.com/cloudfoundry/sonde-go/events"
 	"golang.org/x/net/context"
 )
 
@@ -153,48 +152,6 @@ func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
 	}
 
 	c.envelopes <- e
-}
-
-func (c *Client) SendAppMetrics(m *events.ContainerMetric) {
-	c.EmitGauge(
-		WithGaugeValue("instance_index", float64(m.GetInstanceIndex()), ""),
-		WithGaugeValue("cpu", m.GetCpuPercentage(), "percentage"),
-		WithGaugeValue("memory", float64(m.GetMemoryBytes()), "bytes"),
-		WithGaugeValue("disk", float64(m.GetDiskBytes()), "bytes"),
-		WithGaugeValue("memory_quota", float64(m.GetMemoryBytesQuota()), "bytes"),
-		WithGaugeValue("disk_quota", float64(m.GetDiskBytesQuota()), "bytes"),
-		WithGaugeAppInfo(m.GetApplicationId()),
-	)
-}
-
-func (c *Client) SendDuration(name string, duration time.Duration) {
-	c.EmitGauge(
-		WithGaugeValue(name, float64(duration), "nanos"),
-	)
-}
-
-func (c *Client) SendMebiBytes(name string, mebibytes int) {
-	c.EmitGauge(
-		WithGaugeValue(name, float64(mebibytes), "MiB"),
-	)
-}
-
-func (c *Client) SendMetric(name string, value int) {
-	c.EmitGauge(
-		WithGaugeValue(name, float64(value), "Metric"),
-	)
-}
-
-func (c *Client) SendBytesPerSecond(name string, value float64) {
-	c.EmitGauge(
-		WithGaugeValue(name, value, "B/s"),
-	)
-}
-
-func (c *Client) SendRequestsPerSecond(name string, value float64) {
-	c.EmitGauge(
-		WithGaugeValue(name, value, "Req/s"),
-	)
 }
 
 func (c *Client) EmitCounter(name string) {

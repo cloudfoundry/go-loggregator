@@ -7,8 +7,6 @@ import (
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/v2"
 
-	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -107,17 +105,11 @@ var _ = Describe("GrpcClient", func() {
 	})
 
 	It("sends app metrics", func() {
-		metric := events.ContainerMetric{
-			ApplicationId:    proto.String("app-id"),
-			CpuPercentage:    proto.Float64(10.0),
-			MemoryBytes:      proto.Uint64(10),
-			DiskBytes:        proto.Uint64(10),
-			MemoryBytesQuota: proto.Uint64(20),
-			DiskBytesQuota:   proto.Uint64(20),
-			InstanceIndex:    proto.Int32(5),
-		}
-
-		client.SendAppMetrics(&metric)
+		client.EmitGauge(
+			v2.WithGaugeValue("name-a", 1, "unit-a"),
+			v2.WithGaugeValue("name-b", 2, "unit-b"),
+			v2.WithGaugeAppInfo("app-id"),
+		)
 
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
@@ -127,98 +119,9 @@ var _ = Describe("GrpcClient", func() {
 		metrics := env.GetGauge()
 		Expect(metrics).NotTo(BeNil())
 		Expect(env.SourceId).To(Equal("app-id"))
-		Expect(metrics.GetMetrics()).To(HaveLen(6))
-		Expect(metrics.GetMetrics()["instance_index"].Value).To(Equal(5.0))
-		Expect(metrics.GetMetrics()["cpu"].Value).To(Equal(10.0))
-		Expect(metrics.GetMetrics()["memory"].Value).To(Equal(10.0))
-		Expect(metrics.GetMetrics()["disk"].Value).To(Equal(10.0))
-		Expect(metrics.GetMetrics()["memory_quota"].Value).To(Equal(20.0))
-		Expect(metrics.GetMetrics()["disk_quota"].Value).To(Equal(20.0))
-	})
-
-	Context("when component metrics are emitted", func() {
-		It("sends duration info", func() {
-			client.SendDuration("test-name", 1*time.Nanosecond)
-
-			env, err := getEnvelopeAt(receivers, 0)
-			Expect(err).NotTo(HaveOccurred())
-
-			ts := time.Unix(0, env.Timestamp)
-			Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
-			message := env.GetGauge()
-			Expect(message).NotTo(BeNil())
-			Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(1)))
-			Expect(message.GetMetrics()["test-name"].Unit).To(Equal("nanos"))
-		})
-
-		It("sends mebibytes info", func() {
-			client.SendMebiBytes("test-name", 10)
-
-			env, err := getEnvelopeAt(receivers, 0)
-			Expect(err).NotTo(HaveOccurred())
-
-			ts := time.Unix(0, env.Timestamp)
-			Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
-			message := env.GetGauge()
-			Expect(message).NotTo(BeNil())
-			Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(10)))
-			Expect(message.GetMetrics()["test-name"].Unit).To(Equal("MiB"))
-		})
-
-		It("sends metrics info", func() {
-			client.SendMetric("test-name", 11)
-
-			env, err := getEnvelopeAt(receivers, 0)
-			Expect(err).NotTo(HaveOccurred())
-
-			ts := time.Unix(0, env.Timestamp)
-			Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
-			message := env.GetGauge()
-			Expect(message).NotTo(BeNil())
-			Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(11)))
-			Expect(message.GetMetrics()["test-name"].Unit).To(Equal("Metric"))
-		})
-
-		It("sends requests per second info", func() {
-			client.SendRequestsPerSecond("test-name", 11)
-
-			env, err := getEnvelopeAt(receivers, 0)
-			Expect(err).NotTo(HaveOccurred())
-
-			ts := time.Unix(0, env.Timestamp)
-			Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
-			message := env.GetGauge()
-			Expect(message).NotTo(BeNil())
-			Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(11)))
-		})
-
-		It("sends bytes per second info", func() {
-			client.SendBytesPerSecond("test-name", 10)
-
-			env, err := getEnvelopeAt(receivers, 0)
-			Expect(err).NotTo(HaveOccurred())
-
-			ts := time.Unix(0, env.Timestamp)
-			Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
-			message := env.GetGauge()
-			Expect(message).NotTo(BeNil())
-			Expect(message.GetMetrics()["test-name"].Value).To(Equal(float64(10)))
-			Expect(message.GetMetrics()["test-name"].Unit).To(Equal("B/s"))
-		})
-
-		It("increments counter", func() {
-			client.EmitCounter("test-name")
-
-			env, err := getEnvelopeAt(receivers, 0)
-			Expect(err).NotTo(HaveOccurred())
-
-			ts := time.Unix(0, env.Timestamp)
-			Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
-			message := env.GetCounter()
-			Expect(message).NotTo(BeNil())
-			Expect(message.Name).To(Equal("test-name"))
-			Expect(message.GetDelta()).To(Equal(uint64(1)))
-		})
+		Expect(metrics.GetMetrics()).To(HaveLen(2))
+		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
+		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
 	})
 
 	It("reconnects when the server goes away and comes back", func() {

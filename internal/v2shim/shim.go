@@ -16,32 +16,38 @@ func NewClient(c *v2.Client) client {
 }
 
 func (c client) SendDuration(name string, value time.Duration) error {
-	c.client.SendDuration(name, value)
-
+	c.client.EmitGauge(
+		v2.WithGaugeValue(name, float64(value), "nanos"),
+	)
 	return nil
 }
 
 func (c client) SendMebiBytes(name string, value int) error {
-	c.client.SendMebiBytes(name, value)
-
+	c.client.EmitGauge(
+		v2.WithGaugeValue(name, float64(value), "MiB"),
+	)
 	return nil
 }
 
 func (c client) SendMetric(name string, value int) error {
-	c.client.SendMetric(name, value)
+	c.client.EmitGauge(
+		v2.WithGaugeValue(name, float64(value), "Metric"),
+	)
 
 	return nil
 }
 
 func (c client) SendBytesPerSecond(name string, value float64) error {
-	c.client.SendBytesPerSecond(name, value)
-
+	c.client.EmitGauge(
+		v2.WithGaugeValue(name, value, "B/s"),
+	)
 	return nil
 }
 
 func (c client) SendRequestsPerSecond(name string, value float64) error {
-	c.client.SendRequestsPerSecond(name, value)
-
+	c.client.EmitGauge(
+		v2.WithGaugeValue(name, value, "Req/s"),
+	)
 	return nil
 }
 
@@ -68,8 +74,16 @@ func (c client) SendAppErrorLog(appID, message, sourceType, sourceInstance strin
 	return nil
 }
 
-func (c client) SendAppMetrics(metrics *events.ContainerMetric) error {
-	c.client.SendAppMetrics(metrics)
+func (c client) SendAppMetrics(m *events.ContainerMetric) error {
+	c.client.EmitGauge(
+		v2.WithGaugeValue("instance_index", float64(m.GetInstanceIndex()), ""),
+		v2.WithGaugeValue("cpu", m.GetCpuPercentage(), "percentage"),
+		v2.WithGaugeValue("memory", float64(m.GetMemoryBytes()), "bytes"),
+		v2.WithGaugeValue("disk", float64(m.GetDiskBytes()), "bytes"),
+		v2.WithGaugeValue("memory_quota", float64(m.GetMemoryBytesQuota()), "bytes"),
+		v2.WithGaugeValue("disk_quota", float64(m.GetDiskBytesQuota()), "bytes"),
+		v2.WithGaugeAppInfo(m.GetApplicationId()),
+	)
 
 	return nil
 }
