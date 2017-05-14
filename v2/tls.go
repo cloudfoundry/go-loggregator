@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 )
 
+// NewTLSConfig provides a convenient means for creating a *tls.Config
+// which uses the CA, cert, and key.
 func NewTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {

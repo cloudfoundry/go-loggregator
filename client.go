@@ -1,3 +1,9 @@
+// loggregator provides a top-level client for connecting to the loggregator v1
+// and v2 API's.
+//
+// All members in the package here are deprecated and will be removed in the
+// next major version of this library. Instead, see the v1 and v2 packages for
+// the preferred way of connecting to the respective loggregator API.
 package loggregator
 
 import (
@@ -11,6 +17,7 @@ import (
 )
 
 // Client is the shared contract between v1 and v2 clients.
+//
 // Deprecated: This interface will be removed in the next major version.
 // Instead, use the v1 or v2 clients directly.
 type Client interface {
@@ -26,6 +33,7 @@ type Client interface {
 }
 
 // Config is the shared configuration between v1 and v2 clients.
+//
 // Deprecated: Config will be removed in the next major version.
 // Instead, create a v1 or v2 client directly.
 type Config struct {
@@ -43,6 +51,7 @@ type Config struct {
 }
 
 // NewV1Client creates a V1 connection to the Loggregator API.
+//
 // Deprecated: NewV1Client will be removed in the next major version.
 // Instead, use v1.NewClient.
 func NewV1Client(config Config) (Client, error) {
@@ -50,6 +59,7 @@ func NewV1Client(config Config) (Client, error) {
 }
 
 // NewV2Client creates a V2 connection to the Loggregator API.
+//
 // Deprecated: NewV2Client will be removed in the next major version.
 // Instead, use v2.NewClient.
 func NewV2Client(config Config) (Client, error) {
