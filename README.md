@@ -2,8 +2,6 @@
 
 This is a golang client library for the [Loggregator v2 API][loggregator-api].
 
-**WARNING:** It is in alpha release and unstable.
-
 ## Usage
 
 This repository should be imported as:
