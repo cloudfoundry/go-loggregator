@@ -37,17 +37,32 @@ type Client interface {
 // Deprecated: Config will be removed in the next major version.
 // Instead, create a v1 or v2 client directly.
 type Config struct {
-	APIPort            int
-	CACertPath         string
-	CertPath           string
-	KeyPath            string
-	JobDeployment      string
-	JobName            string
-	JobIndex           string
-	JobIP              string
-	JobOrigin          string
+	UseV2API      bool   `json:"loggregator_use_v2_api"`
+	APIPort       int    `json:"loggregator_api_port"`
+	CACertPath    string `json:"loggregator_ca_path"`
+	CertPath      string `json:"loggregator_cert_path"`
+	KeyPath       string `json:"loggregator_key_path"`
+	JobDeployment string `json:"loggregator_job_deployment"`
+	JobName       string `json:"loggregator_job_name"`
+	JobIndex      string `json:"loggregator_job_index"`
+	JobIP         string `json:"loggregator_job_ip"`
+	JobOrigin     string `json:"loggregator_job_origin"`
+
 	BatchMaxSize       uint
 	BatchFlushInterval time.Duration
+}
+
+// NewClient returns a v1 or v2 client depending on the value of `UseV2API`
+// from the config
+//
+// Deprecated: NewClient will be removed in the next major version.
+// Instead, create a v1 or v2 client directly.
+func NewClient(config Config) (Client, error) {
+	if config.UseV2API {
+		return NewV2Client(config)
+	}
+
+	return NewV1Client(config)
 }
 
 // NewV1Client creates a V1 connection to the Loggregator API.
