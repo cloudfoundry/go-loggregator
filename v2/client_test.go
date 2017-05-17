@@ -138,23 +138,16 @@ var _ = Describe("GrpcClient", func() {
 
 		Consistently(receivers).Should(BeEmpty())
 
-		closeCh := make(chan struct{})
 		go func() {
-			for {
-				select {
-				case <-closeCh:
-					break
-				default:
-					client.EmitLog(
-						"message",
-						v2.WithAppInfo("app-id", "source-type", "source-instance"),
-					)
+			for i := 0; i < 200; i++ {
+				client.EmitLog(
+					"message",
+					v2.WithAppInfo("app-id", "source-type", "source-instance"),
+				)
 
-					time.Sleep(50 * time.Millisecond)
-				}
+				time.Sleep(10 * time.Millisecond)
 			}
 		}()
-		defer close(closeCh)
 
 		envBatch, err = getBatch(receivers)
 		Expect(err).NotTo(HaveOccurred())
