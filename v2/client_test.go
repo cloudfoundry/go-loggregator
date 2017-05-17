@@ -55,12 +55,17 @@ var _ = Describe("GrpcClient", func() {
 				v2.WithAppInfo("app-id", "source-type", "source-instance"),
 				v2.WithStdout(),
 			)
+			time.Sleep(10 * time.Millisecond)
 		}
 
-		batch, err := getBatch(receivers)
-		Expect(err).ToNot(HaveOccurred())
+		Eventually(func() int {
+			b, err := getBatch(receivers)
+			if err != nil {
+				return 0
+			}
 
-		Expect(len(batch.Batch)).To(BeNumerically(">", 1))
+			return len(b.Batch)
+		}).Should(BeNumerically(">", 1))
 	})
 
 	It("sends app logs", func() {
@@ -130,6 +135,7 @@ var _ = Describe("GrpcClient", func() {
 			"message",
 			v2.WithAppInfo("app-id", "source-type", "source-instance"),
 		)
+
 		envBatch, err := getBatch(receivers)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(envBatch.Batch).To(HaveLen(1))
@@ -139,16 +145,12 @@ var _ = Describe("GrpcClient", func() {
 
 		Consistently(receivers).Should(BeEmpty())
 
-		go func() {
-			for i := 0; i < 200; i++ {
-				client.EmitLog(
-					"message",
-					v2.WithAppInfo("app-id", "source-type", "source-instance"),
-				)
-
-				time.Sleep(10 * time.Millisecond)
-			}
-		}()
+		for i := 0; i < 200; i++ {
+			client.EmitLog(
+				"message",
+				v2.WithAppInfo("app-id", "source-type", "source-instance"),
+			)
+		}
 
 		envBatch, err = getBatch(receivers)
 		Expect(err).NotTo(HaveOccurred())
@@ -166,7 +168,7 @@ var _ = Describe("GrpcClient", func() {
 
 func getBatch(receivers chan loggregator_v2.Ingress_BatchSenderServer) (*loggregator_v2.EnvelopeBatch, error) {
 	var recv loggregator_v2.Ingress_BatchSenderServer
-	Eventually(receivers, 3).Should(Receive(&recv))
+	Eventually(receivers, 10).Should(Receive(&recv))
 
 	return recv.Recv()
 }

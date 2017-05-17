@@ -242,18 +242,18 @@ func (c *Client) startSender() {
 			if len(batch) >= int(c.batchMaxSize) {
 				c.flush(batch)
 				batch = nil
-			}
-
-			if !t.Stop() {
-				<-t.C
+				if !t.Stop() {
+					<-t.C
+				}
+				t.Reset(c.batchFlushInterval)
 			}
 		case <-t.C:
 			if len(batch) > 0 {
 				c.flush(batch)
 				batch = nil
 			}
+			t.Reset(c.batchFlushInterval)
 		}
-		t.Reset(c.batchFlushInterval)
 	}
 }
 
