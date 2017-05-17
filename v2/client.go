@@ -197,15 +197,13 @@ func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
 // and will overwrite if called a second time.
 func WithGaugeTags(tags map[string]string) EmitGaugeOption {
 	return func(e *loggregator_v2.Envelope) {
-		valueTags := make(map[string]*loggregator_v2.Value, 0)
 		for name, value := range tags {
-			valueTags[name] = &loggregator_v2.Value{
+			e.Tags[name] = &loggregator_v2.Value{
 				Data: &loggregator_v2.Value_Text{
 					Text: value,
 				},
 			}
 		}
-		e.Tags = valueTags
 	}
 }
 
@@ -220,6 +218,7 @@ func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
 				Metrics: make(map[string]*loggregator_v2.GaugeValue),
 			},
 		},
+		Tags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for _, o := range opts {
