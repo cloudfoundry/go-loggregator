@@ -105,17 +105,10 @@ var _ = Describe("GrpcClient", func() {
 	})
 
 	It("sends app metrics", func() {
-		tags := make(map[string]interface{}, 3)
-		tags["tag-text"] = "tag-value"
-		tags["tag-int"] = int64(42)
-		tags["tag-dec"] = float64(1.25)
-
-		tagOption, err := v2.WithGaugeTags(tags)
-		Expect(err).ToNot(HaveOccurred())
 		client.EmitGauge(
 			v2.WithGaugeValue("name-a", 1, "unit-a"),
 			v2.WithGaugeValue("name-b", 2, "unit-b"),
-			tagOption,
+			v2.WithGaugeTags(map[string]string{"some-tag":"some-tag-value"}),
 			v2.WithGaugeAppInfo("app-id"),
 		)
 
@@ -130,9 +123,7 @@ var _ = Describe("GrpcClient", func() {
 		Expect(metrics.GetMetrics()).To(HaveLen(2))
 		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
-		Expect(env.Tags["tag-text"].GetText()).To(Equal("tag-value"))
-		Expect(env.Tags["tag-int"].GetInteger()).To(Equal(int64(42)))
-		Expect(env.Tags["tag-dec"].GetDecimal()).To(Equal(float64(1.25)))
+		Expect(env.Tags["some-tag"].GetText()).To(Equal("some-tag-value"))
 	})
 
 	It("reconnects when the server goes away and comes back", func() {

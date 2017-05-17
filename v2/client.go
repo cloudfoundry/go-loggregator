@@ -30,7 +30,6 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 	"golang.org/x/net/context"
-	"errors"
 )
 
 // Client represents an emitter into loggregator. It should be created with the
@@ -196,59 +195,17 @@ func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
 // WithGaugeTags adds tag information that can be text, integer, or decimal to
 // the envelope.  WithGaugeTags expects a single call with a complete map
 // and will overwrite if called a second time.
-func WithGaugeTags(tags map[string]interface{}) (EmitGaugeOption, error) {
-	err := checkValues(tags)
+func WithGaugeTags(tags map[string]string) EmitGaugeOption {
 	return func(e *loggregator_v2.Envelope) {
 		valueTags := make(map[string]*loggregator_v2.Value, 0)
 		for name, value := range tags {
-			data, err := toValue(value)
-			if err != nil {
-
+			valueTags[name] = &loggregator_v2.Value{
+				Data: &loggregator_v2.Value_Text{
+					Text: value,
+				},
 			}
-			valueTags[name] = data
 		}
 		e.Tags = valueTags
-	}, err
-}
-
-func checkValues(tags map[string]interface{}) error {
-	for _, value := range tags {
-		switch value.(type) {
-		case string:
-			break
-		case int64:
-			break
-		case float64:
-			break
-		default:
-			return errors.New("Tag Values must conform to loggregator_v2.Value isValueData interface.")
-		}
-	}
-	return nil
-}
-
-func toValue(value interface{}) (*loggregator_v2.Value, error) {
-	switch value.(type) {
-	case string:
-		return &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Text{
-				Text: value.(string),
-			},
-		}, nil
-	case int64:
-		return &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Integer{
-				Integer: value.(int64),
-			},
-		}, nil
-	case float64:
-		return &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Decimal{
-				Decimal: value.(float64),
-			},
-		}, nil
-	default:
-		return nil, errors.New("Tag Values must conform to loggregator_v2.Value isValueData interface.")
 	}
 }
 
