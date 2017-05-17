@@ -192,6 +192,21 @@ func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
 	}
 }
 
+// WithGaugeTags adds tag information that can be text, integer, or decimal to
+// the envelope.  WithGaugeTags expects a single call with a complete map
+// and will overwrite if called a second time.
+func WithGaugeTags(tags map[string]string) EmitGaugeOption {
+	return func(e *loggregator_v2.Envelope) {
+		for name, value := range tags {
+			e.Tags[name] = &loggregator_v2.Value{
+				Data: &loggregator_v2.Value_Text{
+					Text: value,
+				},
+			}
+		}
+	}
+}
+
 // EmitGauge sends the configured gauge values to loggregator.
 // If no EmitGaugeOption values are present, the client will emit
 // an empty gauge.
@@ -203,6 +218,7 @@ func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
 				Metrics: make(map[string]*loggregator_v2.GaugeValue),
 			},
 		},
+		Tags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for _, o := range opts {
