@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
 	"code.cloudfoundry.org/go-loggregator/v2"
 
 	. "github.com/onsi/ginkgo"
@@ -152,6 +153,14 @@ var _ = Describe("GrpcClient", func() {
 		envBatch, err = getBatch(receivers)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(envBatch.Batch).ToNot(BeEmpty())
+	})
+
+	It("works with the runtime emitter", func() {
+		// This test is to ensure that the v2 client satisfies the
+		// runtimeemitter.Sender interface. If it does not satisfy the
+		// runtimeemitter.Sender interface this test will force a compile time
+		// error.
+		runtimeemitter.New(client)
 	})
 })
 
