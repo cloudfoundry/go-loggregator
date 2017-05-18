@@ -41,6 +41,7 @@ var _ = Describe("GrpcClient", func() {
 			tlsConfig,
 			v2.WithPort(server.Port()),
 			v2.WithBatchFlushInterval(50*time.Millisecond),
+			v2.WithTag("origin", "some-origin"),
 		)
 	})
 
@@ -78,6 +79,7 @@ var _ = Describe("GrpcClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(env.Tags["source_instance"].GetText()).To(Equal("source-instance"))
+		Expect(env.Tags["origin"].GetText()).To(Equal("some-origin"))
 		Expect(env.SourceId).To(Equal("app-id"))
 		Expect(env.InstanceId).To(Equal("source-instance"))
 
@@ -114,7 +116,7 @@ var _ = Describe("GrpcClient", func() {
 		client.EmitGauge(
 			v2.WithGaugeValue("name-a", 1, "unit-a"),
 			v2.WithGaugeValue("name-b", 2, "unit-b"),
-			v2.WithGaugeTags(map[string]string{"some-tag":"some-tag-value"}),
+			v2.WithGaugeTags(map[string]string{"some-tag": "some-tag-value"}),
 			v2.WithGaugeAppInfo("app-id"),
 		)
 
@@ -130,6 +132,7 @@ var _ = Describe("GrpcClient", func() {
 		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
 		Expect(env.Tags["some-tag"].GetText()).To(Equal("some-tag-value"))
+		Expect(env.Tags["origin"].GetText()).To(Equal("some-origin"))
 	})
 
 	It("reconnects when the server goes away and comes back", func() {

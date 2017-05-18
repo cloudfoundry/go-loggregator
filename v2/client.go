@@ -38,6 +38,7 @@ type Client struct {
 	conn      loggregator_v2.IngressClient
 	sender    loggregator_v2.Ingress_BatchSenderClient
 	envelopes chan *loggregator_v2.Envelope
+	tags      map[string]string
 
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
@@ -48,6 +49,14 @@ type Client struct {
 
 // Option is the type of a configurable client option.
 type Option func(*Client)
+
+// WithTag allows for the configuration of arbitrary metadata which will be
+// included in all data sent to Loggregator
+func WithTag(name, value string) Option {
+	return func(c *Client) {
+		c.tags[name] = value
+	}
+}
 
 // WithBatchMaxSize allows for the configuration of the number of messages to
 // collect before emitting them into loggregator. By default, its value is 100
@@ -100,6 +109,7 @@ func WithLogger(l Logger) Option {
 func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
 	client := &Client{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
+		tags:               make(map[string]string),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
 		port:               3458,
@@ -132,11 +142,11 @@ func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
 	return func(e *loggregator_v2.Envelope) {
 		e.SourceId = appID
 		e.InstanceId = sourceInstance
-
-		// TODO: don't blow away the tags
-		e.Tags = map[string]*loggregator_v2.Value{
-			"source_type":     &loggregator_v2.Value{Data: &loggregator_v2.Value_Text{Text: sourceType}},
-			"source_instance": &loggregator_v2.Value{Data: &loggregator_v2.Value_Text{Text: sourceInstance}},
+		e.Tags["source_type"] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{Text: sourceType},
+		}
+		e.Tags["source_instance"] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{Text: sourceInstance},
 		}
 	}
 }
@@ -159,6 +169,13 @@ func (c *Client) EmitLog(message string, opts ...EmitLogOption) {
 				Type:    loggregator_v2.Log_ERR,
 			},
 		},
+		Tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for k, v := range c.tags {
+		e.Tags[k] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{Text: v},
+		}
 	}
 
 	for _, o := range opts {
@@ -219,6 +236,12 @@ func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
 			},
 		},
 		Tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for k, v := range c.tags {
+		e.Tags[k] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{Text: v},
+		}
 	}
 
 	for _, o := range opts {
