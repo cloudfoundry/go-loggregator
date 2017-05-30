@@ -51,38 +51,38 @@
 
 
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "code.cloudfoundry.org/localip"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "github.com/cloudfoundry/dropsonde"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "github.com/cloudfoundry/sonde-go"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "github.com/gogo/protobuf"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "github.com/golang/protobuf"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "github.com/onsi/ginkgo"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "github.com/onsi/gomega"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "golang.org/x/net"
 
-[[dependencies]]
+[[constraint]]
   branch = "master"
   name = "google.golang.org/grpc"
