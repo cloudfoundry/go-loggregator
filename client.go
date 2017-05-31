@@ -90,7 +90,7 @@ func NewV2Client(config Config) (Client, error) {
 	opts := []v2.Option{
 		// Whereas Metron will add tags for deployment, name, index, and ip,
 		// it does not add job origin and so we must add it manually here.
-		v2.WithTag("origin", config.JobOrigin),
+		v2.WithStringTag("origin", config.JobOrigin),
 	}
 
 	if config.BatchMaxSize != 0 {

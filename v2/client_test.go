@@ -41,7 +41,9 @@ var _ = Describe("GrpcClient", func() {
 			tlsConfig,
 			v2.WithPort(server.Port()),
 			v2.WithBatchFlushInterval(50*time.Millisecond),
-			v2.WithTag("origin", "some-origin"),
+			v2.WithStringTag("string", "some-string"),
+			v2.WithDecimalTag("decimal", 1.234),
+			v2.WithIntegerTag("integer", 42),
 		)
 	})
 
@@ -79,7 +81,6 @@ var _ = Describe("GrpcClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(env.Tags["source_instance"].GetText()).To(Equal("source-instance"))
-		Expect(env.Tags["origin"].GetText()).To(Equal("some-origin"))
 		Expect(env.SourceId).To(Equal("app-id"))
 		Expect(env.InstanceId).To(Equal("source-instance"))
 
@@ -132,7 +133,6 @@ var _ = Describe("GrpcClient", func() {
 		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
 		Expect(env.Tags["some-tag"].GetText()).To(Equal("some-tag-value"))
-		Expect(env.Tags["origin"].GetText()).To(Equal("some-origin"))
 	})
 
 	It("reconnects when the server goes away and comes back", func() {
@@ -168,6 +168,19 @@ var _ = Describe("GrpcClient", func() {
 		// runtimeemitter.Sender interface this test will force a compile time
 		// error.
 		runtimeemitter.New(client)
+	})
+
+	Describe("tagging", func() {
+		It("sends messages with tags", func() {
+			client.EmitLog("message")
+
+			env, err := getEnvelopeAt(receivers, 0)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(env.Tags["string"].GetText()).To(Equal("some-string"))
+			Expect(env.Tags["decimal"].GetDecimal()).To(Equal(1.234))
+			Expect(env.Tags["integer"].GetInteger()).To(Equal(int64(42)))
+		})
 	})
 })
 

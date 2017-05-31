@@ -38,7 +38,7 @@ type Client struct {
 	conn      loggregator_v2.IngressClient
 	sender    loggregator_v2.Ingress_BatchSenderClient
 	envelopes chan *loggregator_v2.Envelope
-	tags      map[string]string
+	tags      map[string]*loggregator_v2.Value
 
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
@@ -50,11 +50,33 @@ type Client struct {
 // Option is the type of a configurable client option.
 type Option func(*Client)
 
-// WithTag allows for the configuration of arbitrary metadata which will be
-// included in all data sent to Loggregator
-func WithTag(name, value string) Option {
+// WithStringTag allows for the configuration of arbitrary string value
+// metadata which will be included in all data sent to Loggregator
+func WithStringTag(name, value string) Option {
 	return func(c *Client) {
-		c.tags[name] = value
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{Text: value},
+		}
+	}
+}
+
+// WithDecimalTag allows for the configuration of arbitrary decimal value
+// metadata which will be included in all data sent to Loggregator
+func WithDecimalTag(name string, value float64) Option {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Decimal{Decimal: value},
+		}
+	}
+}
+
+// WithIntegerTag allows for the configuration of arbitrary integer value
+// metadata which will be included in all data sent to Loggregator
+func WithIntegerTag(name string, value int64) Option {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Integer{Integer: value},
+		}
 	}
 }
 
@@ -109,7 +131,7 @@ func WithLogger(l Logger) Option {
 func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
 	client := &Client{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
-		tags:               make(map[string]string),
+		tags:               make(map[string]*loggregator_v2.Value),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
 		port:               3458,
@@ -173,9 +195,7 @@ func (c *Client) EmitLog(message string, opts ...EmitLogOption) {
 	}
 
 	for k, v := range c.tags {
-		e.Tags[k] = &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Text{Text: v},
-		}
+		e.Tags[k] = v
 	}
 
 	for _, o := range opts {
@@ -239,9 +259,7 @@ func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
 	}
 
 	for k, v := range c.tags {
-		e.Tags[k] = &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Text{Text: v},
-		}
+		e.Tags[k] = v
 	}
 
 	for _, o := range opts {
