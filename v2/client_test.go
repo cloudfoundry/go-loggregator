@@ -41,6 +41,9 @@ var _ = Describe("GrpcClient", func() {
 			tlsConfig,
 			v2.WithPort(server.Port()),
 			v2.WithBatchFlushInterval(50*time.Millisecond),
+			v2.WithStringTag("string", "some-string"),
+			v2.WithDecimalTag("decimal", 1.234),
+			v2.WithIntegerTag("integer", 42),
 		)
 	})
 
@@ -114,7 +117,7 @@ var _ = Describe("GrpcClient", func() {
 		client.EmitGauge(
 			v2.WithGaugeValue("name-a", 1, "unit-a"),
 			v2.WithGaugeValue("name-b", 2, "unit-b"),
-			v2.WithGaugeTags(map[string]string{"some-tag":"some-tag-value"}),
+			v2.WithGaugeTags(map[string]string{"some-tag": "some-tag-value"}),
 			v2.WithGaugeAppInfo("app-id"),
 		)
 
@@ -165,6 +168,19 @@ var _ = Describe("GrpcClient", func() {
 		// runtimeemitter.Sender interface this test will force a compile time
 		// error.
 		runtimeemitter.New(client)
+	})
+
+	Describe("tagging", func() {
+		It("sends messages with tags", func() {
+			client.EmitLog("message")
+
+			env, err := getEnvelopeAt(receivers, 0)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(env.Tags["string"].GetText()).To(Equal("some-string"))
+			Expect(env.Tags["decimal"].GetDecimal()).To(Equal(1.234))
+			Expect(env.Tags["integer"].GetInteger()).To(Equal(int64(42)))
+		})
 	})
 })
 
