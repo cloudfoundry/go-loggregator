@@ -84,5 +84,5 @@
   name = "golang.org/x/net"
 
 [[constraint]]
-  branch = "master"
+  version = "1.2.1"
   name = "google.golang.org/grpc"
