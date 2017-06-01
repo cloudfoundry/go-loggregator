@@ -269,9 +269,11 @@ func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
 	c.envelopes <- e
 }
 
-// EmitCounter sends a count whose name is specified by the method's
-// only argument.
-func (c *Client) EmitCounter(name string) {
+// EmitCounterOption is the option type passed into EmitCounter.
+type EmitCounterOption func(*loggregator_v2.Envelope)
+
+// EmitCounter sends a counter envelope with a delta of 1.
+func (c *Client) EmitCounter(name string, opts ...EmitCounterOption) {
 	e := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Counter{
@@ -282,6 +284,15 @@ func (c *Client) EmitCounter(name string) {
 				},
 			},
 		},
+		Tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for k, v := range c.tags {
+		e.Tags[k] = v
+	}
+
+	for _, o := range opts {
+		o(e)
 	}
 
 	c.envelopes <- e
@@ -332,4 +343,37 @@ func (c *Client) flush(batch []*loggregator_v2.Envelope) {
 	}
 
 	return
+}
+
+// WithEnvelopeStringTag adds a string tag to the envelope.
+func WithEnvelopeStringTag(name, value string) func(*loggregator_v2.Envelope) {
+	return func(e *loggregator_v2.Envelope) {
+		e.Tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{
+				Text: value,
+			},
+		}
+	}
+}
+
+// WithEnvelopeDecimalTag adds a decimal tag to the envelope.
+func WithEnvelopeDecimalTag(name string, value float64) func(*loggregator_v2.Envelope) {
+	return func(e *loggregator_v2.Envelope) {
+		e.Tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Decimal{
+				Decimal: value,
+			},
+		}
+	}
+}
+
+// WithEnvelopeIntegerTag adds a integer tag to the envelope.
+func WithEnvelopeIntegerTag(name string, value int64) func(*loggregator_v2.Envelope) {
+	return func(e *loggregator_v2.Envelope) {
+		e.Tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Integer{
+				Integer: value,
+			},
+		}
+	}
 }
