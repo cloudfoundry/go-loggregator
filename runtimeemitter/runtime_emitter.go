@@ -36,7 +36,7 @@ func WithInterval(d time.Duration) RuntimeEmitterOption {
 func New(sender Sender, opts ...RuntimeEmitterOption) *Emitter {
 	e := &Emitter{
 		sender:   sender,
-		interval: 15 * time.Second,
+		interval: 10 * time.Second,
 	}
 
 	for _, o := range opts {
