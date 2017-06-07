@@ -1,4 +1,1 @@
-# ignore all code in vendor
-/loggregator_v2/vendor
-# except the grpc library, which we submodule
-!/loggregator_v2/vendor/google.golang.org/grpc
+
