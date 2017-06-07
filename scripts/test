@@ -1,5 +1,8 @@
 #!/bin/bash
 
-set -ex
+go get github.com/cloudfoundry/dropsonde/...
+go get github.com/golang/protobuf
+go get golang.org/x/net
 
+set -ex
 ginkgo -r -race -skip 'vendor'
