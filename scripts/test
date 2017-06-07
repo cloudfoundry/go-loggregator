@@ -1,5 +1,6 @@
 #!/bin/bash
 
+go get github.com/onsi/gomega
 go get github.com/cloudfoundry/dropsonde/...
 go get github.com/golang/protobuf
 go get golang.org/x/net
