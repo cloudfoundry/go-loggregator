@@ -23,7 +23,7 @@ var _ = Describe("GrpcClient", func() {
 
 	BeforeEach(func() {
 		var err error
-		server, err = NewTestServer("fixtures/metron.crt", "fixtures/metron.key", "fixtures/CA.crt")
+		server, err = NewTestServer(fixture("metron.crt"), fixture("metron.key"), fixture("CA.crt"))
 		Expect(err).NotTo(HaveOccurred())
 
 		err = server.Start()
@@ -32,9 +32,9 @@ var _ = Describe("GrpcClient", func() {
 		receivers = server.Receivers()
 
 		tlsConfig, err := v2.NewTLSConfig(
-			"fixtures/CA.crt",
-			"fixtures/client.crt",
-			"fixtures/client.key",
+			fixture("CA.crt"),
+			fixture("client.crt"),
+			fixture("client.key"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
