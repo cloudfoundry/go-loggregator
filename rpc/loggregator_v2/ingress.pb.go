@@ -2,25 +2,6 @@
 // source: ingress.proto
 // DO NOT EDIT!
 
-/*
-Package loggregator_v2 is a generated protocol buffer package.
-
-It is generated from these files:
-	ingress.proto
-	envelope.proto
-
-It has these top-level messages:
-	IngressResponse
-	EnvelopeBatch
-	BatchSenderResponse
-	Envelope
-	Value
-	Log
-	Counter
-	Gauge
-	GaugeValue
-	Timer
-*/
 package loggregator_v2
 
 import proto "github.com/golang/protobuf/proto"
@@ -37,19 +18,13 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
-
 type IngressResponse struct {
 }
 
 func (m *IngressResponse) Reset()                    { *m = IngressResponse{} }
 func (m *IngressResponse) String() string            { return proto.CompactTextString(m) }
 func (*IngressResponse) ProtoMessage()               {}
-func (*IngressResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*IngressResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 type EnvelopeBatch struct {
 	Batch []*Envelope `protobuf:"bytes,1,rep,name=batch" json:"batch,omitempty"`
@@ -58,7 +33,7 @@ type EnvelopeBatch struct {
 func (m *EnvelopeBatch) Reset()                    { *m = EnvelopeBatch{} }
 func (m *EnvelopeBatch) String() string            { return proto.CompactTextString(m) }
 func (*EnvelopeBatch) ProtoMessage()               {}
-func (*EnvelopeBatch) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*EnvelopeBatch) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
 
 func (m *EnvelopeBatch) GetBatch() []*Envelope {
 	if m != nil {
@@ -73,7 +48,7 @@ type BatchSenderResponse struct {
 func (m *BatchSenderResponse) Reset()                    { *m = BatchSenderResponse{} }
 func (m *BatchSenderResponse) String() string            { return proto.CompactTextString(m) }
 func (*BatchSenderResponse) ProtoMessage()               {}
-func (*BatchSenderResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (*BatchSenderResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
 
 func init() {
 	proto.RegisterType((*IngressResponse)(nil), "loggregator.v2.IngressResponse")
@@ -254,11 +229,11 @@ var _Ingress_serviceDesc = grpc.ServiceDesc{
 	Metadata: "ingress.proto",
 }
 
-func init() { proto.RegisterFile("ingress.proto", fileDescriptor0) }
+func init() { proto.RegisterFile("ingress.proto", fileDescriptor3) }
 
-var fileDescriptor0 = []byte{
+var fileDescriptor3 = []byte{
 	// 185 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0xcd, 0xcc, 0x4b, 0x2f,
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0xcd, 0xcc, 0x4b, 0x2f,
 	0x4a, 0x2d, 0x2e, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0xcb, 0xc9, 0x4f, 0x4f, 0x2f,
 	0x4a, 0x4d, 0x4f, 0x2c, 0xc9, 0x2f, 0xd2, 0x2b, 0x33, 0x92, 0xe2, 0x4b, 0xcd, 0x2b, 0x4b, 0xcd,
 	0xc9, 0x2f, 0x48, 0x85, 0xc8, 0x2b, 0x09, 0x72, 0xf1, 0x7b, 0x42, 0x34, 0x04, 0xa5, 0x16, 0x17,

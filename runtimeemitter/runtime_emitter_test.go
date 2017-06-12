@@ -5,7 +5,7 @@ import (
 	"time"
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
 
 	. "github.com/onsi/ginkgo"

@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"golang.org/x/net/context"
 )
 

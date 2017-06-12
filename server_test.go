@@ -8,7 +8,7 @@ import (
 	"net"
 
 	"code.cloudfoundry.org/go-loggregator/compatability/fakes"
-	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/localip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
