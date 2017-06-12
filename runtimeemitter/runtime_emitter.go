@@ -4,13 +4,13 @@ import (
 	"runtime"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v2"
+	"code.cloudfoundry.org/go-loggregator"
 )
 
 // Sender is the interface of the client that can be used to emit gauge
 // metrics.
 type Sender interface {
-	EmitGauge(opts ...v2.EmitGaugeOption)
+	EmitGauge(opts ...loggregator.EmitGaugeOption)
 }
 
 // Emitter will emit a gauge with runtime stats via the sender on the given
@@ -54,10 +54,10 @@ func (e *Emitter) Run() {
 		runtime.ReadMemStats(memstats)
 
 		e.sender.EmitGauge(
-			v2.WithGaugeValue("memoryStats.numBytesAllocatedHeap", float64(memstats.HeapAlloc), "Bytes"),
-			v2.WithGaugeValue("memoryStats.numBytesAllocatedStack", float64(memstats.StackInuse), "Bytes"),
-			v2.WithGaugeValue("memoryStats.lastGCPauseTimeNS", float64(memstats.PauseNs[(memstats.NumGC+255)%256]), "ns"),
-			v2.WithGaugeValue("numGoRoutines", float64(runtime.NumGoroutine()), "Count"),
+			loggregator.WithGaugeValue("memoryStats.numBytesAllocatedHeap", float64(memstats.HeapAlloc), "Bytes"),
+			loggregator.WithGaugeValue("memoryStats.numBytesAllocatedStack", float64(memstats.StackInuse), "Bytes"),
+			loggregator.WithGaugeValue("memoryStats.lastGCPauseTimeNS", float64(memstats.PauseNs[(memstats.NumGC+255)%256]), "ns"),
+			loggregator.WithGaugeValue("numGoRoutines", float64(runtime.NumGoroutine()), "Count"),
 		)
 	}
 }

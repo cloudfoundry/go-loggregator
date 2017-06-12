@@ -1,4 +1,4 @@
-package v2_test
+package loggregator_test
 
 import (
 	"log"

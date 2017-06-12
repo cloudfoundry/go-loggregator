@@ -4,9 +4,9 @@ import (
 	"runtime"
 	"time"
 
+	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
-	"code.cloudfoundry.org/go-loggregator/v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -68,7 +68,7 @@ func (s *SpyV2Client) emitGaugeCalled() int64 {
 	return int64(len(s.envelopes))
 }
 
-func (s *SpyV2Client) EmitGauge(opts ...v2.EmitGaugeOption) {
+func (s *SpyV2Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 	env := &loggregator_v2.Envelope{
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{

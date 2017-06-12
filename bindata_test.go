@@ -9,7 +9,7 @@
 // fixtures/metron.key
 // DO NOT EDIT!
 
-package v2_test
+package loggregator_test
 
 import (
 	"fmt"

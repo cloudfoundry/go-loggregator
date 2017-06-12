@@ -16,7 +16,7 @@
 // available. Each of the methods below make a best-effort at message
 // delivery. Even in the event of a failed send, the client will not block
 // callers.
-package v2
+package loggregator
 
 import (
 	"crypto/tls"

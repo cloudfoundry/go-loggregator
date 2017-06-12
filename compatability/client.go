@@ -9,9 +9,9 @@ package loggregator
 import (
 	"time"
 
+	v2 "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/internal/v2shim"
 	"code.cloudfoundry.org/go-loggregator/v1"
-	"code.cloudfoundry.org/go-loggregator/v2"
 
 	"github.com/cloudfoundry/sonde-go/events"
 )

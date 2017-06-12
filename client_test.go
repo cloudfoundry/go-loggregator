@@ -1,12 +1,12 @@
-package v2_test
+package loggregator_test
 
 import (
 	"errors"
 	"time"
 
+	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/internal/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
-	"code.cloudfoundry.org/go-loggregator/v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("GrpcClient", func() {
 	var (
-		client    *v2.Client
+		client    *loggregator.Client
 		clientErr error
 		receivers chan loggregator_v2.Ingress_BatchSenderServer
 		server    *TestServer
@@ -31,20 +31,20 @@ var _ = Describe("GrpcClient", func() {
 
 		receivers = server.Receivers()
 
-		tlsConfig, err := v2.NewTLSConfig(
+		tlsConfig, err := loggregator.NewTLSConfig(
 			fixture("CA.crt"),
 			fixture("client.crt"),
 			fixture("client.key"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		client, clientErr = v2.NewClient(
+		client, clientErr = loggregator.NewClient(
 			tlsConfig,
-			v2.WithPort(server.Port()),
-			v2.WithBatchFlushInterval(50*time.Millisecond),
-			v2.WithStringTag("string", "client-string-tag"),
-			v2.WithDecimalTag("decimal", 1.234),
-			v2.WithIntegerTag("integer", 42),
+			loggregator.WithPort(server.Port()),
+			loggregator.WithBatchFlushInterval(50*time.Millisecond),
+			loggregator.WithStringTag("string", "client-string-tag"),
+			loggregator.WithDecimalTag("decimal", 1.234),
+			loggregator.WithIntegerTag("integer", 42),
 		)
 	})
 
@@ -56,8 +56,8 @@ var _ = Describe("GrpcClient", func() {
 		for i := 0; i < 10; i++ {
 			client.EmitLog(
 				"message",
-				v2.WithAppInfo("app-id", "source-type", "source-instance"),
-				v2.WithStdout(),
+				loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
+				loggregator.WithStdout(),
 			)
 			time.Sleep(10 * time.Millisecond)
 		}
@@ -75,8 +75,8 @@ var _ = Describe("GrpcClient", func() {
 	It("sends app logs", func() {
 		client.EmitLog(
 			"message",
-			v2.WithAppInfo("app-id", "source-type", "source-instance"),
-			v2.WithStdout(),
+			loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
+			loggregator.WithStdout(),
 		)
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
@@ -96,7 +96,7 @@ var _ = Describe("GrpcClient", func() {
 	It("sends app error logs", func() {
 		client.EmitLog(
 			"message",
-			v2.WithAppInfo("app-id", "source-type", "source-instance"),
+			loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
 		)
 
 		env, err := getEnvelopeAt(receivers, 0)
@@ -116,10 +116,10 @@ var _ = Describe("GrpcClient", func() {
 
 	It("sends app metrics", func() {
 		client.EmitGauge(
-			v2.WithGaugeValue("name-a", 1, "unit-a"),
-			v2.WithGaugeValue("name-b", 2, "unit-b"),
-			v2.WithGaugeTags(map[string]string{"some-tag": "some-tag-value"}),
-			v2.WithGaugeAppInfo("app-id"),
+			loggregator.WithGaugeValue("name-a", 1, "unit-a"),
+			loggregator.WithGaugeValue("name-b", 2, "unit-b"),
+			loggregator.WithGaugeTags(map[string]string{"some-tag": "some-tag-value"}),
+			loggregator.WithGaugeAppInfo("app-id"),
 		)
 
 		env, err := getEnvelopeAt(receivers, 0)
@@ -139,7 +139,7 @@ var _ = Describe("GrpcClient", func() {
 	It("reconnects when the server goes away and comes back", func() {
 		client.EmitLog(
 			"message",
-			v2.WithAppInfo("app-id", "source-type", "source-instance"),
+			loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
 		)
 
 		envBatch, err := getBatch(receivers)
@@ -154,7 +154,7 @@ var _ = Describe("GrpcClient", func() {
 		for i := 0; i < 200; i++ {
 			client.EmitLog(
 				"message",
-				v2.WithAppInfo("app-id", "source-type", "source-instance"),
+				loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
 			)
 		}
 
@@ -188,25 +188,25 @@ var _ = Describe("GrpcClient", func() {
 		Entry("logs", func() {
 			client.EmitLog(
 				"message",
-				v2.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
-				v2.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
-				v2.WithEnvelopeIntegerTag("envelope-integer", 42),
+				loggregator.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
+				loggregator.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
+				loggregator.WithEnvelopeIntegerTag("envelope-integer", 42),
 			)
 		}),
 		Entry("gauge", func() {
 			client.EmitGauge(
-				v2.WithGaugeValue("gauge-name", 123.4, "some-unit"),
-				v2.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
-				v2.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
-				v2.WithEnvelopeIntegerTag("envelope-integer", 42),
+				loggregator.WithGaugeValue("gauge-name", 123.4, "some-unit"),
+				loggregator.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
+				loggregator.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
+				loggregator.WithEnvelopeIntegerTag("envelope-integer", 42),
 			)
 		}),
 		Entry("counter", func() {
 			client.EmitCounter(
 				"foo",
-				v2.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
-				v2.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
-				v2.WithEnvelopeIntegerTag("envelope-integer", 42),
+				loggregator.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
+				loggregator.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
+				loggregator.WithEnvelopeIntegerTag("envelope-integer", 42),
 			)
 		}),
 	)
