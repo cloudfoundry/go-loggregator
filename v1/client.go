@@ -40,25 +40,25 @@ func (c *Client) SendAppMetrics(m *events.ContainerMetric) error {
 }
 
 func (c *Client) SendDuration(name string, duration time.Duration) error {
-	return c.sendComponentMetric(name, float64(duration), "nanos")
+	return c.SendComponentMetric(name, float64(duration), "nanos")
 }
 
 func (c *Client) SendMebiBytes(name string, mebibytes int) error {
-	return c.sendComponentMetric(name, float64(mebibytes), "MiB")
+	return c.SendComponentMetric(name, float64(mebibytes), "MiB")
 }
 
 func (c *Client) SendMetric(name string, value int) error {
-	return c.sendComponentMetric(name, float64(value), "Metric")
+	return c.SendComponentMetric(name, float64(value), "Metric")
 }
 
 func (c *Client) SendBytesPerSecond(name string, value float64) error {
-	return c.sendComponentMetric(name, value, "B/s")
+	return c.SendComponentMetric(name, value, "B/s")
 }
 
 func (c *Client) SendRequestsPerSecond(name string, value float64) error {
-	return c.sendComponentMetric(name, value, "Req/s")
+	return c.SendComponentMetric(name, value, "Req/s")
 }
 
-func (c *Client) sendComponentMetric(name string, value float64, unit string) error {
+func (c *Client) SendComponentMetric(name string, value float64, unit string) error {
 	return metrics.SendValue(name, value, unit)
 }

@@ -52,6 +52,19 @@ var _ = Describe("RuntimeEmitter", func() {
 		Expect(metrics["memoryStats.lastGCPauseTimeNS"].Value).To(BeNumerically(">", 0.0))
 		Expect(metrics["memoryStats.lastGCPauseTimeNS"].Unit).To(Equal("ns"))
 	})
+
+	Describe("V1 Emitter", func() {
+		It("emits go runtime metrics on an interval", func() {
+			v1Client := newSpyV1Client()
+			emitter := runtimeemitter.NewV1(v1Client,
+				runtimeemitter.WithInterval(10*time.Millisecond),
+			)
+
+			go emitter.Run()
+
+			Eventually(v1Client.sendCalled).Should(BeNumerically(">", 4))
+		})
+	})
 })
 
 type SpyV2Client struct {
@@ -82,4 +95,23 @@ func (s *SpyV2Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 	}
 
 	s.envelopes <- env
+}
+
+type SpyV1Client struct {
+	called chan bool
+}
+
+func newSpyV1Client() *SpyV1Client {
+	return &SpyV1Client{
+		called: make(chan bool, 100),
+	}
+}
+
+func (c *SpyV1Client) sendCalled() int64 {
+	return int64(len(c.called))
+}
+
+func (c *SpyV1Client) SendComponentMetric(name string, value float64, unit string) error {
+	c.called <- true
+	return nil
 }
