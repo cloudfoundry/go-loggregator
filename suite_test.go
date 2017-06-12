@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-func TestV2(t *testing.T) {
+func TestGoLoggregator(t *testing.T) {
 	grpclog.SetLogger(log.New(GinkgoWriter, "", 0))
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "V2 Suite")
+	RunSpecs(t, "GoLoggregator Suite")
 }
