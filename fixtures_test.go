@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-//go:generate go-bindata -nocompress -o bindata_test.go -pkg v2_test -prefix fixtures/ fixtures/
+//go:generate go-bindata -nocompress -o bindata_test.go -pkg loggregator_test -prefix examples/fixtures/ examples/fixtures/
 
 func fixture(filename string) string {
 	contents := MustAsset(filename)
