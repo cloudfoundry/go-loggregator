@@ -5,12 +5,12 @@ import (
 	"os"
 	"time"
 
+	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
-	"code.cloudfoundry.org/go-loggregator/v2"
 )
 
 func main() {
-	tlsConfig, err := v2.NewTLSConfig(
+	tlsConfig, err := loggregator.NewTLSConfig(
 		os.Getenv("CA_CERT_PATH"),
 		os.Getenv("CERT_PATH"),
 		os.Getenv("KEY_PATH"),
@@ -19,10 +19,10 @@ func main() {
 		log.Fatal("Could not create TLS config", err)
 	}
 
-	client, err := v2.NewClient(
+	client, err := loggregator.NewClient(
 		tlsConfig,
-		v2.WithPort(3458),
-		v2.WithLogger(log.New(os.Stdout, "", log.LstdFlags)),
+		loggregator.WithPort(3458),
+		loggregator.WithLogger(log.New(os.Stdout, "", log.LstdFlags)),
 	)
 
 	if err != nil {
