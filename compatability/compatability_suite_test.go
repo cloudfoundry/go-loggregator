@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestLoggregatorV2(t *testing.T) {
+func TestCompatability(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "go-loggregator compilation check")
+	RunSpecs(t, "Compatability Suite")
 }
