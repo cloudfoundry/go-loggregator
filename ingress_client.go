@@ -47,12 +47,12 @@ type IngressClient struct {
 	logger Logger
 }
 
-// Option is the type of a configurable client option.
-type Option func(*IngressClient)
+// IngressOption is the type of a configurable client option.
+type IngressOption func(*IngressClient)
 
 // WithStringTag allows for the configuration of arbitrary string value
 // metadata which will be included in all data sent to Loggregator
-func WithStringTag(name, value string) Option {
+func WithStringTag(name, value string) IngressOption {
 	return func(c *IngressClient) {
 		c.tags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Text{Text: value},
@@ -62,7 +62,7 @@ func WithStringTag(name, value string) Option {
 
 // WithDecimalTag allows for the configuration of arbitrary decimal value
 // metadata which will be included in all data sent to Loggregator
-func WithDecimalTag(name string, value float64) Option {
+func WithDecimalTag(name string, value float64) IngressOption {
 	return func(c *IngressClient) {
 		c.tags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Decimal{Decimal: value},
@@ -72,7 +72,7 @@ func WithDecimalTag(name string, value float64) Option {
 
 // WithIntegerTag allows for the configuration of arbitrary integer value
 // metadata which will be included in all data sent to Loggregator
-func WithIntegerTag(name string, value int64) Option {
+func WithIntegerTag(name string, value int64) IngressOption {
 	return func(c *IngressClient) {
 		c.tags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Integer{Integer: value},
@@ -89,7 +89,7 @@ func WithIntegerTag(name string, value int64) Option {
 // held for an undue amount of time before being sent. In other words, even if
 // the client has not yet achieved the maximum batch size, the batch interval
 // may trigger the messages to be sent.
-func WithBatchMaxSize(maxSize uint) Option {
+func WithBatchMaxSize(maxSize uint) IngressOption {
 	return func(c *IngressClient) {
 		c.batchMaxSize = maxSize
 	}
@@ -98,7 +98,7 @@ func WithBatchMaxSize(maxSize uint) Option {
 // WithBatchFlushInterval allows for the configuration of the maximum time to
 // wait before sending a batch of messages. Note that the batch interval
 // may be triggered prior to the batch reaching the configured maximum size.
-func WithBatchFlushInterval(d time.Duration) Option {
+func WithBatchFlushInterval(d time.Duration) IngressOption {
 	return func(c *IngressClient) {
 		c.batchFlushInterval = d
 	}
@@ -107,7 +107,7 @@ func WithBatchFlushInterval(d time.Duration) Option {
 // WithPort allows for the configuration of the loggregator v2 port.
 // The value to defaults to 3458, which happens to be the default port
 // in the loggregator server.
-func WithPort(port int) Option {
+func WithPort(port int) IngressOption {
 	return func(c *IngressClient) {
 		c.port = port
 	}
@@ -120,7 +120,7 @@ type Logger interface {
 
 // WithLogger allows for the configuration of a logger.
 // By default, the logger is disabled.
-func WithLogger(l Logger) Option {
+func WithLogger(l Logger) IngressOption {
 	return func(c *IngressClient) {
 		c.logger = l
 	}
@@ -128,7 +128,7 @@ func WithLogger(l Logger) Option {
 
 // NewIngressClient creates a v2 loggregator client. Its TLS configuration
 // must share a CA with the loggregator server.
-func NewIngressClient(tlsConfig *tls.Config, opts ...Option) (*IngressClient, error) {
+func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressClient, error) {
 	return newIngressClient(
 		[]grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))},
 		opts,
@@ -137,14 +137,14 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...Option) (*IngressClient, er
 
 // NewInsecureIngressClient creates a v2 loggregator client without a TLS
 // configuration. This should only be used for testing user code.
-func NewInsecureIngressClient(opts ...Option) (*IngressClient, error) {
+func NewInsecureIngressClient(opts ...IngressOption) (*IngressClient, error) {
 	return newIngressClient(
 		[]grpc.DialOption{grpc.WithInsecure()},
 		opts,
 	)
 }
 
-func newIngressClient(gopts []grpc.DialOption, opts []Option) (*IngressClient, error) {
+func newIngressClient(gopts []grpc.DialOption, opts []IngressOption) (*IngressClient, error) {
 	client := &IngressClient{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		tags:               make(map[string]*loggregator_v2.Value),
