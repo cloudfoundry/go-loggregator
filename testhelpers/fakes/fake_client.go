@@ -352,4 +352,4 @@ func (fake *FakeClient) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ loggregator.Client = new(FakeClient)
+var _ loggregator.IngressClient = new(FakeClient)

@@ -14,10 +14,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GrpcClient", func() {
+var _ = Describe("IngressClient", func() {
 	var (
-		client    *loggregator.Client
-		clientErr error
+		client    *loggregator.IngressClient
 		receivers chan loggregator_v2.Ingress_BatchSenderServer
 		server    *testhelpers.TestServer
 	)
@@ -39,7 +38,7 @@ var _ = Describe("GrpcClient", func() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		client, clientErr = loggregator.NewClient(
+		client, err = loggregator.NewIngressClient(
 			tlsConfig,
 			loggregator.WithPort(server.Port()),
 			loggregator.WithBatchFlushInterval(50*time.Millisecond),
@@ -212,7 +211,7 @@ var _ = Describe("GrpcClient", func() {
 		}),
 	)
 
-	Describe("NewInsecureClient", func() {
+	Describe("NewInsecureIngressClient", func() {
 		BeforeEach(func() {
 			var err error
 			server, err = testhelpers.NewInsecureTestServer()
@@ -225,7 +224,7 @@ var _ = Describe("GrpcClient", func() {
 		})
 
 		It("spins up a insecure client", func() {
-			_, err := loggregator.NewInsecureClient(
+			_, err := loggregator.NewInsecureIngressClient(
 				loggregator.WithPort(server.Port()),
 				loggregator.WithBatchFlushInterval(50*time.Millisecond),
 				loggregator.WithStringTag("string", "client-string-tag"),

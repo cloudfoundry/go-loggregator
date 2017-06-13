@@ -19,7 +19,7 @@ import (
 
 var _ = Describe("DropsondeClient", func() {
 	var (
-		client loggregator.Client
+		client loggregator.IngressClient
 	)
 
 	JustBeforeEach(func() {

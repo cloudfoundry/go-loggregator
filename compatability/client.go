@@ -16,11 +16,11 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-// Client is the shared contract between v1 and v2 clients.
+// IngressClient is the shared contract between v1 and v2 clients.
 //
 // Deprecated: This interface will be removed in the next major version.
 // Instead, use the v1 or v2 clients directly.
-type Client interface {
+type IngressClient interface {
 	SendDuration(name string, value time.Duration) error
 	SendMebiBytes(name string, value int) error
 	SendMetric(name string, value int) error
@@ -52,32 +52,32 @@ type Config struct {
 	BatchFlushInterval time.Duration
 }
 
-// NewClient returns a v1 or v2 client depending on the value of `UseV2API`
+// NewIngressClient returns a v1 or v2 client depending on the value of `UseV2API`
 // from the config
 //
-// Deprecated: NewClient will be removed in the next major version.
+// Deprecated: NewIngressClient will be removed in the next major version.
 // Instead, create a v1 or v2 client directly.
-func NewClient(config Config) (Client, error) {
+func NewIngressClient(config Config) (IngressClient, error) {
 	if config.UseV2API {
-		return NewV2Client(config)
+		return NewV2IngressClient(config)
 	}
 
-	return NewV1Client(config)
+	return NewV1IngressClient(config)
 }
 
-// NewV1Client creates a V1 connection to the Loggregator API.
+// NewV1IngressClient creates a V1 connection to the Loggregator API.
 //
-// Deprecated: NewV1Client will be removed in the next major version.
-// Instead, use v1.NewClient.
-func NewV1Client(config Config) (Client, error) {
+// Deprecated: NewV1IngressClient will be removed in the next major version.
+// Instead, use v1.NewIngressClient.
+func NewV1IngressClient(config Config) (IngressClient, error) {
 	return v1.NewClient()
 }
 
-// NewV2Client creates a V2 connection to the Loggregator API.
+// NewV2IngressClient creates a V2 connection to the Loggregator API.
 //
-// Deprecated: NewV2Client will be removed in the next major version.
-// Instead, use v2.NewClient.
-func NewV2Client(config Config) (Client, error) {
+// Deprecated: NewV2IngressClient will be removed in the next major version.
+// Instead, use v2.NewIngressClient.
+func NewV2IngressClient(config Config) (IngressClient, error) {
 	tlsConfig, err := v2.NewTLSConfig(
 		config.CACertPath,
 		config.CertPath,
@@ -105,10 +105,10 @@ func NewV2Client(config Config) (Client, error) {
 		opts = append(opts, v2.WithPort(config.APIPort))
 	}
 
-	c, err := v2.NewClient(tlsConfig, opts...)
+	c, err := v2.NewIngressClient(tlsConfig, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	return v2shim.NewClient(c), nil
+	return v2shim.NewIngressClient(c), nil
 }

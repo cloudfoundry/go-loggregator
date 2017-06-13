@@ -8,10 +8,10 @@ import (
 )
 
 type client struct {
-	client *loggregator.Client
+	client *loggregator.IngressClient
 }
 
-func NewClient(c *loggregator.Client) client {
+func NewIngressClient(c *loggregator.IngressClient) client {
 	return client{client: c}
 }
 

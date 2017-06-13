@@ -32,9 +32,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Client represents an emitter into loggregator. It should be created with the
-// NewClient constructor.
-type Client struct {
+// IngressClient represents an emitter into loggregator. It should be created with the
+// NewIngressClient constructor.
+type IngressClient struct {
 	conn      loggregator_v2.IngressClient
 	sender    loggregator_v2.Ingress_BatchSenderClient
 	envelopes chan *loggregator_v2.Envelope
@@ -48,12 +48,12 @@ type Client struct {
 }
 
 // Option is the type of a configurable client option.
-type Option func(*Client)
+type Option func(*IngressClient)
 
 // WithStringTag allows for the configuration of arbitrary string value
 // metadata which will be included in all data sent to Loggregator
 func WithStringTag(name, value string) Option {
-	return func(c *Client) {
+	return func(c *IngressClient) {
 		c.tags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Text{Text: value},
 		}
@@ -63,7 +63,7 @@ func WithStringTag(name, value string) Option {
 // WithDecimalTag allows for the configuration of arbitrary decimal value
 // metadata which will be included in all data sent to Loggregator
 func WithDecimalTag(name string, value float64) Option {
-	return func(c *Client) {
+	return func(c *IngressClient) {
 		c.tags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Decimal{Decimal: value},
 		}
@@ -73,7 +73,7 @@ func WithDecimalTag(name string, value float64) Option {
 // WithIntegerTag allows for the configuration of arbitrary integer value
 // metadata which will be included in all data sent to Loggregator
 func WithIntegerTag(name string, value int64) Option {
-	return func(c *Client) {
+	return func(c *IngressClient) {
 		c.tags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Integer{Integer: value},
 		}
@@ -90,7 +90,7 @@ func WithIntegerTag(name string, value int64) Option {
 // the client has not yet achieved the maximum batch size, the batch interval
 // may trigger the messages to be sent.
 func WithBatchMaxSize(maxSize uint) Option {
-	return func(c *Client) {
+	return func(c *IngressClient) {
 		c.batchMaxSize = maxSize
 	}
 }
@@ -99,7 +99,7 @@ func WithBatchMaxSize(maxSize uint) Option {
 // wait before sending a batch of messages. Note that the batch interval
 // may be triggered prior to the batch reaching the configured maximum size.
 func WithBatchFlushInterval(d time.Duration) Option {
-	return func(c *Client) {
+	return func(c *IngressClient) {
 		c.batchFlushInterval = d
 	}
 }
@@ -108,7 +108,7 @@ func WithBatchFlushInterval(d time.Duration) Option {
 // The value to defaults to 3458, which happens to be the default port
 // in the loggregator server.
 func WithPort(port int) Option {
-	return func(c *Client) {
+	return func(c *IngressClient) {
 		c.port = port
 	}
 }
@@ -121,31 +121,31 @@ type Logger interface {
 // WithLogger allows for the configuration of a logger.
 // By default, the logger is disabled.
 func WithLogger(l Logger) Option {
-	return func(c *Client) {
+	return func(c *IngressClient) {
 		c.logger = l
 	}
 }
 
-// NewClient creates a v2 loggregator client. Its TLS configuration
+// NewIngressClient creates a v2 loggregator client. Its TLS configuration
 // must share a CA with the loggregator server.
-func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
-	return newClient(
+func NewIngressClient(tlsConfig *tls.Config, opts ...Option) (*IngressClient, error) {
+	return newIngressClient(
 		[]grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))},
 		opts,
 	)
 }
 
-// NewInsecureClient creates a v2 loggregator client without a TLS
+// NewInsecureIngressClient creates a v2 loggregator client without a TLS
 // configuration. This should only be used for testing user code.
-func NewInsecureClient(opts ...Option) (*Client, error) {
-	return newClient(
+func NewInsecureIngressClient(opts ...Option) (*IngressClient, error) {
+	return newIngressClient(
 		[]grpc.DialOption{grpc.WithInsecure()},
 		opts,
 	)
 }
 
-func newClient(gopts []grpc.DialOption, opts []Option) (*Client, error) {
-	client := &Client{
+func newIngressClient(gopts []grpc.DialOption, opts []Option) (*IngressClient, error) {
+	client := &IngressClient{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		tags:               make(map[string]*loggregator_v2.Value),
 		batchMaxSize:       100,
@@ -198,7 +198,7 @@ func WithStdout() EmitLogOption {
 }
 
 // EmitLog sends a message to loggregator.
-func (c *Client) EmitLog(message string, opts ...EmitLogOption) {
+func (c *IngressClient) EmitLog(message string, opts ...EmitLogOption) {
 	e := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Log{
@@ -263,7 +263,7 @@ func WithGaugeTags(tags map[string]string) EmitGaugeOption {
 // EmitGauge sends the configured gauge values to loggregator.
 // If no EmitGaugeOption values are present, the client will emit
 // an empty gauge.
-func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
+func (c *IngressClient) EmitGauge(opts ...EmitGaugeOption) {
 	e := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Gauge{
@@ -296,7 +296,7 @@ func WithDelta(d uint64) EmitCounterOption {
 }
 
 // EmitCounter sends a counter envelope with a delta of 1.
-func (c *Client) EmitCounter(name string, opts ...EmitCounterOption) {
+func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 	e := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Counter{
@@ -321,7 +321,7 @@ func (c *Client) EmitCounter(name string, opts ...EmitCounterOption) {
 	c.envelopes <- e
 }
 
-func (c *Client) startSender() {
+func (c *IngressClient) startSender() {
 	t := time.NewTimer(c.batchFlushInterval)
 
 	var batch []*loggregator_v2.Envelope
@@ -348,7 +348,7 @@ func (c *Client) startSender() {
 	}
 }
 
-func (c *Client) flush(batch []*loggregator_v2.Envelope) {
+func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) {
 	if c.sender == nil {
 		var err error
 		c.sender, err = c.conn.BatchSender(context.TODO())
