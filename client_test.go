@@ -210,6 +210,30 @@ var _ = Describe("GrpcClient", func() {
 			)
 		}),
 	)
+
+	Describe("NewInsecureClient", func() {
+		BeforeEach(func() {
+			var err error
+			server, err = NewInsecureTestServer()
+			Expect(err).NotTo(HaveOccurred())
+
+			err = server.Start()
+			Expect(err).NotTo(HaveOccurred())
+
+			receivers = server.Receivers()
+		})
+
+		It("spins up a insecure client", func() {
+			_, err := loggregator.NewInsecureClient(
+				loggregator.WithPort(server.Port()),
+				loggregator.WithBatchFlushInterval(50*time.Millisecond),
+				loggregator.WithStringTag("string", "client-string-tag"),
+				loggregator.WithDecimalTag("decimal", 1.234),
+				loggregator.WithIntegerTag("integer", 42),
+			)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
 
 func getBatch(receivers chan loggregator_v2.Ingress_BatchSenderServer) (*loggregator_v2.EnvelopeBatch, error) {

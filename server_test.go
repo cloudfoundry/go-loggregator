@@ -53,6 +53,18 @@ func NewTestServer(serverCert, serverKey, caCert string) (*TestServer, error) {
 	}, nil
 }
 
+func NewInsecureTestServer() (*TestServer, error) {
+	port, err := localip.LocalPort()
+	if err != nil {
+		return nil, err
+	}
+
+	return &TestServer{
+		receivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
+		port:      int(port),
+	}, nil
+}
+
 func (t *TestServer) Port() int {
 	return t.port
 }
@@ -66,7 +78,12 @@ func (t *TestServer) Start() error {
 	if err != nil {
 		return err
 	}
-	t.grpcServer = grpc.NewServer(grpc.Creds(credentials.NewTLS(t.tlsConfig)))
+
+	var opts []grpc.ServerOption
+	if t.tlsConfig != nil {
+		opts = append(opts, grpc.Creds(credentials.NewTLS(t.tlsConfig)))
+	}
+	t.grpcServer = grpc.NewServer(opts...)
 
 	senderServer := &fakes.FakeIngressServer{}
 	senderServer.BatchSenderStub = func(recv loggregator_v2.Ingress_BatchSenderServer) error {

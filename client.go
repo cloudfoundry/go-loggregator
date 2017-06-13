@@ -129,6 +129,22 @@ func WithLogger(l Logger) Option {
 // NewClient creates a v2 loggregator client. Its TLS configuration
 // must share a CA with the loggregator server.
 func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
+	return newClient(
+		[]grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))},
+		opts,
+	)
+}
+
+// NewInsecureClient creates a v2 loggregator client without a TLS
+// configuration. This should only be used for testing user code.
+func NewInsecureClient(opts ...Option) (*Client, error) {
+	return newClient(
+		[]grpc.DialOption{grpc.WithInsecure()},
+		opts,
+	)
+}
+
+func newClient(gopts []grpc.DialOption, opts []Option) (*Client, error) {
 	client := &Client{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		tags:               make(map[string]*loggregator_v2.Value),
@@ -144,7 +160,7 @@ func NewClient(tlsConfig *tls.Config, opts ...Option) (*Client, error) {
 
 	conn, err := grpc.Dial(
 		fmt.Sprintf("localhost:%d", client.port),
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+		gopts...,
 	)
 	if err != nil {
 		return nil, err
