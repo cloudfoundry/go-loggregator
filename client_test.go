@@ -235,6 +235,20 @@ var _ = Describe("GrpcClient", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
+
+	Describe("With functions", func() {
+		Describe("WithDelta()", func() {
+			It("sets the counter's delta to the given value", func() {
+				e := &loggregator_v2.Envelope{
+					Message: &loggregator_v2.Envelope_Counter{
+						Counter: &loggregator_v2.Counter{},
+					},
+				}
+				loggregator.WithDelta(99)(e)
+				Expect(e.GetCounter().GetDelta()).To(Equal(uint64(99)))
+			})
+		})
+	})
 })
 
 func getBatch(receivers chan loggregator_v2.Ingress_BatchSenderServer) (*loggregator_v2.EnvelopeBatch, error) {

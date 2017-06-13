@@ -288,6 +288,13 @@ func (c *Client) EmitGauge(opts ...EmitGaugeOption) {
 // EmitCounterOption is the option type passed into EmitCounter.
 type EmitCounterOption func(*loggregator_v2.Envelope)
 
+// WithDelta is an option that sets the delta for a counter.
+func WithDelta(d uint64) EmitCounterOption {
+	return func(e *loggregator_v2.Envelope) {
+		e.GetCounter().Value = &loggregator_v2.Counter_Delta{Delta: d}
+	}
+}
+
 // EmitCounter sends a counter envelope with a delta of 1.
 func (c *Client) EmitCounter(name string, opts ...EmitCounterOption) {
 	e := &loggregator_v2.Envelope{
