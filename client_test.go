@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
+	"code.cloudfoundry.org/go-loggregator/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -18,12 +19,12 @@ var _ = Describe("GrpcClient", func() {
 		client    *loggregator.Client
 		clientErr error
 		receivers chan loggregator_v2.Ingress_BatchSenderServer
-		server    *TestServer
+		server    *testhelpers.TestServer
 	)
 
 	BeforeEach(func() {
 		var err error
-		server, err = NewTestServer(fixture("metron.crt"), fixture("metron.key"), fixture("CA.crt"))
+		server, err = testhelpers.NewTestServer(fixture("metron.crt"), fixture("metron.key"), fixture("CA.crt"))
 		Expect(err).NotTo(HaveOccurred())
 
 		err = server.Start()
@@ -214,7 +215,7 @@ var _ = Describe("GrpcClient", func() {
 	Describe("NewInsecureClient", func() {
 		BeforeEach(func() {
 			var err error
-			server, err = NewInsecureTestServer()
+			server, err = testhelpers.NewInsecureTestServer()
 			Expect(err).NotTo(HaveOccurred())
 
 			err = server.Start()

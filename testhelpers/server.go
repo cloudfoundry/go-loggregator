@@ -1,4 +1,4 @@
-package loggregator_test
+package testhelpers
 
 import (
 	"crypto/tls"
