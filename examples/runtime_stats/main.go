@@ -19,7 +19,7 @@ func main() {
 		log.Fatal("Could not create TLS config", err)
 	}
 
-	client, err := loggregator.NewClient(
+	client, err := loggregator.NewIngressClient(
 		tlsConfig,
 		loggregator.WithPort(3458),
 		loggregator.WithLogger(log.New(os.Stdout, "", log.LstdFlags)),
