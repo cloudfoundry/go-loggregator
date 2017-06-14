@@ -3,30 +3,23 @@ package testhelpers
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"io/ioutil"
 	"net"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/testhelpers/fakes"
-	"code.cloudfoundry.org/localip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 type TestIngressServer struct {
 	receivers  chan loggregator_v2.Ingress_BatchSenderServer
-	port       int
+	addr       string
 	tlsConfig  *tls.Config
 	grpcServer *grpc.Server
 }
 
 func NewTestIngressServer(serverCert, serverKey, caCert string) (*TestIngressServer, error) {
-	port, err := localip.LocalPort()
-	if err != nil {
-		return nil, err
-	}
-
 	cert, err := tls.LoadX509KeyPair(serverCert, serverKey)
 	if err != nil {
 		return nil, err
@@ -49,12 +42,12 @@ func NewTestIngressServer(serverCert, serverKey, caCert string) (*TestIngressSer
 	return &TestIngressServer{
 		tlsConfig: tlsConfig,
 		receivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
-		port:      int(port),
+		addr:      "localhost:0",
 	}, nil
 }
 
-func (t *TestIngressServer) Port() int {
-	return t.port
+func (t *TestIngressServer) Addr() string {
+	return t.addr
 }
 
 func (t *TestIngressServer) Receivers() chan loggregator_v2.Ingress_BatchSenderServer {
@@ -62,10 +55,11 @@ func (t *TestIngressServer) Receivers() chan loggregator_v2.Ingress_BatchSenderS
 }
 
 func (t *TestIngressServer) Start() error {
-	listener, err := net.Listen("tcp4", fmt.Sprintf("localhost:%d", t.port))
+	listener, err := net.Listen("tcp4", t.addr)
 	if err != nil {
 		return err
 	}
+	t.addr = listener.Addr().String()
 
 	var opts []grpc.ServerOption
 	if t.tlsConfig != nil {
