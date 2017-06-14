@@ -20,7 +20,6 @@ package loggregator
 
 import (
 	"crypto/tls"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
@@ -42,7 +41,7 @@ type IngressClient struct {
 
 	batchMaxSize       uint
 	batchFlushInterval time.Duration
-	port               int
+	addr               string
 
 	logger Logger
 }
@@ -104,12 +103,12 @@ func WithBatchFlushInterval(d time.Duration) IngressOption {
 	}
 }
 
-// WithPort allows for the configuration of the loggregator v2 port.
-// The value to defaults to 3458, which happens to be the default port
-// in the loggregator server.
-func WithPort(port int) IngressOption {
+// WithAddr allows for the configuration of the loggregator v2 address.
+// The value to defaults to localhost:3458, which happens to be the default
+// address in the loggregator server.
+func WithAddr(addr string) IngressOption {
 	return func(c *IngressClient) {
-		c.port = port
+		c.addr = addr
 	}
 }
 
@@ -150,7 +149,7 @@ func newIngressClient(gopts []grpc.DialOption, opts []IngressOption) (*IngressCl
 		tags:               make(map[string]*loggregator_v2.Value),
 		batchMaxSize:       100,
 		batchFlushInterval: time.Second,
-		port:               3458,
+		addr:               "localhost:3458",
 		logger:             log.New(ioutil.Discard, "", 0),
 	}
 
@@ -159,7 +158,7 @@ func newIngressClient(gopts []grpc.DialOption, opts []IngressOption) (*IngressCl
 	}
 
 	conn, err := grpc.Dial(
-		fmt.Sprintf("localhost:%d", client.port),
+		client.addr,
 		gopts...,
 	)
 	if err != nil {

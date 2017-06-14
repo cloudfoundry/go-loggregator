@@ -7,6 +7,7 @@
 package loggregator
 
 import (
+	"fmt"
 	"time"
 
 	v2 "code.cloudfoundry.org/go-loggregator"
@@ -102,7 +103,7 @@ func NewV2IngressClient(config Config) (IngressClient, error) {
 	}
 
 	if config.APIPort != 0 {
-		opts = append(opts, v2.WithPort(config.APIPort))
+		opts = append(opts, v2.WithAddr(fmt.Sprintf("localhost:%d", config.APIPort)))
 	}
 
 	c, err := v2.NewIngressClient(tlsConfig, opts...)

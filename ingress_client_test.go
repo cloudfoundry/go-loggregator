@@ -2,6 +2,7 @@ package loggregator_test
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator"
@@ -40,7 +41,7 @@ var _ = Describe("IngressClient", func() {
 
 		client, err = loggregator.NewIngressClient(
 			tlsConfig,
-			loggregator.WithPort(server.Port()),
+			loggregator.WithAddr(fmt.Sprintf("localhost:%d", server.Port())),
 			loggregator.WithBatchFlushInterval(50*time.Millisecond),
 			loggregator.WithStringTag("string", "client-string-tag"),
 			loggregator.WithDecimalTag("decimal", 1.234),
