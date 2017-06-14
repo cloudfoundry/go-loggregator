@@ -74,6 +74,7 @@ func (t *TestEgressServer) Start(rxCallback func(*loggregator_v2.EgressRequest, 
 	if err != nil {
 		return err
 	}
+	t.addr = listener.Addr().String()
 
 	var opts []grpc.ServerOption
 	if t.tlsConfig != nil {
