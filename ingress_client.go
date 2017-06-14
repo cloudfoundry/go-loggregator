@@ -128,22 +128,6 @@ func WithLogger(l Logger) IngressOption {
 // NewIngressClient creates a v2 loggregator client. Its TLS configuration
 // must share a CA with the loggregator server.
 func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressClient, error) {
-	return newIngressClient(
-		[]grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))},
-		opts,
-	)
-}
-
-// NewInsecureIngressClient creates a v2 loggregator client without a TLS
-// configuration. This should only be used for testing user code.
-func NewInsecureIngressClient(opts ...IngressOption) (*IngressClient, error) {
-	return newIngressClient(
-		[]grpc.DialOption{grpc.WithInsecure()},
-		opts,
-	)
-}
-
-func newIngressClient(gopts []grpc.DialOption, opts []IngressOption) (*IngressClient, error) {
 	client := &IngressClient{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		tags:               make(map[string]*loggregator_v2.Value),
@@ -159,7 +143,7 @@ func newIngressClient(gopts []grpc.DialOption, opts []IngressOption) (*IngressCl
 
 	conn, err := grpc.Dial(
 		client.addr,
-		gopts...,
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 	)
 	if err != nil {
 		return nil, err
