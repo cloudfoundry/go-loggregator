@@ -14,14 +14,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-type TestServer struct {
+type TestIngressServer struct {
 	receivers  chan loggregator_v2.Ingress_BatchSenderServer
 	port       int
 	tlsConfig  *tls.Config
 	grpcServer *grpc.Server
 }
 
-func NewTestServer(serverCert, serverKey, caCert string) (*TestServer, error) {
+func NewTestIngressServer(serverCert, serverKey, caCert string) (*TestIngressServer, error) {
 	port, err := localip.LocalPort()
 	if err != nil {
 		return nil, err
@@ -46,34 +46,22 @@ func NewTestServer(serverCert, serverKey, caCert string) (*TestServer, error) {
 	caCertPool.AppendCertsFromPEM(caCertBytes)
 	tlsConfig.RootCAs = caCertPool
 
-	return &TestServer{
+	return &TestIngressServer{
 		tlsConfig: tlsConfig,
 		receivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
 		port:      int(port),
 	}, nil
 }
 
-func NewInsecureTestServer() (*TestServer, error) {
-	port, err := localip.LocalPort()
-	if err != nil {
-		return nil, err
-	}
-
-	return &TestServer{
-		receivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
-		port:      int(port),
-	}, nil
-}
-
-func (t *TestServer) Port() int {
+func (t *TestIngressServer) Port() int {
 	return t.port
 }
 
-func (t *TestServer) Receivers() chan loggregator_v2.Ingress_BatchSenderServer {
+func (t *TestIngressServer) Receivers() chan loggregator_v2.Ingress_BatchSenderServer {
 	return t.receivers
 }
 
-func (t *TestServer) Start() error {
+func (t *TestIngressServer) Start() error {
 	listener, err := net.Listen("tcp4", fmt.Sprintf("localhost:%d", t.port))
 	if err != nil {
 		return err
@@ -97,6 +85,6 @@ func (t *TestServer) Start() error {
 	return nil
 }
 
-func (t *TestServer) Stop() {
+func (t *TestIngressServer) Stop() {
 	t.grpcServer.Stop()
 }

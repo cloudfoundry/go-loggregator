@@ -18,12 +18,12 @@ var _ = Describe("IngressClient", func() {
 	var (
 		client    *loggregator.IngressClient
 		receivers chan loggregator_v2.Ingress_BatchSenderServer
-		server    *testhelpers.TestServer
+		server    *testhelpers.TestIngressServer
 	)
 
 	BeforeEach(func() {
 		var err error
-		server, err = testhelpers.NewTestServer(fixture("metron.crt"), fixture("metron.key"), fixture("CA.crt"))
+		server, err = testhelpers.NewTestIngressServer(fixture("metron.crt"), fixture("metron.key"), fixture("CA.crt"))
 		Expect(err).NotTo(HaveOccurred())
 
 		err = server.Start()
@@ -210,30 +210,6 @@ var _ = Describe("IngressClient", func() {
 			)
 		}),
 	)
-
-	Describe("NewInsecureIngressClient", func() {
-		BeforeEach(func() {
-			var err error
-			server, err = testhelpers.NewInsecureTestServer()
-			Expect(err).NotTo(HaveOccurred())
-
-			err = server.Start()
-			Expect(err).NotTo(HaveOccurred())
-
-			receivers = server.Receivers()
-		})
-
-		It("spins up a insecure client", func() {
-			_, err := loggregator.NewInsecureIngressClient(
-				loggregator.WithPort(server.Port()),
-				loggregator.WithBatchFlushInterval(50*time.Millisecond),
-				loggregator.WithStringTag("string", "client-string-tag"),
-				loggregator.WithDecimalTag("decimal", 1.234),
-				loggregator.WithIntegerTag("integer", 42),
-			)
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
 
 	Describe("With functions", func() {
 		Describe("WithDelta()", func() {
