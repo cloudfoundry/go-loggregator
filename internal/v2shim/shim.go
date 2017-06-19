@@ -87,3 +87,11 @@ func (c client) SendAppMetrics(m *events.ContainerMetric) error {
 
 	return nil
 }
+
+func (c client) SendComponentMetric(name string, value float64, unit string) error {
+	c.client.EmitGauge(
+		loggregator.WithGaugeValue(name, value, unit),
+	)
+
+	return nil
+}

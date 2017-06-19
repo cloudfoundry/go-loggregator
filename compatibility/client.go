@@ -31,6 +31,7 @@ type IngressClient interface {
 	SendAppLog(appID, message, sourceType, sourceInstance string) error
 	SendAppErrorLog(appID, message, sourceType, sourceInstance string) error
 	SendAppMetrics(metrics *events.ContainerMetric) error
+	SendComponentMetric(name string, value float64, unit string) error
 }
 
 // Config is the shared configuration between v1 and v2 clients.
