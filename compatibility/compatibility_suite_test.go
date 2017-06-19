@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCompatability(t *testing.T) {
+func TestCompatibility(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Compatability Suite")
+	RunSpecs(t, "Compatibility Suite")
 }

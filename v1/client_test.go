@@ -3,7 +3,7 @@ package v1_test
 import (
 	"time"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/compatability"
+	loggregator "code.cloudfoundry.org/go-loggregator/compatibility"
 	"code.cloudfoundry.org/go-loggregator/v1"
 	"github.com/cloudfoundry/dropsonde/logs"
 	"github.com/cloudfoundry/dropsonde/metrics"

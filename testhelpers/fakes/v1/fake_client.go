@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/compatability"
+	loggregator "code.cloudfoundry.org/go-loggregator/compatibility"
 
 	"github.com/cloudfoundry/sonde-go/events"
 )
