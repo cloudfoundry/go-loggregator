@@ -60,7 +60,10 @@ type V1Sender interface {
 // New returns an Emitter that is configured with the given v1 sender and
 // RuntimeEmitterOptions.
 func NewV1(sender V1Sender, opts ...RuntimeEmitterOption) *Emitter {
-	e := &Emitter{sender: v1Sender{sender: sender}}
+	e := &Emitter{
+		sender:   v1Sender{sender: sender},
+		interval: 10 * time.Second,
+	}
 
 	for _, o := range opts {
 		o(e)
