@@ -31,7 +31,7 @@ var _ = Describe("IngressClient", func() {
 
 		receivers = server.Receivers()
 
-		tlsConfig, err := loggregator.NewTLSConfig(
+		tlsConfig, err := loggregator.NewIngressTLSConfig(
 			fixture("CA.crt"),
 			fixture("client.crt"),
 			fixture("client.key"),

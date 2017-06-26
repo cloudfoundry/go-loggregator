@@ -9,14 +9,24 @@ import (
 
 // NewTLSConfig provides a convenient means for creating a *tls.Config
 // which uses the CA, cert, and key.
-func NewTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+func NewIngressTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+	return newTLSConfig(caPath, certPath, keyPath, "metron")
+}
+
+// NewTLSConfig provides a convenient means for creating a *tls.Config
+// which uses the CA, cert, and key.
+func NewEgressTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+	return newTLSConfig(caPath, certPath, keyPath, "reverselogproxy")
+}
+
+func newTLSConfig(caPath, certPath, keyPath, cn string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, err
 	}
 
 	tlsConfig := &tls.Config{
-		ServerName:         "metron",
+		ServerName:         cn,
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: false,
 	}
