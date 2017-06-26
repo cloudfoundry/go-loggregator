@@ -7,16 +7,26 @@ import (
 	"io/ioutil"
 )
 
-// NewTLSConfig provides a convenient means for creating a *tls.Config
-// which uses the CA, cert, and key.
-func NewTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+// NewIngressTLSConfig provides a convenient means for creating a *tls.Config
+// which uses the CA, cert, and key for the ingress endpoint.
+func NewIngressTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+	return newTLSConfig(caPath, certPath, keyPath, "metron")
+}
+
+// NewEgressTLSConfig provides a convenient means for creating a *tls.Config
+// which uses the CA, cert, and key for the egress endpoint.
+func NewEgressTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+	return newTLSConfig(caPath, certPath, keyPath, "reverselogproxy")
+}
+
+func newTLSConfig(caPath, certPath, keyPath, cn string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, err
 	}
 
 	tlsConfig := &tls.Config{
-		ServerName:         "metron",
+		ServerName:         cn,
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: false,
 	}

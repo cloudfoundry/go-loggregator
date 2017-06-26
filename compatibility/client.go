@@ -80,7 +80,7 @@ func NewV1IngressClient(config Config) (IngressClient, error) {
 // Deprecated: NewV2IngressClient will be removed in the next major version.
 // Instead, use v2.NewIngressClient.
 func NewV2IngressClient(config Config) (IngressClient, error) {
-	tlsConfig, err := v2.NewTLSConfig(
+	tlsConfig, err := v2.NewIngressTLSConfig(
 		config.CACertPath,
 		config.CertPath,
 		config.KeyPath,

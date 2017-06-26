@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	tlsConfig, err := loggregator.NewTLSConfig(
+	tlsConfig, err := loggregator.NewIngressTLSConfig(
 		os.Getenv("CA_CERT_PATH"),
 		os.Getenv("CERT_PATH"),
 		os.Getenv("KEY_PATH"),
@@ -19,7 +19,7 @@ func main() {
 
 	client, err := loggregator.NewIngressClient(
 		tlsConfig,
-		loggregator.WithPort(3458),
+		loggregator.WithAddr("localhost:3458"),
 	)
 
 	if err != nil {
