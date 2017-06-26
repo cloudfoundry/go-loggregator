@@ -46,6 +46,7 @@ var _ = Describe("IngressClient", func() {
 			loggregator.WithDecimalTag("decimal", 1.234),
 			loggregator.WithIntegerTag("integer", 42),
 		)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -134,33 +135,6 @@ var _ = Describe("IngressClient", func() {
 		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
 		Expect(env.Tags["some-tag"].GetText()).To(Equal("some-tag-value"))
-	})
-
-	It("reconnects when the server goes away and comes back", func() {
-		client.EmitLog(
-			"message",
-			loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
-		)
-
-		envBatch, err := getBatch(receivers)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(envBatch.Batch).To(HaveLen(1))
-
-		server.Stop()
-		Eventually(server.Start).Should(Succeed())
-
-		Consistently(receivers).Should(BeEmpty())
-
-		for i := 0; i < 200; i++ {
-			client.EmitLog(
-				"message",
-				loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
-			)
-		}
-
-		envBatch, err = getBatch(receivers)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(envBatch.Batch).ToNot(BeEmpty())
 	})
 
 	It("works with the runtime emitter", func() {

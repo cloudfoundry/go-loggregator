@@ -24,18 +24,13 @@ import (
 	"log"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"golang.org/x/net/context"
 )
 
 // IngressClient represents an emitter into loggregator. It should be created with the
 // NewIngressClient constructor.
 type IngressClient struct {
-	conn      loggregator_v2.IngressClient
-	sender    loggregator_v2.Ingress_BatchSenderClient
+	rawClient *RawIngressClient
 	envelopes chan *loggregator_v2.Envelope
 	tags      map[string]*loggregator_v2.Value
 
@@ -141,14 +136,11 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 		o(client)
 	}
 
-	conn, err := grpc.Dial(
-		client.addr,
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-	)
+	var err error
+	client.rawClient, err = NewRawIngressClient(client.addr, tlsConfig)
 	if err != nil {
 		return nil, err
 	}
-	client.conn = loggregator_v2.NewIngressClient(conn)
 
 	go client.startSender()
 
@@ -332,23 +324,10 @@ func (c *IngressClient) startSender() {
 }
 
 func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) {
-	if c.sender == nil {
-		var err error
-		c.sender, err = c.conn.BatchSender(context.TODO())
-		if err != nil {
-			c.logger.Printf("Error while flushing: %s", err)
-			return
-		}
-	}
-
-	err := c.sender.Send(&loggregator_v2.EnvelopeBatch{Batch: batch})
+	err := c.rawClient.Emit(batch)
 	if err != nil {
 		c.logger.Printf("Error while flushing: %s", err)
-		c.sender = nil
-		return
 	}
-
-	return
 }
 
 // WithEnvelopeStringTag adds a string tag to the envelope.
