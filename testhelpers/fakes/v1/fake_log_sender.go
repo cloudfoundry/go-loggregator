@@ -11,7 +11,7 @@ type Log struct {
 }
 
 type FakeLogSender struct {
-	FakeClient
+	FakeIngressClient
 	logs     []Log
 	logsLock sync.Mutex
 }
@@ -23,7 +23,7 @@ const (
 
 func NewFakeLogSender() *FakeLogSender {
 	sender := &FakeLogSender{}
-	sender.FakeClient.SendAppErrorLogStub = func(appId, message, sourceType, sourceInstance string) error {
+	sender.FakeIngressClient.SendAppErrorLogStub = func(appId, message, sourceType, sourceInstance string) error {
 		sender.logsLock.Lock()
 		defer sender.logsLock.Unlock()
 		sender.logs = append(sender.logs, Log{
@@ -35,7 +35,7 @@ func NewFakeLogSender() *FakeLogSender {
 		})
 		return nil
 	}
-	sender.FakeClient.SendAppLogStub = func(appId, message, sourceType, sourceInstance string) error {
+	sender.FakeIngressClient.SendAppLogStub = func(appId, message, sourceType, sourceInstance string) error {
 		sender.logsLock.Lock()
 		defer sender.logsLock.Unlock()
 		sender.logs = append(sender.logs, Log{
