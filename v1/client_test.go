@@ -175,6 +175,61 @@ var _ = Describe("DropsondeClient", func() {
 						"source_id": "app-id",
 					}))
 				})
+
+				Context("with IngressOptions", func() {
+					BeforeEach(func() {
+						client, _ = v1.NewClient(
+							v1.WithStringTag("string-tag-name", "string-tag-value"),
+							v1.WithDecimalTag("decimal-tag-name", 123.45),
+							v1.WithIntegerTag("integer-tag-name", 404),
+						)
+					})
+
+					It("adds tags to logs", func() {
+						client.EmitLog("a message")
+
+						var env *events.Envelope
+						Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
+
+						Expect(env.GetTags()).To(Equal(map[string]string{
+							"string-tag-name":  "string-tag-value",
+							"decimal-tag-name": "123.450000",
+							"integer-tag-name": "404",
+						}))
+					})
+
+					It("adds tags to counters", func() {
+						client.EmitCounter("counter-name")
+
+						var env *events.Envelope
+						Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
+
+						Expect(env.GetTags()).To(Equal(map[string]string{
+							"string-tag-name":  "string-tag-value",
+							"decimal-tag-name": "123.450000",
+							"integer-tag-name": "404",
+						}))
+					})
+
+					It("adds tags to gauges", func() {
+						client.EmitGauge(
+							loggregator_v2.WithGaugeValue("gauge-name", 1.1, "dollars"),
+							loggregator_v2.WithGaugeTags(map[string]string{
+								"gauge-tag-name": "gauge-tag-value",
+							}),
+						)
+
+						var env *events.Envelope
+						Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
+
+						Expect(env.GetTags()).To(Equal(map[string]string{
+							"string-tag-name":  "string-tag-value",
+							"decimal-tag-name": "123.450000",
+							"integer-tag-name": "404",
+							"gauge-tag-name":   "gauge-tag-value",
+						}))
+					})
+				})
 			})
 		})
 

@@ -19,8 +19,40 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-func NewClient() (*Client, error) {
-	c := &Client{}
+type ClientOption func(*Client)
+
+func WithStringTag(name, value string) ClientOption {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{Text: value},
+		}
+	}
+}
+
+func WithDecimalTag(name string, value float64) ClientOption {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Decimal{Decimal: value},
+		}
+	}
+}
+
+func WithIntegerTag(name string, value int64) ClientOption {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Integer{Integer: value},
+		}
+	}
+}
+
+func NewClient(opts ...ClientOption) (*Client, error) {
+	c := &Client{
+		tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for _, o := range opts {
+		o(c)
+	}
 
 	return c, nil
 }
@@ -118,6 +150,7 @@ func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 				},
 			},
 		},
+		Tags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for _, o := range opts {
@@ -127,6 +160,10 @@ func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 }
 
 func (c *Client) emitEnvelopes(v2Envelope *loggregator_v2.Envelope) {
+	for k, v := range c.tags {
+		v2Envelope.Tags[k] = v
+	}
+
 	v1Envelopes := conversion.ToV1(v2Envelope)
 
 	for _, e := range v1Envelopes {
