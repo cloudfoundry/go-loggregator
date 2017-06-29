@@ -9,16 +9,57 @@ package v1
 import (
 	"time"
 
+	loggregator "code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v1/conversion"
+
+	"github.com/cloudfoundry/dropsonde"
 	"github.com/cloudfoundry/dropsonde/logs"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-func NewClient() (*Client, error) {
-	return &Client{}, nil
+type ClientOption func(*Client)
+
+func WithStringTag(name, value string) ClientOption {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Text{Text: value},
+		}
+	}
 }
 
-type Client struct{}
+func WithDecimalTag(name string, value float64) ClientOption {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Decimal{Decimal: value},
+		}
+	}
+}
+
+func WithIntegerTag(name string, value int64) ClientOption {
+	return func(c *Client) {
+		c.tags[name] = &loggregator_v2.Value{
+			Data: &loggregator_v2.Value_Integer{Integer: value},
+		}
+	}
+}
+
+func NewClient(opts ...ClientOption) (*Client, error) {
+	c := &Client{
+		tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for _, o := range opts {
+		o(c)
+	}
+
+	return c, nil
+}
+
+type Client struct {
+	tags map[string]*loggregator_v2.Value
+}
 
 func (c *Client) Send() error {
 	return nil
@@ -61,4 +102,71 @@ func (c *Client) SendRequestsPerSecond(name string, value float64) error {
 
 func (c *Client) SendComponentMetric(name string, value float64, unit string) error {
 	return metrics.SendValue(name, value, unit)
+}
+
+func (c *Client) EmitLog(message string, opts ...loggregator.EmitLogOption) {
+	v2Envelope := &loggregator_v2.Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &loggregator_v2.Envelope_Log{
+			Log: &loggregator_v2.Log{
+				Payload: []byte(message),
+				Type:    loggregator_v2.Log_ERR,
+			},
+		},
+		Tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for _, o := range opts {
+		o(v2Envelope)
+	}
+	c.emitEnvelopes(v2Envelope)
+}
+
+func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
+	v2Envelope := &loggregator_v2.Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &loggregator_v2.Envelope_Gauge{
+			Gauge: &loggregator_v2.Gauge{
+				Metrics: make(map[string]*loggregator_v2.GaugeValue),
+			},
+		},
+		Tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for _, o := range opts {
+		o(v2Envelope)
+	}
+	c.emitEnvelopes(v2Envelope)
+}
+
+func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption) {
+	v2Envelope := &loggregator_v2.Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &loggregator_v2.Envelope_Counter{
+			Counter: &loggregator_v2.Counter{
+				Name: name,
+				Value: &loggregator_v2.Counter_Delta{
+					Delta: uint64(1),
+				},
+			},
+		},
+		Tags: make(map[string]*loggregator_v2.Value),
+	}
+
+	for _, o := range opts {
+		o(v2Envelope)
+	}
+	c.emitEnvelopes(v2Envelope)
+}
+
+func (c *Client) emitEnvelopes(v2Envelope *loggregator_v2.Envelope) {
+	for k, v := range c.tags {
+		v2Envelope.Tags[k] = v
+	}
+
+	v1Envelopes := conversion.ToV1(v2Envelope)
+
+	for _, e := range v1Envelopes {
+		dropsonde.DefaultEmitter.EmitEnvelope(e)
+	}
 }
