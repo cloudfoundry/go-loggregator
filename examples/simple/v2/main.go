@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"code.cloudfoundry.org/go-loggregator"
 )
@@ -26,5 +27,9 @@ func main() {
 		log.Fatal("Could not create client", err)
 	}
 
-	client.EmitLog("some log goes here")
+	for {
+		client.EmitLog("some log goes here")
+
+		time.Sleep(time.Second)
+	}
 }
