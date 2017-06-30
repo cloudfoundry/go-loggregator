@@ -33,7 +33,7 @@ var _ = Describe("DropsondeClient", func() {
 			BeforeEach(func() {
 				dropsonde.Initialize("dst", "origin")
 				originalEventEmitter = dropsonde.DefaultEmitter
-				spyEmitter = NewSpyEventEmitter()
+				spyEmitter = NewSpyEventEmitter("my-origin")
 				dropsonde.DefaultEmitter = spyEmitter
 
 				client, _ = v1.NewClient()
@@ -50,7 +50,7 @@ var _ = Describe("DropsondeClient", func() {
 					var env *events.Envelope
 					Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 					Expect(env.GetEventType()).To(Equal(events.Envelope_LogMessage))
-
+					Expect(env.GetOrigin()).To(Equal("my-origin"))
 					Expect(env.GetTimestamp()).To(BeNumerically("~", time.Now().UnixNano(), time.Second))
 
 					message := env.GetLogMessage()
@@ -94,7 +94,7 @@ var _ = Describe("DropsondeClient", func() {
 					var env *events.Envelope
 					Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 					Expect(env.GetEventType()).To(Equal(events.Envelope_CounterEvent))
-
+					Expect(env.GetOrigin()).To(Equal("my-origin"))
 					Expect(env.GetTimestamp()).To(BeNumerically("~", time.Now().UnixNano(), time.Second))
 
 					counter := env.GetCounterEvent()
@@ -126,7 +126,7 @@ var _ = Describe("DropsondeClient", func() {
 					var env *events.Envelope
 					Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 					Expect(env.GetEventType()).To(Equal(events.Envelope_ValueMetric))
-
+					Expect(env.GetOrigin()).To(Equal("my-origin"))
 					Expect(env.GetTimestamp()).To(BeNumerically("~", time.Now().UnixNano(), time.Second))
 
 					gauge := env.GetValueMetric()
@@ -320,15 +320,17 @@ var _ = Describe("DropsondeClient", func() {
 
 type SpyEventEmitter struct {
 	emittedEnvelopes chan *events.Envelope
+	origin           string
 }
 
-func NewSpyEventEmitter() *SpyEventEmitter {
+func NewSpyEventEmitter(origin string) *SpyEventEmitter {
 	return &SpyEventEmitter{
 		emittedEnvelopes: make(chan *events.Envelope, 100),
+		origin:           origin,
 	}
 }
 
-func (s *SpyEventEmitter) Emit(events.Event) error {
+func (s *SpyEventEmitter) Emit(e events.Event) error {
 	return nil
 }
 
@@ -338,5 +340,5 @@ func (s *SpyEventEmitter) EmitEnvelope(envelope *events.Envelope) error {
 }
 
 func (s *SpyEventEmitter) Origin() string {
-	return ""
+	return s.origin
 }
