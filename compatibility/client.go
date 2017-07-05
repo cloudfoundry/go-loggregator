@@ -28,6 +28,7 @@ type IngressClient interface {
 	SendBytesPerSecond(name string, value float64) error
 	SendRequestsPerSecond(name string, value float64) error
 	IncrementCounter(name string) error
+	IncrementCounterWithDelta(name string, value uint64) error
 	SendAppLog(appID, message, sourceType, sourceInstance string) error
 	SendAppErrorLog(appID, message, sourceType, sourceInstance string) error
 	SendAppMetrics(metrics *events.ContainerMetric) error

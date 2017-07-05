@@ -57,6 +57,12 @@ func (c client) IncrementCounter(name string) error {
 	return nil
 }
 
+func (c client) IncrementCounterWithDelta(name string, value uint64) error {
+	c.client.EmitCounter(name, loggregator.WithDelta(value))
+
+	return nil
+}
+
 func (c client) SendAppLog(appID, message, sourceType, sourceInstance string) error {
 	c.client.EmitLog(
 		message,

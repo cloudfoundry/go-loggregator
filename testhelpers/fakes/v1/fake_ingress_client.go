@@ -63,6 +63,15 @@ type FakeIngressClient struct {
 	incrementCounterReturns struct {
 		result1 error
 	}
+	IncrementCounterWithDeltaStub        func(name string, value uint64) error
+	incrementCounterWithDeltaMutex       sync.RWMutex
+	incrementCounterWithDeltaArgsForCall []struct {
+		name  string
+		value uint64
+	}
+	incrementCounterWithDeltaReturns struct {
+		result1 error
+	}
 	SendAppLogStub        func(appID, message, sourceType, sourceInstance string) error
 	sendAppLogMutex       sync.RWMutex
 	sendAppLogArgsForCall []struct {
@@ -310,6 +319,40 @@ func (fake *FakeIngressClient) IncrementCounterReturns(result1 error) {
 	}{result1}
 }
 
+func (fake *FakeIngressClient) IncrementCounterWithDelta(name string, value uint64) error {
+	fake.incrementCounterWithDeltaMutex.Lock()
+	fake.incrementCounterWithDeltaArgsForCall = append(fake.incrementCounterWithDeltaArgsForCall, struct {
+		name  string
+		value uint64
+	}{name, value})
+	fake.recordInvocation("IncrementCounterWithDelta", []interface{}{name, value})
+	fake.incrementCounterWithDeltaMutex.Unlock()
+	if fake.IncrementCounterWithDeltaStub != nil {
+		return fake.IncrementCounterWithDeltaStub(name, value)
+	} else {
+		return fake.incrementCounterWithDeltaReturns.result1
+	}
+}
+
+func (fake *FakeIngressClient) IncrementCounterWithDeltaCallCount() int {
+	fake.incrementCounterWithDeltaMutex.RLock()
+	defer fake.incrementCounterWithDeltaMutex.RUnlock()
+	return len(fake.incrementCounterWithDeltaArgsForCall)
+}
+
+func (fake *FakeIngressClient) IncrementCounterWithDeltaArgsForCall(i int) (string, uint64) {
+	fake.incrementCounterWithDeltaMutex.RLock()
+	defer fake.incrementCounterWithDeltaMutex.RUnlock()
+	return fake.incrementCounterWithDeltaArgsForCall[i].name, fake.incrementCounterWithDeltaArgsForCall[i].value
+}
+
+func (fake *FakeIngressClient) IncrementCounterWithDeltaReturns(result1 error) {
+	fake.IncrementCounterWithDeltaStub = nil
+	fake.incrementCounterWithDeltaReturns = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeIngressClient) SendAppLog(appID string, message string, sourceType string, sourceInstance string) error {
 	fake.sendAppLogMutex.Lock()
 	fake.sendAppLogArgsForCall = append(fake.sendAppLogArgsForCall, struct {
@@ -465,6 +508,8 @@ func (fake *FakeIngressClient) Invocations() map[string][][]interface{} {
 	defer fake.sendRequestsPerSecondMutex.RUnlock()
 	fake.incrementCounterMutex.RLock()
 	defer fake.incrementCounterMutex.RUnlock()
+	fake.incrementCounterWithDeltaMutex.RLock()
+	defer fake.incrementCounterWithDeltaMutex.RUnlock()
 	fake.sendAppLogMutex.RLock()
 	defer fake.sendAppLogMutex.RUnlock()
 	fake.sendAppErrorLogMutex.RLock()
