@@ -1,4 +1,4 @@
-# go-loggregator [![slack.cloudfoundry.org][slack-badge]][loggregator-slack]
+# go-loggregator [![slack.cloudfoundry.org][slack-badge]][loggregator-slack][![GoDoc][go-doc-badge]][go-doc]
 
 This is a golang client library for [Loggregator][loggregator].
 
@@ -27,4 +27,6 @@ variables: `CA_CERT_PATH`, `CERT_PATH`, `KEY_PATH`
 
 [slack-badge]:              https://slack.cloudfoundry.org/badge.svg
 [loggregator-slack]:        https://cloudfoundry.slack.com/archives/loggregator
-[loggregator]:          https://github.com/cloudfoundry/loggregator
+[loggregator]:              https://github.com/cloudfoundry/loggregator
+[go-doc-badge]:             https://godoc.org/code.cloudfoundry.org/go-loggregator?status.svg
+[go-doc]:                   https://godoc.org/code.cloudfoundry.org/go-loggregator
