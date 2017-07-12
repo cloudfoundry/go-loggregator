@@ -150,6 +150,11 @@ func (c *Client) Send() error {
 func (c *Client) IncrementCounter(name string) error {
 	return metrics.IncrementCounter(name)
 }
+
+func (c *Client) IncrementCounterWithDelta(name string, value uint64) error {
+	return metrics.AddToCounter(name, value)
+}
+
 func (c *Client) SendAppLog(appID, message, sourceType, sourceInstance string) error {
 	return logs.SendAppLog(appID, message, sourceType, sourceInstance)
 }

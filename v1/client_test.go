@@ -315,6 +315,18 @@ var _ = Describe("DropsondeClient", func() {
 			Expect(metricSender.HasValue("test-name")).To(BeTrue())
 			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100.1, Unit: "Req/s"}))
 		})
+
+		It("sends component incremented counter", func() {
+			client.IncrementCounter("test-name")
+			Expect(metricSender.GetCounter("test-name")).To(Equal(uint64(1)))
+		})
+
+		It("sends component incremented counter with delta", func() {
+			client.IncrementCounter("test-name")
+			Expect(metricSender.GetCounter("test-name")).To(Equal(uint64(1)))
+			client.IncrementCounterWithDelta("test-name", 10)
+			Expect(metricSender.GetCounter("test-name")).To(Equal(uint64(11)))
+		})
 	})
 })
 
