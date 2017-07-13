@@ -13,9 +13,6 @@
 [submodule "vendor/golang.org/x/crypto"]
 	path = vendor/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
-[submodule "vendor/golang.org/x/net"]
-	path = vendor/golang.org/x/net
-	url = https://go.googlesource.com/net
 [submodule "vendor/golang.org/x/oauth2"]
 	path = vendor/golang.org/x/oauth2
 	url = https://go.googlesource.com/oauth2
