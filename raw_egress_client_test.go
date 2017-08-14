@@ -54,15 +54,6 @@ var _ = Describe("EgressClient", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 	})
-
-	It("creates a streaming batch client receiver", func() {
-		_, err := client.BatchReceiver(
-			context.Background(),
-			&loggregator_v2.EgressBatchRequest{},
-		)
-
-		Expect(err).NotTo(HaveOccurred())
-	})
 })
 
 func rxCallbackStub(

@@ -26,15 +26,15 @@ var _ = Describe("CounterMetric", func() {
 				Message: &loggregator_v2.Envelope_Counter{
 					Counter: &loggregator_v2.Counter{},
 				},
-				DeprecatedTags: make(map[string]*loggregator_v2.Value),
+				Tags: make(map[string]*loggregator_v2.Value),
 			}
 			for _, o := range spy.CounterOpts() {
 				o(e)
 			}
 
 			Expect(e.GetCounter().GetDelta()).To(Equal(uint64(10)))
-			Expect(e.GetDeprecatedTags()).To(HaveKey("metric_version"))
-			Expect(e.GetDeprecatedTags()["metric_version"].GetText()).To(Equal("1.2"))
+			Expect(e.GetTags()).To(HaveKey("metric_version"))
+			Expect(e.GetTags()["metric_version"].GetText()).To(Equal("1.2"))
 		})
 
 		It("decrements it value on success", func() {

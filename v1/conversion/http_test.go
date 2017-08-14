@@ -31,7 +31,7 @@ var _ = Describe("HTTP", func() {
 						Stop:  100,
 					},
 				},
-				DeprecatedTags: map[string]*v2.Value{
+				Tags: map[string]*v2.Value{
 					"request_id":          ValueText("954f61c4-ac84-44be-9217-cdfa3117fb41"),
 					"peer_type":           ValueText("Client"),
 					"method":              ValueText("GET"),
