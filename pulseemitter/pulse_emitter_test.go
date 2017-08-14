@@ -25,7 +25,7 @@ var _ = Describe("Pulse EmitterClient", func() {
 			Message: &loggregator_v2.Envelope_Counter{
 				Counter: &loggregator_v2.Counter{},
 			},
-			Tags: make(map[string]*loggregator_v2.Value),
+			DeprecatedTags: make(map[string]*loggregator_v2.Value),
 		}
 		for _, o := range spyLoggClient.CounterOpts() {
 			o(e)
@@ -49,7 +49,7 @@ var _ = Describe("Pulse EmitterClient", func() {
 					Metrics: make(map[string]*loggregator_v2.GaugeValue),
 				},
 			},
-			Tags: make(map[string]*loggregator_v2.Value),
+			DeprecatedTags: make(map[string]*loggregator_v2.Value),
 		}
 		for _, o := range spyLoggClient.GaugeOpts() {
 			o(e)
