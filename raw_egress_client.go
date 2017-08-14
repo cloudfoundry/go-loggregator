@@ -38,3 +38,11 @@ func (c *EgressClient) Receiver(
 
 	return c.c.Receiver(ctx, in)
 }
+
+func (c *EgressClient) BatchReceiver(
+	ctx context.Context,
+	in *loggregator_v2.EgressBatchRequest,
+) (loggregator_v2.Egress_BatchedReceiverClient, error) {
+
+	return c.c.BatchedReceiver(ctx, in)
+}
