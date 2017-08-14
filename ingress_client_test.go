@@ -23,7 +23,11 @@ var _ = Describe("IngressClient", func() {
 
 	BeforeEach(func() {
 		var err error
-		server, err = testhelpers.NewTestIngressServer(fixture("metron.crt"), fixture("metron.key"), fixture("CA.crt"))
+		server, err = testhelpers.NewTestIngressServer(
+			fixture("server.crt"),
+			fixture("server.key"),
+			fixture("CA.crt"),
+		)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = server.Start()

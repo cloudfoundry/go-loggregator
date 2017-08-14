@@ -5,8 +5,8 @@
 // examples/fixtures/client.crt
 // examples/fixtures/client.key
 // examples/fixtures/invalid-ca.crt
-// examples/fixtures/metron.crt
-// examples/fixtures/metron.key
+// examples/fixtures/server.crt
+// examples/fixtures/server.key
 // DO NOT EDIT!
 
 package loggregator_test
@@ -90,7 +90,7 @@ func caCrt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "CA.crt", size: 1740, mode: os.FileMode(436), modTime: time.Unix(1497291269, 0)}
+	info := bindataFileInfo{name: "CA.crt", size: 1740, mode: os.FileMode(436), modTime: time.Unix(1498837291, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -158,7 +158,7 @@ func caKey() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "CA.key", size: 3243, mode: os.FileMode(436), modTime: time.Unix(1497291269, 0)}
+	info := bindataFileInfo{name: "CA.key", size: 3243, mode: os.FileMode(436), modTime: time.Unix(1498837291, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -199,7 +199,7 @@ func clientCrt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "client.crt", size: 1484, mode: os.FileMode(436), modTime: time.Unix(1497291269, 0)}
+	info := bindataFileInfo{name: "client.crt", size: 1484, mode: os.FileMode(436), modTime: time.Unix(1498837291, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -243,7 +243,7 @@ func clientKey() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "client.key", size: 1679, mode: os.FileMode(436), modTime: time.Unix(1497291269, 0)}
+	info := bindataFileInfo{name: "client.key", size: 1679, mode: os.FileMode(436), modTime: time.Unix(1498837291, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -261,12 +261,12 @@ func invalidCaCrt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "invalid-ca.crt", size: 7, mode: os.FileMode(436), modTime: time.Unix(1497291269, 0)}
+	info := bindataFileInfo{name: "invalid-ca.crt", size: 7, mode: os.FileMode(436), modTime: time.Unix(1498837291, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _metronCrt = []byte(`-----BEGIN CERTIFICATE-----
+var _serverCrt = []byte(`-----BEGIN CERTIFICATE-----
 MIIEGTCCAgGgAwIBAgIQBmJzvh3KxC4lVxa7yaSc5jANBgkqhkiG9w0BAQsFADAN
 MQswCQYDVQQDEwJDQTAeFw0xNzAzMDIyMTUxMzJaFw0xOTAzMDIyMTUxMzJaMBEx
 DzANBgNVBAMTBm1ldHJvbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
@@ -292,22 +292,22 @@ dVRUfeUdSa7cPBy5xJwBxusW7ExOqjhCByRYxSQWIrT6p5VVFFeLHhDrbFlb
 -----END CERTIFICATE-----
 `)
 
-func metronCrtBytes() ([]byte, error) {
-	return _metronCrt, nil
+func serverCrtBytes() ([]byte, error) {
+	return _serverCrt, nil
 }
 
-func metronCrt() (*asset, error) {
-	bytes, err := metronCrtBytes()
+func serverCrt() (*asset, error) {
+	bytes, err := serverCrtBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "metron.crt", size: 1480, mode: os.FileMode(436), modTime: time.Unix(1497291269, 0)}
+	info := bindataFileInfo{name: "server.crt", size: 1480, mode: os.FileMode(436), modTime: time.Unix(1498837291, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _metronKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
+var _serverKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAnEO/47xCnrGQ3AIZTkChji5GJdTG88DdNaNfa2G1LL+lwoFU
 jUawW0sYNALd+wCoJMC7s6utJ9Z4GTIuU+G8kR4DOcfnUApHrNHaogzNWd20bSgl
 QgERQ8cWU/ekxgGMRfe02YXctf1YbeZA55ztohDnddv9yTb6naCWUiReaZQuGLPG
@@ -336,17 +336,17 @@ KseA2F/yzDOYHLTsX3JRKh0hrTr2Ar4f3F81ho85HWcKl34uX8+A
 -----END RSA PRIVATE KEY-----
 `)
 
-func metronKeyBytes() ([]byte, error) {
-	return _metronKey, nil
+func serverKeyBytes() ([]byte, error) {
+	return _serverKey, nil
 }
 
-func metronKey() (*asset, error) {
-	bytes, err := metronKeyBytes()
+func serverKey() (*asset, error) {
+	bytes, err := serverKeyBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "metron.key", size: 1675, mode: os.FileMode(436), modTime: time.Unix(1497291269, 0)}
+	info := bindataFileInfo{name: "server.key", size: 1675, mode: os.FileMode(436), modTime: time.Unix(1498837291, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -408,8 +408,8 @@ var _bindata = map[string]func() (*asset, error){
 	"client.crt": clientCrt,
 	"client.key": clientKey,
 	"invalid-ca.crt": invalidCaCrt,
-	"metron.crt": metronCrt,
-	"metron.key": metronKey,
+	"server.crt": serverCrt,
+	"server.key": serverKey,
 }
 
 // AssetDir returns the file names below a certain
@@ -457,8 +457,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"client.crt": &bintree{clientCrt, map[string]*bintree{}},
 	"client.key": &bintree{clientKey, map[string]*bintree{}},
 	"invalid-ca.crt": &bintree{invalidCaCrt, map[string]*bintree{}},
-	"metron.crt": &bintree{metronCrt, map[string]*bintree{}},
-	"metron.key": &bintree{metronKey, map[string]*bintree{}},
+	"server.crt": &bintree{serverCrt, map[string]*bintree{}},
+	"server.key": &bintree{serverKey, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
