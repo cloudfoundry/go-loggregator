@@ -31,6 +31,10 @@ func NewEgressClient(addr string, c *tls.Config) (*EgressClient, io.Closer, erro
 }
 
 // Receiver wraps the created EgressClient's Receiver method.
-func (c *EgressClient) Receiver(ctx context.Context, in *loggregator_v2.EgressRequest) (loggregator_v2.Egress_ReceiverClient, error) {
+func (c *EgressClient) Receiver(
+	ctx context.Context,
+	in *loggregator_v2.EgressRequest,
+) (loggregator_v2.Egress_ReceiverClient, error) {
+
 	return c.c.Receiver(ctx, in)
 }
