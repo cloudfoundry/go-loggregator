@@ -94,7 +94,7 @@ func (c *Client) EmitLog(message string, opts ...loggregator.EmitLogOption) {
 				Type:    loggregator_v2.Log_ERR,
 			},
 		},
-		Tags: make(map[string]*loggregator_v2.Value),
+		DeprecatedTags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for _, o := range opts {
@@ -113,7 +113,7 @@ func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 				Metrics: make(map[string]*loggregator_v2.GaugeValue),
 			},
 		},
-		Tags: make(map[string]*loggregator_v2.Value),
+		DeprecatedTags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for _, o := range opts {
@@ -134,7 +134,7 @@ func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 				},
 			},
 		},
-		Tags: make(map[string]*loggregator_v2.Value),
+		DeprecatedTags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for _, o := range opts {
@@ -193,9 +193,9 @@ func (c *Client) SendComponentMetric(name string, value float64, unit string) er
 
 func (c *Client) emitEnvelopes(v2Envelope *loggregator_v2.Envelope) {
 	for k, v := range c.tags {
-		v2Envelope.Tags[k] = v
+		v2Envelope.DeprecatedTags[k] = v
 	}
-	v2Envelope.Tags["origin"] = &loggregator_v2.Value{
+	v2Envelope.DeprecatedTags["origin"] = &loggregator_v2.Value{
 		Data: &loggregator_v2.Value_Text{
 			Text: dropsonde.DefaultEmitter.Origin(),
 		},

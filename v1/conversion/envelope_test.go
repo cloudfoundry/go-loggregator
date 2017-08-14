@@ -18,7 +18,7 @@ var _ = Describe("Envelope", func() {
 		It("sets v1 specific properties", func() {
 			envelope := &v2.Envelope{
 				Timestamp: 99,
-				Tags: map[string]*v2.Value{
+				DeprecatedTags: map[string]*v2.Value{
 					"origin":         {&v2.Value_Text{"origin"}},
 					"deployment":     {&v2.Value_Text{"deployment"}},
 					"job":            {&v2.Value_Text{"job"}},
@@ -50,7 +50,7 @@ var _ = Describe("Envelope", func() {
 
 		It("rejects empty tags", func() {
 			envelope := &v2.Envelope{
-				Tags: map[string]*v2.Value{
+				DeprecatedTags: map[string]*v2.Value{
 					"foo": {&v2.Value_Text{"bar"}},
 					"baz": nil,
 				},

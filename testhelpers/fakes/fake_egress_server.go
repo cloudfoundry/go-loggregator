@@ -42,6 +42,10 @@ func (fake *FakeEgressServer) Receiver(arg1 *loggregator_v2.EgressRequest, arg2 
 	return fake.receiverReturns.result1
 }
 
+func (fake *FakeEgressServer) BatchedReceiver(arg1 *loggregator_v2.EgressBatchRequest, arg2 loggregator_v2.Egress_BatchedReceiverServer) error {
+	return nil
+}
+
 func (fake *FakeEgressServer) ReceiverCallCount() int {
 	fake.receiverMutex.RLock()
 	defer fake.receiverMutex.RUnlock()

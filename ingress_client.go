@@ -155,10 +155,10 @@ func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
 	return func(e *loggregator_v2.Envelope) {
 		e.SourceId = appID
 		e.InstanceId = sourceInstance
-		e.Tags["source_type"] = &loggregator_v2.Value{
+		e.DeprecatedTags["source_type"] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Text{Text: sourceType},
 		}
-		e.Tags["source_instance"] = &loggregator_v2.Value{
+		e.DeprecatedTags["source_instance"] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Text{Text: sourceInstance},
 		}
 	}
@@ -182,11 +182,11 @@ func (c *IngressClient) EmitLog(message string, opts ...EmitLogOption) {
 				Type:    loggregator_v2.Log_ERR,
 			},
 		},
-		Tags: make(map[string]*loggregator_v2.Value),
+		DeprecatedTags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for k, v := range c.tags {
-		e.Tags[k] = v
+		e.DeprecatedTags[k] = v
 	}
 
 	for _, o := range opts {
@@ -226,7 +226,7 @@ func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
 func WithGaugeTags(tags map[string]string) EmitGaugeOption {
 	return func(e *loggregator_v2.Envelope) {
 		for name, value := range tags {
-			e.Tags[name] = &loggregator_v2.Value{
+			e.DeprecatedTags[name] = &loggregator_v2.Value{
 				Data: &loggregator_v2.Value_Text{
 					Text: value,
 				},
@@ -246,11 +246,11 @@ func (c *IngressClient) EmitGauge(opts ...EmitGaugeOption) {
 				Metrics: make(map[string]*loggregator_v2.GaugeValue),
 			},
 		},
-		Tags: make(map[string]*loggregator_v2.Value),
+		DeprecatedTags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for k, v := range c.tags {
-		e.Tags[k] = v
+		e.DeprecatedTags[k] = v
 	}
 
 	for _, o := range opts {
@@ -282,11 +282,11 @@ func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 				},
 			},
 		},
-		Tags: make(map[string]*loggregator_v2.Value),
+		DeprecatedTags: make(map[string]*loggregator_v2.Value),
 	}
 
 	for k, v := range c.tags {
-		e.Tags[k] = v
+		e.DeprecatedTags[k] = v
 	}
 
 	for _, o := range opts {
@@ -333,7 +333,7 @@ func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) {
 // WithEnvelopeStringTag adds a string tag to the envelope.
 func WithEnvelopeStringTag(name, value string) func(*loggregator_v2.Envelope) {
 	return func(e *loggregator_v2.Envelope) {
-		e.Tags[name] = &loggregator_v2.Value{
+		e.DeprecatedTags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Text{
 				Text: value,
 			},
@@ -344,7 +344,7 @@ func WithEnvelopeStringTag(name, value string) func(*loggregator_v2.Envelope) {
 // WithEnvelopeDecimalTag adds a decimal tag to the envelope.
 func WithEnvelopeDecimalTag(name string, value float64) func(*loggregator_v2.Envelope) {
 	return func(e *loggregator_v2.Envelope) {
-		e.Tags[name] = &loggregator_v2.Value{
+		e.DeprecatedTags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Decimal{
 				Decimal: value,
 			},
@@ -355,7 +355,7 @@ func WithEnvelopeDecimalTag(name string, value float64) func(*loggregator_v2.Env
 // WithEnvelopeIntegerTag adds a integer tag to the envelope.
 func WithEnvelopeIntegerTag(name string, value int64) func(*loggregator_v2.Envelope) {
 	return func(e *loggregator_v2.Envelope) {
-		e.Tags[name] = &loggregator_v2.Value{
+		e.DeprecatedTags[name] = &loggregator_v2.Value{
 			Data: &loggregator_v2.Value_Integer{
 				Integer: value,
 			},
