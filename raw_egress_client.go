@@ -11,6 +11,8 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+// EgressClient wraps the gRPC EgressClient for convenience.
+// TODO Rename EgressClient to RawEgressClient to match RawIngressClient.
 type EgressClient struct {
 	c loggregator_v2.EgressClient
 }
