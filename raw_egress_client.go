@@ -11,15 +11,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// EgressClient wraps the gRPC EgressClient for convenience.
-// TODO Rename EgressClient to RawEgressClient to match RawIngressClient.
-type EgressClient struct {
+// RawEgressClient wraps the gRPC RawEgressClient for convenience.
+type RawEgressClient struct {
 	c loggregator_v2.EgressClient
 }
 
 // NewEgressClient creates a new EgressClient for the given addr and TLS
 // configuration.
-func NewEgressClient(addr string, c *tls.Config) (*EgressClient, io.Closer, error) {
+func NewEgressClient(addr string, c *tls.Config) (*RawEgressClient, io.Closer, error) {
 	conn, err := grpc.Dial(addr,
 		grpc.WithTransportCredentials(credentials.NewTLS(c)),
 	)
@@ -27,11 +26,11 @@ func NewEgressClient(addr string, c *tls.Config) (*EgressClient, io.Closer, erro
 		return nil, nil, err
 	}
 
-	return &EgressClient{c: loggregator_v2.NewEgressClient(conn)}, conn, nil
+	return &RawEgressClient{c: loggregator_v2.NewEgressClient(conn)}, conn, nil
 }
 
 // Receiver wraps the created EgressClient's Receiver method.
-func (c *EgressClient) Receiver(
+func (c *RawEgressClient) Receiver(
 	ctx context.Context,
 	in *loggregator_v2.EgressRequest,
 ) (loggregator_v2.Egress_ReceiverClient, error) {
@@ -39,7 +38,7 @@ func (c *EgressClient) Receiver(
 	return c.c.Receiver(ctx, in)
 }
 
-func (c *EgressClient) BatchReceiver(
+func (c *RawEgressClient) BatchReceiver(
 	ctx context.Context,
 	in *loggregator_v2.EgressBatchRequest,
 ) (loggregator_v2.Egress_BatchedReceiverClient, error) {

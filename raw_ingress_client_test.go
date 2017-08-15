@@ -57,7 +57,10 @@ var _ = Describe("RawIngressClient", func() {
 			},
 		})
 
-		envBatch, err := getBatch(receivers)
+		var recv loggregator_v2.Ingress_BatchSenderServer
+		Eventually(receivers, 10).Should(Receive(&recv))
+		envBatch, err := recv.Recv()
+
 		Expect(err).NotTo(HaveOccurred())
 		Expect(envBatch.Batch).To(HaveLen(2))
 
@@ -74,7 +77,9 @@ var _ = Describe("RawIngressClient", func() {
 			})
 		}
 
-		envBatch, err = getBatch(receivers)
+		Eventually(receivers, 10).Should(Receive(&recv))
+		envBatch, err = recv.Recv()
+
 		Expect(err).NotTo(HaveOccurred())
 		Expect(envBatch.Batch).ToNot(BeEmpty())
 	})

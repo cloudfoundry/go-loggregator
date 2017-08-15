@@ -68,7 +68,10 @@ var _ = Describe("IngressClient", func() {
 		}
 
 		Eventually(func() int {
-			b, err := getBatch(receivers)
+			var recv loggregator_v2.Ingress_BatchSenderServer
+			Eventually(receivers, 10).Should(Receive(&recv))
+
+			b, err := recv.Recv()
 			if err != nil {
 				return 0
 			}
@@ -204,15 +207,11 @@ var _ = Describe("IngressClient", func() {
 	})
 })
 
-func getBatch(receivers chan loggregator_v2.Ingress_BatchSenderServer) (*loggregator_v2.EnvelopeBatch, error) {
+func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx int) (*loggregator_v2.Envelope, error) {
 	var recv loggregator_v2.Ingress_BatchSenderServer
 	Eventually(receivers, 10).Should(Receive(&recv))
 
-	return recv.Recv()
-}
-
-func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx int) (*loggregator_v2.Envelope, error) {
-	envBatch, err := getBatch(receivers)
+	envBatch, err := recv.Recv()
 	if err != nil {
 		return nil, err
 	}

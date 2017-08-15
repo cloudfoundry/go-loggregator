@@ -10,9 +10,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("EgressClient", func() {
+var _ = Describe("RawEgressClient", func() {
 	var (
-		client *loggregator.EgressClient
+		client *loggregator.RawEgressClient
 		server *testhelpers.TestEgressServer
 	)
 
