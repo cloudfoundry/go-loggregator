@@ -7,7 +7,6 @@ import (
 	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
-	"code.cloudfoundry.org/go-loggregator/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -18,22 +17,22 @@ var _ = Describe("IngressClient", func() {
 	var (
 		client    *loggregator.IngressClient
 		receivers chan loggregator_v2.Ingress_BatchSenderServer
-		server    *testhelpers.TestIngressServer
+		server    *testIngressServer
 	)
 
 	BeforeEach(func() {
 		var err error
-		server, err = testhelpers.NewTestIngressServer(
+		server, err = newTestIngressServer(
 			fixture("server.crt"),
 			fixture("server.key"),
 			fixture("CA.crt"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = server.Start()
+		err = server.start()
 		Expect(err).NotTo(HaveOccurred())
 
-		receivers = server.Receivers()
+		receivers = server.receivers()
 
 		tlsConfig, err := loggregator.NewIngressTLSConfig(
 			fixture("CA.crt"),
@@ -44,7 +43,7 @@ var _ = Describe("IngressClient", func() {
 
 		client, err = loggregator.NewIngressClient(
 			tlsConfig,
-			loggregator.WithAddr(server.Addr()),
+			loggregator.WithAddr(server.addr()),
 			loggregator.WithBatchFlushInterval(50*time.Millisecond),
 			loggregator.WithStringTag("string", "client-string-tag"),
 			loggregator.WithDecimalTag("decimal", 1.234),
@@ -54,7 +53,7 @@ var _ = Describe("IngressClient", func() {
 	})
 
 	AfterEach(func() {
-		server.Stop()
+		server.stop()
 	})
 
 	It("sends in batches", func() {

@@ -5,7 +5,6 @@ import (
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/testhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -13,19 +12,19 @@ import (
 var _ = Describe("RawEgressClient", func() {
 	var (
 		client *loggregator.RawEgressClient
-		server *testhelpers.TestEgressServer
+		server *testEgressServer
 	)
 
 	BeforeEach(func() {
 		var err error
-		server, err = testhelpers.NewTestEgressServer(
+		server, err = newTestEgressServer(
 			fixture("server.crt"),
 			fixture("server.key"),
 			fixture("CA.crt"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = server.Start(rxCallbackStub)
+		err = server.start()
 		Expect(err).NotTo(HaveOccurred())
 
 		tlsConfig, err := loggregator.NewIngressTLSConfig(
@@ -36,14 +35,14 @@ var _ = Describe("RawEgressClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		client, _, err = loggregator.NewEgressClient(
-			server.Addr(),
+			server.addr(),
 			tlsConfig,
 		)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		server.Stop()
+		server.stop()
 	})
 
 	It("creates a streaming client receiver", func() {

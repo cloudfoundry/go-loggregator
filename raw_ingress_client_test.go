@@ -3,7 +3,6 @@ package loggregator_test
 import (
 	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,21 +12,21 @@ var _ = Describe("RawIngressClient", func() {
 	var (
 		client    *loggregator.RawIngressClient
 		receivers chan loggregator_v2.Ingress_BatchSenderServer
-		server    *testhelpers.TestIngressServer
+		server    *testIngressServer
 	)
 
 	BeforeEach(func() {
 		var err error
-		server, err = testhelpers.NewTestIngressServer(
+		server, err = newTestIngressServer(
 			fixture("server.crt"),
 			fixture("server.key"),
 			fixture("CA.crt"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = server.Start()
+		err = server.start()
 		Expect(err).NotTo(HaveOccurred())
-		receivers = server.Receivers()
+		receivers = server.receivers()
 
 		tlsConfig, err := loggregator.NewIngressTLSConfig(
 			fixture("CA.crt"),
@@ -37,14 +36,14 @@ var _ = Describe("RawIngressClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		client, err = loggregator.NewRawIngressClient(
-			server.Addr(),
+			server.addr(),
 			tlsConfig,
 		)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		server.Stop()
+		server.stop()
 	})
 
 	It("reconnects when the server goes away and comes back", func() {
@@ -64,8 +63,8 @@ var _ = Describe("RawIngressClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(envBatch.Batch).To(HaveLen(2))
 
-		server.Stop()
-		Eventually(server.Start).Should(Succeed())
+		server.stop()
+		Eventually(server.start).Should(Succeed())
 
 		Consistently(receivers).Should(BeEmpty())
 
