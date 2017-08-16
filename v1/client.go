@@ -23,33 +23,11 @@ import (
 
 type ClientOption func(*Client)
 
-// WithStringTag allows for the configuration of arbitrary string value
+// WithTag allows for the configuration of arbitrary string value
 // metadata which will be included in all data sent to Loggregator
-func WithStringTag(name, value string) ClientOption {
+func WithTag(name, value string) ClientOption {
 	return func(c *Client) {
-		c.tags[name] = &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Text{Text: value},
-		}
-	}
-}
-
-// WithDecimalTag allows for the configuration of arbitrary decimal value
-// metadata which will be included in all data sent to Loggregator
-func WithDecimalTag(name string, value float64) ClientOption {
-	return func(c *Client) {
-		c.tags[name] = &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Decimal{Decimal: value},
-		}
-	}
-}
-
-// WithIntegerTag allows for the configuration of arbitrary integer value
-// metadata which will be included in all data sent to Loggregator
-func WithIntegerTag(name string, value int64) ClientOption {
-	return func(c *Client) {
-		c.tags[name] = &loggregator_v2.Value{
-			Data: &loggregator_v2.Value_Integer{Integer: value},
-		}
+		c.tags[name] = value
 	}
 }
 
@@ -66,7 +44,7 @@ func WithLogger(l loggregator.Logger) ClientOption {
 // calling NewClient you should call dropsonde.Initialize.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	c := &Client{
-		tags:   make(map[string]*loggregator_v2.Value),
+		tags:   make(map[string]string),
 		logger: log.New(ioutil.Discard, "", 0),
 	}
 
@@ -80,7 +58,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 // Client represents an emitter into loggregator. It should be created with
 // the NewClient constructor.
 type Client struct {
-	tags   map[string]*loggregator_v2.Value
+	tags   map[string]string
 	logger loggregator.Logger
 }
 
@@ -94,7 +72,7 @@ func (c *Client) EmitLog(message string, opts ...loggregator.EmitLogOption) {
 				Type:    loggregator_v2.Log_ERR,
 			},
 		},
-		DeprecatedTags: make(map[string]*loggregator_v2.Value),
+		Tags: make(map[string]string),
 	}
 
 	for _, o := range opts {
@@ -113,7 +91,7 @@ func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 				Metrics: make(map[string]*loggregator_v2.GaugeValue),
 			},
 		},
-		DeprecatedTags: make(map[string]*loggregator_v2.Value),
+		Tags: make(map[string]string),
 	}
 
 	for _, o := range opts {
@@ -134,7 +112,7 @@ func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 				},
 			},
 		},
-		DeprecatedTags: make(map[string]*loggregator_v2.Value),
+		Tags: make(map[string]string),
 	}
 
 	for _, o := range opts {
@@ -193,13 +171,9 @@ func (c *Client) SendComponentMetric(name string, value float64, unit string) er
 
 func (c *Client) emitEnvelopes(v2Envelope *loggregator_v2.Envelope) {
 	for k, v := range c.tags {
-		v2Envelope.DeprecatedTags[k] = v
+		v2Envelope.Tags[k] = v
 	}
-	v2Envelope.DeprecatedTags["origin"] = &loggregator_v2.Value{
-		Data: &loggregator_v2.Value_Text{
-			Text: dropsonde.DefaultEmitter.Origin(),
-		},
-	}
+	v2Envelope.Tags["origin"] = dropsonde.DefaultEmitter.Origin()
 
 	for _, e := range conversion.ToV1(v2Envelope) {
 		err := dropsonde.DefaultEmitter.EmitEnvelope(e)

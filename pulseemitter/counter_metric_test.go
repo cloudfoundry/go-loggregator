@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("CounterMetric", func() {
 	Context("Emit", func() {
-		It("emits the delta", func() {
+		It("prepares an envelope for delivery", func() {
 			metric := pulseemitter.NewCounterMetric("name", pulseemitter.WithVersion(1, 2))
 
 			metric.Increment(10)
@@ -26,18 +26,17 @@ var _ = Describe("CounterMetric", func() {
 				Message: &loggregator_v2.Envelope_Counter{
 					Counter: &loggregator_v2.Counter{},
 				},
-				DeprecatedTags: make(map[string]*loggregator_v2.Value),
+				Tags: make(map[string]string),
 			}
 			for _, o := range spy.CounterOpts() {
 				o(e)
 			}
 
 			Expect(e.GetCounter().GetDelta()).To(Equal(uint64(10)))
-			Expect(e.GetDeprecatedTags()).To(HaveKey("metric_version"))
-			Expect(e.GetDeprecatedTags()["metric_version"].GetText()).To(Equal("1.2"))
+			Expect(e.Tags["metric_version"]).To(Equal("1.2"))
 		})
 
-		It("decrements it value on success", func() {
+		It("decrements its value on success", func() {
 			metric := pulseemitter.NewCounterMetric("name")
 
 			metric.Increment(10)

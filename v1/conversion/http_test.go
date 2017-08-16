@@ -12,18 +12,16 @@ import (
 )
 
 var _ = Describe("HTTP", func() {
-	ValueText := func(s string) *v2.Value {
-		return &v2.Value{&v2.Value_Text{Text: s}}
-	}
-
-	ValueInteger := func(i int64) *v2.Value {
-		return &v2.Value{&v2.Value_Integer{Integer: i}}
-	}
-
 	Context("given a v2 envelope", func() {
-		It("converts to a v1 envelope", func() {
-			v2Envelope := &v2.Envelope{
-				SourceId: "b3015d69-09cd-476d-aace-ad2d824d5ab7",
+		var (
+			v2Envelope         *v2.Envelope
+			expectedV1Envelope *events.Envelope
+		)
+
+		BeforeEach(func() {
+			v2Envelope = &v2.Envelope{
+				SourceId:   "b3015d69-09cd-476d-aace-ad2d824d5ab7",
+				InstanceId: "10",
 				Message: &v2.Envelope_Timer{
 					Timer: &v2.Timer{
 						Name:  "http",
@@ -38,14 +36,14 @@ var _ = Describe("HTTP", func() {
 					"uri":                 ValueText("/hello-world"),
 					"remote_address":      ValueText("10.1.1.0"),
 					"user_agent":          ValueText("Mozilla/5.0"),
-					"status_code":         ValueInteger(200),
-					"content_length":      ValueInteger(1000000),
-					"instance_index":      ValueInteger(10),
+					"status_code":         ValueText("200"),
+					"content_length":      ValueText("1000000"),
 					"routing_instance_id": ValueText("application-id"),
 					"forwarded":           ValueText("6.6.6.6\n8.8.8.8"),
 				},
 			}
-			expectedV1Envelope := &events.Envelope{
+
+			expectedV1Envelope = &events.Envelope{
 				EventType: events.Envelope_HttpStartStop.Enum(),
 				HttpStartStop: &events.HttpStartStop{
 					StartTimestamp: proto.Int64(99),
@@ -70,6 +68,23 @@ var _ = Describe("HTTP", func() {
 					Forwarded:     []string{"6.6.6.6", "8.8.8.8"},
 				},
 			}
+		})
+
+		It("converts to a v1 envelope", func() {
+			envelopes := conversion.ToV1(v2Envelope)
+			Expect(len(envelopes)).To(Equal(1))
+			converted := envelopes[0]
+
+			_, err := proto.Marshal(converted)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
+				"EventType":     Equal(expectedV1Envelope.EventType),
+				"HttpStartStop": Equal(expectedV1Envelope.HttpStartStop),
+			}))
+		})
+
+		It("converts integer tag types", func() {
+			v2Envelope.GetDeprecatedTags()["status_code"] = ValueInteger(200)
 
 			envelopes := conversion.ToV1(v2Envelope)
 			Expect(len(envelopes)).To(Equal(1))

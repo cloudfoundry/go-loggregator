@@ -121,11 +121,18 @@ var _ = Describe("DropsondeClient", func() {
 				})
 
 				It("emits a gauge with one metric", func() {
-					client.EmitGauge(loggregator_v2.WithGaugeValue("gauge-name", 123.45, "nanofortnights"))
+					tags := map[string]string{
+						"deployment": "an-deployment",
+					}
+					client.EmitGauge(
+						loggregator_v2.WithGaugeValue("gauge-name", 123.45, "nanofortnights"),
+						loggregator_v2.WithGaugeTags(tags),
+					)
 
 					var env *events.Envelope
 					Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 					Expect(env.GetEventType()).To(Equal(events.Envelope_ValueMetric))
+					Expect(env.GetDeployment()).To(Equal("an-deployment"))
 					Expect(env.GetOrigin()).To(Equal("my-origin"))
 					Expect(env.GetTimestamp()).To(BeNumerically("~", time.Now().UnixNano(), time.Second))
 
@@ -179,9 +186,7 @@ var _ = Describe("DropsondeClient", func() {
 				Context("with IngressOptions", func() {
 					BeforeEach(func() {
 						client, _ = v1.NewClient(
-							v1.WithStringTag("string-tag-name", "string-tag-value"),
-							v1.WithDecimalTag("decimal-tag-name", 123.45),
-							v1.WithIntegerTag("integer-tag-name", 404),
+							v1.WithTag("string-tag-name", "string-tag-value"),
 						)
 					})
 
@@ -192,9 +197,7 @@ var _ = Describe("DropsondeClient", func() {
 						Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 
 						Expect(env.GetTags()).To(Equal(map[string]string{
-							"string-tag-name":  "string-tag-value",
-							"decimal-tag-name": "123.450000",
-							"integer-tag-name": "404",
+							"string-tag-name": "string-tag-value",
 						}))
 					})
 
@@ -205,9 +208,7 @@ var _ = Describe("DropsondeClient", func() {
 						Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 
 						Expect(env.GetTags()).To(Equal(map[string]string{
-							"string-tag-name":  "string-tag-value",
-							"decimal-tag-name": "123.450000",
-							"integer-tag-name": "404",
+							"string-tag-name": "string-tag-value",
 						}))
 					})
 
@@ -223,10 +224,8 @@ var _ = Describe("DropsondeClient", func() {
 						Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 
 						Expect(env.GetTags()).To(Equal(map[string]string{
-							"string-tag-name":  "string-tag-value",
-							"decimal-tag-name": "123.450000",
-							"integer-tag-name": "404",
-							"gauge-tag-name":   "gauge-tag-value",
+							"string-tag-name": "string-tag-value",
+							"gauge-tag-name":  "gauge-tag-value",
 						}))
 					})
 				})
