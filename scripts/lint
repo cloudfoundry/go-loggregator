@@ -14,7 +14,9 @@ function run_linters {
         go_loggregator_pkg="$1"
     fi
 
-    gometalinter --vendor --disable-all $go_loggregator_pkg \
+    gometalinter --vendor \
+      --disable-all $go_loggregator_pkg \
+      --skip rpc \
       --enable "vet" \
       --enable "deadcode" \
       --enable "golint" \
