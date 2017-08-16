@@ -123,7 +123,7 @@ var _ = Describe("IngressClient", func() {
 		client.EmitGauge(
 			loggregator.WithGaugeValue("name-a", 1, "unit-a"),
 			loggregator.WithGaugeValue("name-b", 2, "unit-b"),
-			loggregator.WithGaugeTags(map[string]string{"some-tag": "some-tag-value"}),
+			loggregator.WithEnvelopeTags(map[string]string{"some-tag": "some-tag-value"}),
 			loggregator.WithGaugeAppInfo("app-id"),
 		)
 

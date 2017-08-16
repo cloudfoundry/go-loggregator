@@ -120,7 +120,7 @@ var _ = Describe("DropsondeClient", func() {
 					}
 					client.EmitGauge(
 						loggregator_v2.WithGaugeValue("gauge-name", 123.45, "nanofortnights"),
-						loggregator_v2.WithGaugeTags(tags),
+						loggregator_v2.WithEnvelopeTags(tags),
 					)
 
 					var env *events.Envelope
@@ -149,7 +149,7 @@ var _ = Describe("DropsondeClient", func() {
 				It("emits envelopes with tags", func() {
 					client.EmitGauge(
 						loggregator_v2.WithGaugeValue("gauge-name", 123.45, "nanofortnights"),
-						loggregator_v2.WithGaugeTags(map[string]string{
+						loggregator_v2.WithEnvelopeTags(map[string]string{
 							"tag-1": "value-1",
 							"tag-2": "value-2",
 						}),
@@ -209,7 +209,7 @@ var _ = Describe("DropsondeClient", func() {
 					It("adds tags to gauges", func() {
 						client.EmitGauge(
 							loggregator_v2.WithGaugeValue("gauge-name", 1.1, "dollars"),
-							loggregator_v2.WithGaugeTags(map[string]string{
+							loggregator_v2.WithEnvelopeTags(map[string]string{
 								"gauge-tag-name": "gauge-tag-value",
 							}),
 						)

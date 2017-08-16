@@ -27,20 +27,6 @@ import (
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 )
 
-// IngressClient represents an emitter into loggregator. It should be created with the
-// NewIngressClient constructor.
-type IngressClient struct {
-	rawClient *RawIngressClient
-	envelopes chan *loggregator_v2.Envelope
-	tags      map[string]string
-
-	batchMaxSize       uint
-	batchFlushInterval time.Duration
-	addr               string
-
-	logger Logger
-}
-
 // IngressOption is the type of a configurable client option.
 type IngressOption func(*IngressClient)
 
@@ -96,6 +82,20 @@ func WithLogger(l Logger) IngressOption {
 	return func(c *IngressClient) {
 		c.logger = l
 	}
+}
+
+// IngressClient represents an emitter into loggregator. It should be created with the
+// NewIngressClient constructor.
+type IngressClient struct {
+	rawClient *RawIngressClient
+	envelopes chan *loggregator_v2.Envelope
+	tags      map[string]string
+
+	batchMaxSize       uint
+	batchFlushInterval time.Duration
+	addr               string
+
+	logger Logger
 }
 
 // NewIngressClient creates a v2 loggregator client. Its TLS configuration
@@ -191,17 +191,6 @@ func WithGaugeAppInfo(appID string) EmitGaugeOption {
 func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
 	return func(e *loggregator_v2.Envelope) {
 		e.GetGauge().Metrics[name] = &loggregator_v2.GaugeValue{Value: value, Unit: unit}
-	}
-}
-
-// WithGaugeTags adds tag information that can be text, integer, or decimal to
-// the envelope.  WithGaugeTags expects a single call with a complete map
-// and will overwrite if called a second time.
-func WithGaugeTags(tags map[string]string) EmitGaugeOption {
-	return func(e *loggregator_v2.Envelope) {
-		for name, value := range tags {
-			e.Tags[name] = value
-		}
 	}
 }
 
@@ -304,5 +293,16 @@ func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) {
 func WithEnvelopeTag(name, value string) func(*loggregator_v2.Envelope) {
 	return func(e *loggregator_v2.Envelope) {
 		e.Tags[name] = value
+	}
+}
+
+// WithEnvelopeTags adds tag information that can be text, integer, or decimal to
+// the envelope.  WithEnvelopeTags expects a single call with a complete map
+// and will overwrite if called a second time.
+func WithEnvelopeTags(tags map[string]string) func(*loggregator_v2.Envelope) {
+	return func(e *loggregator_v2.Envelope) {
+		for name, value := range tags {
+			e.Tags[name] = value
+		}
 	}
 }
