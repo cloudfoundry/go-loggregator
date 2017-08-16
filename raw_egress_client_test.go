@@ -34,7 +34,7 @@ var _ = Describe("RawEgressClient", func() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		client, _, err = loggregator.NewEgressClient(
+		client, _, err = loggregator.NewRawEgressClient(
 			server.addr(),
 			tlsConfig,
 		)

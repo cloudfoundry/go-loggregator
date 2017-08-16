@@ -16,9 +16,9 @@ type RawEgressClient struct {
 	c loggregator_v2.EgressClient
 }
 
-// NewEgressClient creates a new EgressClient for the given addr and TLS
+// NewRawEgressClient creates a new EgressClient for the given addr and TLS
 // configuration.
-func NewEgressClient(addr string, c *tls.Config) (*RawEgressClient, io.Closer, error) {
+func NewRawEgressClient(addr string, c *tls.Config) (*RawEgressClient, io.Closer, error) {
 	conn, err := grpc.Dial(addr,
 		grpc.WithTransportCredentials(credentials.NewTLS(c)),
 	)

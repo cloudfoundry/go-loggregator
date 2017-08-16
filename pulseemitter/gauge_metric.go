@@ -48,7 +48,7 @@ func (g *GaugeMetric) Emit(c LoggClient) {
 	}
 
 	for k, v := range g.tags {
-		options = append(options, loggregator.WithEnvelopeStringTag(k, v))
+		options = append(options, loggregator.WithEnvelopeTag(k, v))
 	}
 
 	c.EmitGauge(options...)

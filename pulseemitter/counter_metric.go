@@ -67,7 +67,7 @@ func (m *CounterMetric) Emit(c LoggClient) {
 	options := []loggregator.EmitCounterOption{loggregator.WithDelta(d)}
 
 	for k, v := range m.tags {
-		options = append(options, loggregator.WithEnvelopeStringTag(k, v))
+		options = append(options, loggregator.WithEnvelopeTag(k, v))
 	}
 
 	c.EmitCounter(m.name, options...)

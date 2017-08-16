@@ -45,9 +45,7 @@ var _ = Describe("IngressClient", func() {
 			tlsConfig,
 			loggregator.WithAddr(server.addr()),
 			loggregator.WithBatchFlushInterval(50*time.Millisecond),
-			loggregator.WithStringTag("string", "client-string-tag"),
-			loggregator.WithDecimalTag("decimal", 1.234),
-			loggregator.WithIntegerTag("integer", 42),
+			loggregator.WithTag("string", "client-string-tag"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -88,7 +86,7 @@ var _ = Describe("IngressClient", func() {
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(env.DeprecatedTags["source_instance"].GetText()).To(Equal("source-instance"))
+		Expect(env.Tags["source_instance"]).To(Equal("source-instance"))
 		Expect(env.SourceId).To(Equal("app-id"))
 		Expect(env.InstanceId).To(Equal("source-instance"))
 
@@ -109,7 +107,7 @@ var _ = Describe("IngressClient", func() {
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(env.DeprecatedTags["source_instance"].GetText()).To(Equal("source-instance"))
+		Expect(env.Tags["source_instance"]).To(Equal("source-instance"))
 		Expect(env.SourceId).To(Equal("app-id"))
 		Expect(env.InstanceId).To(Equal("source-instance"))
 
@@ -140,7 +138,7 @@ var _ = Describe("IngressClient", func() {
 		Expect(metrics.GetMetrics()).To(HaveLen(2))
 		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
-		Expect(env.DeprecatedTags["some-tag"].GetText()).To(Equal("some-tag-value"))
+		Expect(env.Tags["some-tag"]).To(Equal("some-tag-value"))
 	})
 
 	It("works with the runtime emitter", func() {
@@ -157,36 +155,25 @@ var _ = Describe("IngressClient", func() {
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(env.DeprecatedTags["string"].GetText()).To(Equal("client-string-tag"), "The client tag for string was not set properly")
-		Expect(env.DeprecatedTags["decimal"].GetDecimal()).To(Equal(1.234), "The client tag for decimal was not set properly")
-		Expect(env.DeprecatedTags["integer"].GetInteger()).To(Equal(int64(42)), "The client tag for integer was not set properly")
-
-		Expect(env.DeprecatedTags["envelope-string"].GetText()).To(Equal("envelope-string-tag"), "The envelope tag for string was not set properly")
-		Expect(env.DeprecatedTags["envelope-decimal"].GetDecimal()).To(Equal(1.234), "The envelope tag for decimal was not set properly")
-		Expect(env.DeprecatedTags["envelope-integer"].GetInteger()).To(Equal(int64(42)), "The envelope tag for integer was not set properly")
+		Expect(env.Tags["string"]).To(Equal("client-string-tag"), "The client tag for string was not set properly")
+		Expect(env.Tags["envelope-string"]).To(Equal("envelope-string-tag"), "The envelope tag for string was not set properly")
 	},
 		Entry("logs", func() {
 			client.EmitLog(
 				"message",
-				loggregator.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
-				loggregator.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
-				loggregator.WithEnvelopeIntegerTag("envelope-integer", 42),
+				loggregator.WithEnvelopeTag("envelope-string", "envelope-string-tag"),
 			)
 		}),
 		Entry("gauge", func() {
 			client.EmitGauge(
 				loggregator.WithGaugeValue("gauge-name", 123.4, "some-unit"),
-				loggregator.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
-				loggregator.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
-				loggregator.WithEnvelopeIntegerTag("envelope-integer", 42),
+				loggregator.WithEnvelopeTag("envelope-string", "envelope-string-tag"),
 			)
 		}),
 		Entry("counter", func() {
 			client.EmitCounter(
 				"foo",
-				loggregator.WithEnvelopeStringTag("envelope-string", "envelope-string-tag"),
-				loggregator.WithEnvelopeDecimalTag("envelope-decimal", 1.234),
-				loggregator.WithEnvelopeIntegerTag("envelope-integer", 42),
+				loggregator.WithEnvelopeTag("envelope-string", "envelope-string-tag"),
 			)
 		}),
 	)
