@@ -6,13 +6,7 @@ import (
 	loggregator_v2 "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/v1"
 	"github.com/cloudfoundry/dropsonde"
-	"github.com/cloudfoundry/dropsonde/logs"
-	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-
-	lfake "github.com/cloudfoundry/dropsonde/log_sender/fake"
-	mfake "github.com/cloudfoundry/dropsonde/metric_sender/fake"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -247,84 +241,6 @@ var _ = Describe("DropsondeClient", func() {
 
 			By("ensuring that the v1 client conforms to v2 interface")
 			var _ V2Interface = &v1.Client{}
-		})
-	})
-
-	Context("when v2 api is disabled", func() {
-		var (
-			logSender    *lfake.FakeLogSender
-			metricSender *mfake.FakeMetricSender
-		)
-
-		BeforeEach(func() {
-			logSender = &lfake.FakeLogSender{}
-			metricSender = mfake.NewFakeMetricSender()
-			logs.Initialize(logSender)
-			metrics.Initialize(metricSender, nil)
-
-			client, _ = v1.NewClient()
-		})
-
-		It("sends app logs", func() {
-			client.SendAppLog("app-id", "message", "source-type", "source-instance")
-			Expect(logSender.GetLogs()).To(ConsistOf(lfake.Log{AppId: "app-id", Message: "message",
-				SourceType: "source-type", SourceInstance: "source-instance", MessageType: "OUT"}))
-		})
-
-		It("sends app error logs", func() {
-			client.SendAppErrorLog("app-id", "message", "source-type", "source-instance")
-			Expect(logSender.GetLogs()).To(ConsistOf(lfake.Log{AppId: "app-id", Message: "message",
-				SourceType: "source-type", SourceInstance: "source-instance", MessageType: "ERR"}))
-		})
-
-		It("sends app metrics", func() {
-			metric := events.ContainerMetric{
-				ApplicationId: proto.String("app-id"),
-			}
-			client.SendAppMetrics(&metric)
-			Expect(metricSender.Events()).To(ConsistOf(&metric))
-		})
-
-		It("sends component duration", func() {
-			client.SendDuration("test-name", 1*time.Nanosecond)
-			Expect(metricSender.HasValue("test-name")).To(BeTrue())
-			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 1, Unit: "nanos"}))
-		})
-
-		It("sends component data in MebiBytes", func() {
-			client.SendMebiBytes("test-name", 100)
-			Expect(metricSender.HasValue("test-name")).To(BeTrue())
-			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100, Unit: "MiB"}))
-		})
-
-		It("sends component metric", func() {
-			client.SendMetric("test-name", 1)
-			Expect(metricSender.HasValue("test-name")).To(BeTrue())
-			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 1, Unit: "Metric"}))
-		})
-
-		It("sends component bytes/sec", func() {
-			client.SendBytesPerSecond("test-name", 100.1)
-			Expect(metricSender.HasValue("test-name")).To(BeTrue())
-			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100.1, Unit: "B/s"}))
-		})
-
-		It("sends component req/sec", func() {
-			client.SendRequestsPerSecond("test-name", 100.1)
-			Expect(metricSender.HasValue("test-name")).To(BeTrue())
-			Expect(metricSender.GetValue("test-name")).To(Equal(mfake.Metric{Value: 100.1, Unit: "Req/s"}))
-		})
-
-		It("sends component incremented counter", func() {
-			client.IncrementCounter("test-name")
-			Expect(metricSender.GetCounter("test-name")).To(Equal(uint64(1)))
-		})
-
-		It("sends component incremented counter with delta", func() {
-			client.IncrementCounter("test-name")
-			Expect(metricSender.GetCounter("test-name")).To(Equal(uint64(1)))
-			client.IncrementCounterWithDelta("test-name", 10)
-			Expect(metricSender.GetCounter("test-name")).To(Equal(uint64(11)))
 		})
 	})
 })

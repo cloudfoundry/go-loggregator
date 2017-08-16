@@ -16,9 +16,6 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v1/conversion"
 
 	"github.com/cloudfoundry/dropsonde"
-	"github.com/cloudfoundry/dropsonde/logs"
-	"github.com/cloudfoundry/dropsonde/metrics"
-	"github.com/cloudfoundry/sonde-go/events"
 )
 
 type ClientOption func(*Client)
@@ -39,6 +36,13 @@ func WithLogger(l loggregator.Logger) ClientOption {
 	}
 }
 
+// Client represents an emitter into loggregator. It should be created with
+// the NewClient constructor.
+type Client struct {
+	tags   map[string]string
+	logger loggregator.Logger
+}
+
 // NewClient creates a v1 loggregator client. This is a wrapper around the
 // dropsonde package that will write envelopes to loggregator over UDP. Before
 // calling NewClient you should call dropsonde.Initialize.
@@ -53,13 +57,6 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	}
 
 	return c, nil
-}
-
-// Client represents an emitter into loggregator. It should be created with
-// the NewClient constructor.
-type Client struct {
-	tags   map[string]string
-	logger loggregator.Logger
 }
 
 // EmitLog sends a message to loggregator.
@@ -119,54 +116,6 @@ func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 		o(v2Envelope)
 	}
 	c.emitEnvelopes(v2Envelope)
-}
-
-func (c *Client) Send() error {
-	return nil
-}
-
-func (c *Client) IncrementCounter(name string) error {
-	return metrics.IncrementCounter(name)
-}
-
-func (c *Client) IncrementCounterWithDelta(name string, value uint64) error {
-	return metrics.AddToCounter(name, value)
-}
-
-func (c *Client) SendAppLog(appID, message, sourceType, sourceInstance string) error {
-	return logs.SendAppLog(appID, message, sourceType, sourceInstance)
-}
-
-func (c *Client) SendAppErrorLog(appID, message, sourceType, sourceInstance string) error {
-	return logs.SendAppErrorLog(appID, message, sourceType, sourceInstance)
-}
-
-func (c *Client) SendAppMetrics(m *events.ContainerMetric) error {
-	return metrics.Send(m)
-}
-
-func (c *Client) SendDuration(name string, duration time.Duration) error {
-	return c.SendComponentMetric(name, float64(duration), "nanos")
-}
-
-func (c *Client) SendMebiBytes(name string, mebibytes int) error {
-	return c.SendComponentMetric(name, float64(mebibytes), "MiB")
-}
-
-func (c *Client) SendMetric(name string, value int) error {
-	return c.SendComponentMetric(name, float64(value), "Metric")
-}
-
-func (c *Client) SendBytesPerSecond(name string, value float64) error {
-	return c.SendComponentMetric(name, value, "B/s")
-}
-
-func (c *Client) SendRequestsPerSecond(name string, value float64) error {
-	return c.SendComponentMetric(name, value, "Req/s")
-}
-
-func (c *Client) SendComponentMetric(name string, value float64, unit string) error {
-	return metrics.SendValue(name, value, unit)
 }
 
 func (c *Client) emitEnvelopes(v2Envelope *loggregator_v2.Envelope) {
