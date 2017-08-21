@@ -11,7 +11,7 @@ import (
 
 // RawIngressClient is an emitter of bare envelopes to loggregator.
 // Only use this if you do not want the tagging and batching features of
-// ingress client.
+// ingress client. Most users should use the IngressClient.
 type RawIngressClient struct {
 	conn   loggregator_v2.IngressClient
 	sender loggregator_v2.Ingress_BatchSenderClient

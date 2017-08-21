@@ -11,12 +11,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// RawEgressClient wraps the gRPC RawEgressClient for convenience.
+// RawEgressClient wraps the gRPC EgressClient exists only for low-level,
+// granular control. At present, the RawEgressClient consumes a private API
+// which is subject to change.
 type RawEgressClient struct {
 	c loggregator_v2.EgressClient
 }
 
-// NewRawEgressClient creates a new EgressClient for the given addr and TLS
+// NewRawEgressClient creates a new RawEgressClient for the given addr and TLS
 // configuration.
 func NewRawEgressClient(addr string, c *tls.Config) (*RawEgressClient, io.Closer, error) {
 	conn, err := grpc.Dial(addr,
@@ -38,6 +40,7 @@ func (c *RawEgressClient) Receiver(
 	return c.c.Receiver(ctx, in)
 }
 
+// BatchReceiver wraps the created EgressClient's BatchedReceiver method.
 func (c *RawEgressClient) BatchReceiver(
 	ctx context.Context,
 	in *loggregator_v2.EgressBatchRequest,
