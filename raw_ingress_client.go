@@ -36,6 +36,8 @@ func NewRawIngressClient(addr string, tlsConfig *tls.Config) (*RawIngressClient,
 func (c *RawIngressClient) Emit(e []*loggregator_v2.Envelope) error {
 	if c.sender == nil {
 		var err error
+		// TODO Callers of Emit should pass in a context. The code should not
+		// be hard-coding context.TODO here.
 		c.sender, err = c.conn.BatchSender(context.TODO())
 		if err != nil {
 			return err
