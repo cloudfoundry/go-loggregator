@@ -116,7 +116,6 @@ func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
 		e.SourceId = appID
 		e.InstanceId = sourceInstance
 		e.Tags["source_type"] = sourceType
-		e.Tags["source_instance"] = sourceInstance
 	}
 }
 

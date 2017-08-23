@@ -86,7 +86,6 @@ var _ = Describe("IngressClient", func() {
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(env.Tags["source_instance"]).To(Equal("source-instance"))
 		Expect(env.SourceId).To(Equal("app-id"))
 		Expect(env.InstanceId).To(Equal("source-instance"))
 
@@ -107,7 +106,6 @@ var _ = Describe("IngressClient", func() {
 		env, err := getEnvelopeAt(receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(env.Tags["source_instance"]).To(Equal("source-instance"))
 		Expect(env.SourceId).To(Equal("app-id"))
 		Expect(env.InstanceId).To(Equal("source-instance"))
 
