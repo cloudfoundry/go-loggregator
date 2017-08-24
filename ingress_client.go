@@ -2,9 +2,13 @@ package loggregator
 
 import (
 	"crypto/tls"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
+
+	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/gogo/protobuf/proto"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 )
@@ -107,23 +111,48 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 	return client, nil
 }
 
+// EnvelopeWrapper is used to setup v1 Envelopes. It should not be created or
+// used by a user.
+type EnvelopeWrapper struct {
+	proto.Message
+
+	Messages []*events.Envelope
+	Tags     map[string]string
+}
+
 // EmitLogOption is the option type passed into EmitLog
-type EmitLogOption func(*loggregator_v2.Envelope)
+type EmitLogOption func(proto.Message)
 
 // WithAppInfo configures the meta data associated with emitted data
 func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
-	return func(e *loggregator_v2.Envelope) {
-		e.SourceId = appID
-		e.InstanceId = sourceInstance
-		e.Tags["source_type"] = sourceType
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.SourceId = appID
+			e.InstanceId = sourceInstance
+			e.Tags["source_type"] = sourceType
+		case *EnvelopeWrapper:
+			e.Messages[0].GetLogMessage().AppId = proto.String(appID)
+			e.Messages[0].GetLogMessage().SourceType = proto.String(sourceType)
+			e.Messages[0].GetLogMessage().SourceInstance = proto.String(sourceInstance)
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
 	}
 }
 
 // WithStdout sets the output type to stdout. Without using this option,
 // all data is assumed to be stderr output.
 func WithStdout() EmitLogOption {
-	return func(e *loggregator_v2.Envelope) {
-		e.GetLog().Type = loggregator_v2.Log_OUT
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.GetLog().Type = loggregator_v2.Log_OUT
+		case *EnvelopeWrapper:
+			e.Messages[0].GetLogMessage().MessageType = events.LogMessage_OUT.Enum()
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
 	}
 }
 
@@ -152,12 +181,19 @@ func (c *IngressClient) EmitLog(message string, opts ...EmitLogOption) {
 }
 
 // EmitGaugeOption is the option type passed into EmitGauge
-type EmitGaugeOption func(*loggregator_v2.Envelope)
+type EmitGaugeOption func(proto.Message)
 
 // WithGaugeAppInfo configures an ID associated with the gauge
 func WithGaugeAppInfo(appID string) EmitGaugeOption {
-	return func(e *loggregator_v2.Envelope) {
-		e.SourceId = appID
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.SourceId = appID
+		case *EnvelopeWrapper:
+			e.Tags["source_id"] = appID
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
 	}
 }
 
@@ -170,8 +206,21 @@ func WithGaugeAppInfo(appID string) EmitGaugeOption {
 // If there are duplicate names in any of the options, i.e., "cpu" and "cpu",
 // then the last EmitGaugeOption will take precedence.
 func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
-	return func(e *loggregator_v2.Envelope) {
-		e.GetGauge().Metrics[name] = &loggregator_v2.GaugeValue{Value: value, Unit: unit}
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.GetGauge().Metrics[name] = &loggregator_v2.GaugeValue{Value: value, Unit: unit}
+		case *EnvelopeWrapper:
+			e.Messages = append(e.Messages, &events.Envelope{
+				ValueMetric: &events.ValueMetric{
+					Name:  proto.String(name),
+					Value: proto.Float64(value),
+					Unit:  proto.String(unit),
+				},
+			})
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
 	}
 }
 
@@ -201,12 +250,19 @@ func (c *IngressClient) EmitGauge(opts ...EmitGaugeOption) {
 }
 
 // EmitCounterOption is the option type passed into EmitCounter.
-type EmitCounterOption func(*loggregator_v2.Envelope)
+type EmitCounterOption func(proto.Message)
 
 // WithDelta is an option that sets the delta for a counter.
 func WithDelta(d uint64) EmitCounterOption {
-	return func(e *loggregator_v2.Envelope) {
-		e.GetCounter().Value = &loggregator_v2.Counter_Delta{Delta: d}
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.GetCounter().Value = &loggregator_v2.Counter_Delta{Delta: d}
+		case *EnvelopeWrapper:
+			e.Messages[0].GetCounterEvent().Delta = proto.Uint64(d)
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
 	}
 }
 
@@ -271,19 +327,35 @@ func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) {
 }
 
 // WithEnvelopeTag adds a tag to the envelope.
-func WithEnvelopeTag(name, value string) func(*loggregator_v2.Envelope) {
-	return func(e *loggregator_v2.Envelope) {
-		e.Tags[name] = value
+func WithEnvelopeTag(name, value string) func(proto.Message) {
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.Tags[name] = value
+		case *EnvelopeWrapper:
+			e.Tags[name] = value
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
 	}
 }
 
 // WithEnvelopeTags adds tag information that can be text, integer, or decimal to
 // the envelope.  WithEnvelopeTags expects a single call with a complete map
 // and will overwrite if called a second time.
-func WithEnvelopeTags(tags map[string]string) func(*loggregator_v2.Envelope) {
-	return func(e *loggregator_v2.Envelope) {
-		for name, value := range tags {
-			e.Tags[name] = value
+func WithEnvelopeTags(tags map[string]string) func(proto.Message) {
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			for name, value := range tags {
+				e.Tags[name] = value
+			}
+		case *EnvelopeWrapper:
+			for name, value := range tags {
+				e.Tags[name] = value
+			}
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
 	}
 }

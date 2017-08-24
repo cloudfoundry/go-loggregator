@@ -12,10 +12,10 @@ import (
 	"time"
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/v1/conversion"
 
 	"github.com/cloudfoundry/dropsonde"
+	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/gogo/protobuf/proto"
 )
 
 type ClientOption func(*Client)
@@ -61,51 +61,15 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 
 // EmitLog sends a message to loggregator.
 func (c *Client) EmitLog(message string, opts ...loggregator.EmitLogOption) {
-	v2Envelope := &loggregator_v2.Envelope{
-		Timestamp: time.Now().UnixNano(),
-		Message: &loggregator_v2.Envelope_Log{
-			Log: &loggregator_v2.Log{
-				Payload: []byte(message),
-				Type:    loggregator_v2.Log_ERR,
-			},
-		},
-		Tags: make(map[string]string),
-	}
-
-	for _, o := range opts {
-		o(v2Envelope)
-	}
-	c.emitEnvelopes(v2Envelope)
-}
-
-// EmitGauge sends the configured gauge values to loggregator.
-// If no EmitGaugeOption values are present, no envelopes will be emitted.
-func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
-	v2Envelope := &loggregator_v2.Envelope{
-		Timestamp: time.Now().UnixNano(),
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: make(map[string]*loggregator_v2.GaugeValue),
-			},
-		},
-		Tags: make(map[string]string),
-	}
-
-	for _, o := range opts {
-		o(v2Envelope)
-	}
-	c.emitEnvelopes(v2Envelope)
-}
-
-// EmitCounter sends a counter envelope with a delta of 1.
-func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption) {
-	v2Envelope := &loggregator_v2.Envelope{
-		Timestamp: time.Now().UnixNano(),
-		Message: &loggregator_v2.Envelope_Counter{
-			Counter: &loggregator_v2.Counter{
-				Name: name,
-				Value: &loggregator_v2.Counter_Delta{
-					Delta: uint64(1),
+	w := loggregator.EnvelopeWrapper{
+		Messages: []*events.Envelope{
+			{
+				Timestamp: proto.Int64(time.Now().UnixNano()),
+				EventType: events.Envelope_LogMessage.Enum(),
+				LogMessage: &events.LogMessage{
+					MessageType: events.LogMessage_ERR.Enum(),
+					Message:     []byte(message),
+					Timestamp:   proto.Int64(time.Now().UnixNano()),
 				},
 			},
 		},
@@ -113,18 +77,65 @@ func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 	}
 
 	for _, o := range opts {
-		o(v2Envelope)
+		o(&w)
 	}
-	c.emitEnvelopes(v2Envelope)
+	w.Messages[0].Tags = w.Tags
+
+	c.emitEnvelope(w)
 }
 
-func (c *Client) emitEnvelopes(v2Envelope *loggregator_v2.Envelope) {
-	for k, v := range c.tags {
-		v2Envelope.Tags[k] = v
+// EmitGauge sends the configured gauge values to loggregator.
+// If no EmitGaugeOption values are present, no envelopes will be emitted.
+func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
+	w := loggregator.EnvelopeWrapper{
+		Tags: make(map[string]string),
 	}
-	v2Envelope.Tags["origin"] = dropsonde.DefaultEmitter.Origin()
 
-	for _, e := range conversion.ToV1(v2Envelope) {
+	for _, o := range opts {
+		o(&w)
+	}
+
+	for _, e := range w.Messages {
+		e.Timestamp = proto.Int64(time.Now().UnixNano())
+		e.EventType = events.Envelope_ValueMetric.Enum()
+		e.Tags = w.Tags
+	}
+
+	c.emitEnvelope(w)
+}
+
+// EmitCounter sends a counter envelope with a delta of 1.
+func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption) {
+	w := loggregator.EnvelopeWrapper{
+		Messages: []*events.Envelope{
+			{
+				Timestamp: proto.Int64(time.Now().UnixNano()),
+				EventType: events.Envelope_CounterEvent.Enum(),
+				CounterEvent: &events.CounterEvent{
+					Name:  proto.String(name),
+					Delta: proto.Uint64(1),
+				},
+			},
+		},
+		Tags: make(map[string]string),
+	}
+
+	for _, o := range opts {
+		o(&w)
+	}
+
+	w.Messages[0].Tags = w.Tags
+
+	c.emitEnvelope(w)
+}
+
+func (c *Client) emitEnvelope(w loggregator.EnvelopeWrapper) {
+	for _, e := range w.Messages {
+		e.Origin = proto.String(dropsonde.DefaultEmitter.Origin())
+		for k, v := range c.tags {
+			e.Tags[k] = v
+		}
+
 		err := dropsonde.DefaultEmitter.EmitEnvelope(e)
 		if err != nil {
 			c.logger.Printf("Failed to emit envelope: %s", err)

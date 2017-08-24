@@ -116,19 +116,22 @@ var _ = Describe("DropsondeClient", func() {
 
 				It("emits a gauge with one metric", func() {
 					tags := map[string]string{
-						"deployment": "an-deployment",
+						"deployment": "a-deployment",
 					}
 					client.EmitGauge(
 						loggregator_v2.WithGaugeValue("gauge-name", 123.45, "nanofortnights"),
 						loggregator_v2.WithEnvelopeTags(tags),
+						loggregator_v2.WithEnvelopeTag("other-tag", "some-value"),
 					)
 
 					var env *events.Envelope
 					Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 					Expect(env.GetEventType()).To(Equal(events.Envelope_ValueMetric))
-					Expect(env.GetDeployment()).To(Equal("an-deployment"))
 					Expect(env.GetOrigin()).To(Equal("my-origin"))
 					Expect(env.GetTimestamp()).To(BeNumerically("~", time.Now().UnixNano(), time.Second))
+
+					Expect(env.Tags).To(HaveKeyWithValue("deployment", "a-deployment"))
+					Expect(env.Tags).To(HaveKeyWithValue("other-tag", "some-value"))
 
 					gauge := env.GetValueMetric()
 					Expect(gauge.GetName()).To(Equal("gauge-name"))
