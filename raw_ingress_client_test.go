@@ -68,13 +68,15 @@ var _ = Describe("RawIngressClient", func() {
 
 		Consistently(receivers).Should(BeEmpty())
 
-		for i := 0; i < 200; i++ {
-			client.Emit([]*loggregator_v2.Envelope{
-				{
-					Timestamp: 3,
-				},
-			})
-		}
+		go func() {
+			for {
+				client.Emit([]*loggregator_v2.Envelope{
+					{
+						Timestamp: 3,
+					},
+				})
+			}
+		}()
 
 		Eventually(receivers, 10).Should(Receive(&recv))
 		envBatch, err = recv.Recv()
