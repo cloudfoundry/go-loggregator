@@ -9,6 +9,9 @@ import (
 
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 )
@@ -73,7 +76,9 @@ func WithLogger(l Logger) IngressOption {
 // IngressClient represents an emitter into loggregator. It should be created with the
 // NewIngressClient constructor.
 type IngressClient struct {
-	rawClient *RawIngressClient
+	client loggregator_v2.IngressClient
+	sender loggregator_v2.Ingress_BatchSenderClient
+
 	envelopes chan *loggregator_v2.Envelope
 	tags      map[string]string
 
@@ -87,7 +92,7 @@ type IngressClient struct {
 // NewIngressClient creates a v2 loggregator client. Its TLS configuration
 // must share a CA with the loggregator server.
 func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressClient, error) {
-	client := &IngressClient{
+	c := &IngressClient{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		tags:               make(map[string]string),
 		batchMaxSize:       100,
@@ -97,18 +102,21 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 	}
 
 	for _, o := range opts {
-		o(client)
+		o(c)
 	}
 
-	var err error
-	client.rawClient, err = NewRawIngressClient(client.addr, tlsConfig)
+	conn, err := grpc.Dial(
+		c.addr,
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+	)
 	if err != nil {
 		return nil, err
 	}
+	c.client = loggregator_v2.NewIngressClient(conn)
 
-	go client.startSender()
+	go c.startSender()
 
-	return client, nil
+	return c, nil
 }
 
 // EnvelopeWrapper is used to setup v1 Envelopes. It should not be created or
@@ -320,10 +328,30 @@ func (c *IngressClient) startSender() {
 }
 
 func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) {
-	err := c.rawClient.Emit(batch)
+	err := c.emit(batch)
 	if err != nil {
 		c.logger.Printf("Error while flushing: %s", err)
 	}
+}
+
+func (c *IngressClient) emit(batch []*loggregator_v2.Envelope) error {
+	if c.sender == nil {
+		var err error
+		// TODO Callers of emit should pass in a context. The code should not
+		// be hard-coding context.TODO here.
+		c.sender, err = c.client.BatchSender(context.TODO())
+		if err != nil {
+			return err
+		}
+	}
+
+	err := c.sender.Send(&loggregator_v2.EnvelopeBatch{Batch: batch})
+	if err != nil {
+		c.sender = nil
+		return err
+	}
+
+	return nil
 }
 
 // WithEnvelopeTag adds a tag to the envelope.

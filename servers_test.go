@@ -13,8 +13,8 @@ import (
 )
 
 type testIngressServer struct {
-	receivers_ chan loggregator_v2.Ingress_BatchSenderServer
-	addr_      string
+	receivers  chan loggregator_v2.Ingress_BatchSenderServer
+	addr       string
 	tlsConfig  *tls.Config
 	grpcServer *grpc.Server
 	grpc.Stream
@@ -41,9 +41,9 @@ func newTestIngressServer(serverCert, serverKey, caCert string) (*testIngressSer
 	tlsConfig.RootCAs = caCertPool
 
 	return &testIngressServer{
-		tlsConfig:  tlsConfig,
-		receivers_: make(chan loggregator_v2.Ingress_BatchSenderServer),
-		addr_:      "localhost:0",
+		tlsConfig: tlsConfig,
+		receivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
+		addr:      "localhost:0",
 	}, nil
 }
 
@@ -52,16 +52,16 @@ func (*testIngressServer) Sender(srv loggregator_v2.Ingress_SenderServer) error 
 }
 
 func (t *testIngressServer) BatchSender(srv loggregator_v2.Ingress_BatchSenderServer) error {
-	t.receivers_ <- srv
+	t.receivers <- srv
 	return nil
 }
 
 func (t *testIngressServer) start() error {
-	listener, err := net.Listen("tcp4", t.addr_)
+	listener, err := net.Listen("tcp4", t.addr)
 	if err != nil {
 		return err
 	}
-	t.addr_ = listener.Addr().String()
+	t.addr = listener.Addr().String()
 
 	var opts []grpc.ServerOption
 	if t.tlsConfig != nil {
@@ -78,14 +78,6 @@ func (t *testIngressServer) start() error {
 
 func (t *testIngressServer) stop() {
 	t.grpcServer.Stop()
-}
-
-func (t *testIngressServer) addr() string {
-	return t.addr_
-}
-
-func (t *testIngressServer) receivers() chan loggregator_v2.Ingress_BatchSenderServer {
-	return t.receivers_
 }
 
 type testEgressServer struct {

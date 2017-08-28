@@ -15,9 +15,8 @@ import (
 
 var _ = Describe("IngressClient", func() {
 	var (
-		client    *loggregator.IngressClient
-		receivers chan loggregator_v2.Ingress_BatchSenderServer
-		server    *testIngressServer
+		client *loggregator.IngressClient
+		server *testIngressServer
 	)
 
 	BeforeEach(func() {
@@ -32,8 +31,6 @@ var _ = Describe("IngressClient", func() {
 		err = server.start()
 		Expect(err).NotTo(HaveOccurred())
 
-		receivers = server.receivers()
-
 		tlsConfig, err := loggregator.NewIngressTLSConfig(
 			fixture("CA.crt"),
 			fixture("client.crt"),
@@ -43,7 +40,7 @@ var _ = Describe("IngressClient", func() {
 
 		client, err = loggregator.NewIngressClient(
 			tlsConfig,
-			loggregator.WithAddr(server.addr()),
+			loggregator.WithAddr(server.addr),
 			loggregator.WithBatchFlushInterval(50*time.Millisecond),
 			loggregator.WithTag("string", "client-string-tag"),
 		)
@@ -66,7 +63,7 @@ var _ = Describe("IngressClient", func() {
 
 		Eventually(func() int {
 			var recv loggregator_v2.Ingress_BatchSenderServer
-			Eventually(receivers, 10).Should(Receive(&recv))
+			Eventually(server.receivers, 10).Should(Receive(&recv))
 
 			b, err := recv.Recv()
 			if err != nil {
@@ -83,7 +80,7 @@ var _ = Describe("IngressClient", func() {
 			loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
 			loggregator.WithStdout(),
 		)
-		env, err := getEnvelopeAt(receivers, 0)
+		env, err := getEnvelopeAt(server.receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(env.SourceId).To(Equal("app-id"))
@@ -103,7 +100,7 @@ var _ = Describe("IngressClient", func() {
 			loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
 		)
 
-		env, err := getEnvelopeAt(receivers, 0)
+		env, err := getEnvelopeAt(server.receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(env.SourceId).To(Equal("app-id"))
@@ -125,7 +122,7 @@ var _ = Describe("IngressClient", func() {
 			loggregator.WithGaugeAppInfo("app-id"),
 		)
 
-		env, err := getEnvelopeAt(receivers, 0)
+		env, err := getEnvelopeAt(server.receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
 		ts := time.Unix(0, env.Timestamp)
@@ -150,7 +147,7 @@ var _ = Describe("IngressClient", func() {
 	DescribeTable("tagging", func(emit func()) {
 		emit()
 
-		env, err := getEnvelopeAt(receivers, 0)
+		env, err := getEnvelopeAt(server.receivers, 0)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(env.Tags["string"]).To(Equal("client-string-tag"), "The client tag for string was not set properly")
