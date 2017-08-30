@@ -87,6 +87,8 @@ type IngressClient struct {
 	addr               string
 
 	logger Logger
+
+	closeErrors chan error
 }
 
 // NewIngressClient creates a v2 loggregator client. Its TLS configuration
@@ -99,6 +101,7 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 		batchFlushInterval: time.Second,
 		addr:               "localhost:3458",
 		logger:             log.New(ioutil.Discard, "", 0),
+		closeErrors:        make(chan error),
 	}
 
 	for _, o := range opts {
@@ -307,10 +310,15 @@ func (c *IngressClient) startSender() {
 	for {
 		select {
 		case env := <-c.envelopes:
+			if env == nil {
+				c.closeErrors <- c.flush(batch, true)
+				return
+			}
+
 			batch = append(batch, env)
 
 			if len(batch) >= int(c.batchMaxSize) {
-				c.flush(batch)
+				c.flush(batch, false)
 				batch = nil
 				if !t.Stop() {
 					<-t.C
@@ -319,7 +327,7 @@ func (c *IngressClient) startSender() {
 			}
 		case <-t.C:
 			if len(batch) > 0 {
-				c.flush(batch)
+				c.flush(batch, false)
 				batch = nil
 			}
 			t.Reset(c.batchFlushInterval)
@@ -327,14 +335,22 @@ func (c *IngressClient) startSender() {
 	}
 }
 
-func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) {
-	err := c.emit(batch)
+func (c *IngressClient) CloseSend() error {
+	close(c.envelopes)
+
+	return <-c.closeErrors
+}
+
+func (c *IngressClient) flush(batch []*loggregator_v2.Envelope, close bool) error {
+	err := c.emit(batch, close)
 	if err != nil {
 		c.logger.Printf("Error while flushing: %s", err)
 	}
+
+	return err
 }
 
-func (c *IngressClient) emit(batch []*loggregator_v2.Envelope) error {
+func (c *IngressClient) emit(batch []*loggregator_v2.Envelope, close bool) error {
 	if c.sender == nil {
 		var err error
 		// TODO Callers of emit should pass in a context. The code should not
@@ -349,6 +365,10 @@ func (c *IngressClient) emit(batch []*loggregator_v2.Envelope) error {
 	if err != nil {
 		c.sender = nil
 		return err
+	}
+
+	if close {
+		return c.sender.CloseSend()
 	}
 
 	return nil
