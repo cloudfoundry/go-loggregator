@@ -27,9 +27,11 @@ func main() {
 		log.Fatal("Could not create client", err)
 	}
 
-	for {
+	for i := 0; i < 50; i++ {
 		client.EmitLog("some log goes here")
 
-		time.Sleep(time.Second)
+		time.Sleep(10 * time.Millisecond)
 	}
+
+	client.CloseSend()
 }
