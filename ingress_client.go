@@ -277,6 +277,14 @@ func WithDelta(d uint64) EmitCounterOption {
 	}
 }
 
+// CloseSend will flush the envelope buffers and close the stream to the
+// ingress server. This method will block until the buffers are flushed.
+func (c *IngressClient) CloseSend() error {
+	close(c.envelopes)
+
+	return <-c.closeErrors
+}
+
 // EmitCounter sends a counter envelope with a delta of 1.
 func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 	e := &loggregator_v2.Envelope{
@@ -333,12 +341,6 @@ func (c *IngressClient) startSender() {
 			t.Reset(c.batchFlushInterval)
 		}
 	}
-}
-
-func (c *IngressClient) CloseSend() error {
-	close(c.envelopes)
-
-	return <-c.closeErrors
 }
 
 func (c *IngressClient) flush(batch []*loggregator_v2.Envelope, close bool) error {
