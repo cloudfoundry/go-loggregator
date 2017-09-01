@@ -317,9 +317,12 @@ func (c *IngressClient) startSender() {
 	var batch []*loggregator_v2.Envelope
 	for {
 		select {
-		case env := <-c.envelopes:
-			if env == nil {
-				c.closeErrors <- c.flush(batch, true)
+		case env, ok := <-c.envelopes:
+			if !ok {
+				if len(batch) > 0 {
+					c.closeErrors <- c.flush(batch, true)
+				}
+
 				return
 			}
 
