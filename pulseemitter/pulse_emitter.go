@@ -53,7 +53,7 @@ func New(c LoggClient, opts ...PulseEmitterOption) *PulseEmitter {
 // interval configured on the PulseEmitter. If the counter metrics value has
 // not changed since last emitted a 0 value will be emitted. Every time the
 // counter metric is emitted, its delta is reset to 0.
-func (c *PulseEmitter) NewCounterMetric(name string, opts ...MetricOption) *CounterMetric {
+func (c *PulseEmitter) NewCounterMetric(name string, opts ...MetricOption) CounterMetric {
 	m := NewCounterMetric(name, opts...)
 	go c.pulse(m)
 
@@ -65,7 +65,7 @@ func (c *PulseEmitter) NewCounterMetric(name string, opts ...MetricOption) *Coun
 // the interval configured on the PulseEmitter. When emitting the gauge
 // metric, it will use the last value given when calling set on the gauge
 // metric.
-func (c *PulseEmitter) NewGaugeMetric(name, unit string, opts ...MetricOption) *GaugeMetric {
+func (c *PulseEmitter) NewGaugeMetric(name, unit string, opts ...MetricOption) GaugeMetric {
 	g := NewGaugeMetric(name, unit, opts...)
 	go c.pulse(g)
 

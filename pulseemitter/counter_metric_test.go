@@ -38,13 +38,23 @@ var _ = Describe("CounterMetric", func() {
 
 		It("decrements its value on success", func() {
 			metric := pulseemitter.NewCounterMetric("name")
+			spy := newSpyLoggClient()
 
 			metric.Increment(10)
-
-			spy := newSpyLoggClient()
 			metric.Emit(spy)
 
-			Expect(metric.GetDelta()).To(Equal(uint64(0)))
+			metric.Emit(spy)
+			e := &loggregator_v2.Envelope{
+				Message: &loggregator_v2.Envelope_Counter{
+					&loggregator_v2.Counter{},
+				},
+			}
+
+			for _, o := range spy.counterOpts {
+				o(e)
+			}
+
+			Expect(e.GetCounter().GetDelta()).To(Equal(uint64(0)))
 		})
 	})
 })

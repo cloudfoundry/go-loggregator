@@ -27,18 +27,28 @@ func WithTags(tags map[string]string) MetricOption {
 	}
 }
 
-// CounterMetric is used by the pulse emitter to emit counter metrics to the
+// counterMetric is used by the pulse emitter to emit counter metrics to the
 // LoggClient.
-type CounterMetric struct {
+type counterMetric struct {
 	name  string
 	delta uint64
 	tags  map[string]string
 }
 
-// NewCounterMetric returns a new CounterMetric that can be incremented and
+// CounterMetric is used by the pulse emitter to emit counter metrics to the
+// LoggClient.
+type CounterMetric interface {
+	// Increment increases the counter's delta by the given value
+	Increment(c uint64)
+
+	// Emit sends the counter values to the LoggClient.
+	Emit(c LoggClient)
+}
+
+// NewCounterMetric returns a new counterMetric that can be incremented and
 // emitted via a LoggClient.
-func NewCounterMetric(name string, opts ...MetricOption) *CounterMetric {
-	m := &CounterMetric{
+func NewCounterMetric(name string, opts ...MetricOption) CounterMetric {
+	m := &counterMetric{
 		name: name,
 		tags: make(map[string]string),
 	}
@@ -51,18 +61,13 @@ func NewCounterMetric(name string, opts ...MetricOption) *CounterMetric {
 }
 
 // Increment will add the given uint64 to the current delta.
-func (m *CounterMetric) Increment(c uint64) {
+func (m *counterMetric) Increment(c uint64) {
 	atomic.AddUint64(&m.delta, c)
 }
 
-// GetDelta will return the current value of the delta.
-func (m *CounterMetric) GetDelta() uint64 {
-	return atomic.LoadUint64(&m.delta)
-}
-
 // Emit will send the current delta and tagging options to the LoggClient to
-// be emitted. The delta on the CounterMetric will be reset to 0.
-func (m *CounterMetric) Emit(c LoggClient) {
+// be emitted. The delta on the counterMetric will be reset to 0.
+func (m *counterMetric) Emit(c LoggClient) {
 	d := atomic.SwapUint64(&m.delta, 0)
 	options := []loggregator.EmitCounterOption{loggregator.WithDelta(d)}
 

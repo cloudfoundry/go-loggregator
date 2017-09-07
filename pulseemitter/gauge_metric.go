@@ -8,17 +8,27 @@ import (
 
 // GaugeMetric is used by the pulse emitter to emit gauge metrics to the
 // LoggClient.
-type GaugeMetric struct {
+type GaugeMetric interface {
+	// Set sets the current value of the gauge metric.
+	Set(n int64)
+
+	// Emit sends the counter values to the LoggClient.
+	Emit(c LoggClient)
+}
+
+// gaugeMetric is used by the pulse emitter to emit gauge metrics to the
+// LoggClient.
+type gaugeMetric struct {
 	name  string
 	unit  string
 	value int64
 	tags  map[string]string
 }
 
-// NewGaugeMetric returns a new GaugeMetric that has a value that can be set
+// NewGaugeMetric returns a new gaugeMetric that has a value that can be set
 // and emitted via a LoggClient.
-func NewGaugeMetric(name, unit string, opts ...MetricOption) *GaugeMetric {
-	g := &GaugeMetric{
+func NewGaugeMetric(name, unit string, opts ...MetricOption) GaugeMetric {
+	g := &gaugeMetric{
 		name: name,
 		unit: unit,
 		tags: make(map[string]string),
@@ -32,13 +42,13 @@ func NewGaugeMetric(name, unit string, opts ...MetricOption) *GaugeMetric {
 }
 
 // Set will set the current value of the gauge metric to the given number.
-func (g *GaugeMetric) Set(n int64) {
+func (g *gaugeMetric) Set(n int64) {
 	atomic.SwapInt64(&g.value, n)
 }
 
 // Emit will send the current value and tagging options to the LoggClient to
 // be emitted.
-func (g *GaugeMetric) Emit(c LoggClient) {
+func (g *gaugeMetric) Emit(c LoggClient) {
 	options := []loggregator.EmitGaugeOption{
 		loggregator.WithGaugeValue(
 			g.name,
