@@ -61,7 +61,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 
 // EmitLog sends a message to loggregator.
 func (c *Client) EmitLog(message string, opts ...loggregator.EmitLogOption) {
-	w := loggregator.EnvelopeWrapper{
+	w := envelopeWrapper{
 		Messages: []*events.Envelope{
 			{
 				Timestamp: proto.Int64(time.Now().UnixNano()),
@@ -87,7 +87,7 @@ func (c *Client) EmitLog(message string, opts ...loggregator.EmitLogOption) {
 // EmitGauge sends the configured gauge values to loggregator.
 // If no EmitGaugeOption values are present, no envelopes will be emitted.
 func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
-	w := loggregator.EnvelopeWrapper{
+	w := envelopeWrapper{
 		Tags: make(map[string]string),
 	}
 
@@ -106,7 +106,7 @@ func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 
 // EmitCounter sends a counter envelope with a delta of 1.
 func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption) {
-	w := loggregator.EnvelopeWrapper{
+	w := envelopeWrapper{
 		Messages: []*events.Envelope{
 			{
 				Timestamp: proto.Int64(time.Now().UnixNano()),
@@ -129,7 +129,7 @@ func (c *Client) EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 	c.emitEnvelope(w)
 }
 
-func (c *Client) emitEnvelope(w loggregator.EnvelopeWrapper) {
+func (c *Client) emitEnvelope(w envelopeWrapper) {
 	for _, e := range w.Messages {
 		e.Origin = proto.String(dropsonde.DefaultEmitter.Origin())
 		for k, v := range c.tags {
@@ -141,4 +141,44 @@ func (c *Client) emitEnvelope(w loggregator.EnvelopeWrapper) {
 			c.logger.Printf("Failed to emit envelope: %s", err)
 		}
 	}
+}
+
+// envelopeWrapper is used to setup v1 Envelopes.
+type envelopeWrapper struct {
+	proto.Message
+
+	Messages []*events.Envelope
+	Tags     map[string]string
+}
+
+func (e *envelopeWrapper) SetGaugeAppInfo(appID string) {
+	e.Tags["source_id"] = appID
+}
+
+func (e *envelopeWrapper) SetLogAppInfo(appID string, sourceType string, sourceInstance string) {
+	e.Messages[0].GetLogMessage().AppId = proto.String(appID)
+	e.Messages[0].GetLogMessage().SourceType = proto.String(sourceType)
+	e.Messages[0].GetLogMessage().SourceInstance = proto.String(sourceInstance)
+}
+
+func (e *envelopeWrapper) SetLogToStdout() {
+	e.Messages[0].GetLogMessage().MessageType = events.LogMessage_OUT.Enum()
+}
+
+func (e *envelopeWrapper) SetGaugeValue(name string, value float64, unit string) {
+	e.Messages = append(e.Messages, &events.Envelope{
+		ValueMetric: &events.ValueMetric{
+			Name:  proto.String(name),
+			Value: proto.Float64(value),
+			Unit:  proto.String(unit),
+		},
+	})
+}
+
+func (e *envelopeWrapper) SetDelta(d uint64) {
+	e.Messages[0].GetCounterEvent().Delta = proto.Uint64(d)
+}
+
+func (e *envelopeWrapper) SetTag(name string, value string) {
+	e.Tags[name] = value
 }

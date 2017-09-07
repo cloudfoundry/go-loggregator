@@ -7,8 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -122,13 +121,15 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 	return c, nil
 }
 
-// EnvelopeWrapper is used to setup v1 Envelopes. It should not be created or
-// used by a user.
-type EnvelopeWrapper struct {
-	proto.Message
-
-	Messages []*events.Envelope
-	Tags     map[string]string
+// protoEditor is required for v1 envelopes. It should be removed once v1
+// is removed. It is necessary to prevent any v1 dependency in the v2 path.
+type protoEditor interface {
+	SetGaugeAppInfo(appID string)
+	SetLogAppInfo(appID, sourceType, sourceInstance string)
+	SetLogToStdout()
+	SetGaugeValue(name string, value float64, unit string)
+	SetDelta(d uint64)
+	SetTag(name, value string)
 }
 
 // EmitLogOption is the option type passed into EmitLog
@@ -142,10 +143,8 @@ func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
 			e.SourceId = appID
 			e.InstanceId = sourceInstance
 			e.Tags["source_type"] = sourceType
-		case *EnvelopeWrapper:
-			e.Messages[0].GetLogMessage().AppId = proto.String(appID)
-			e.Messages[0].GetLogMessage().SourceType = proto.String(sourceType)
-			e.Messages[0].GetLogMessage().SourceInstance = proto.String(sourceInstance)
+		case protoEditor:
+			e.SetLogAppInfo(appID, sourceType, sourceInstance)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -159,8 +158,8 @@ func WithStdout() EmitLogOption {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
 			e.GetLog().Type = loggregator_v2.Log_OUT
-		case *EnvelopeWrapper:
-			e.Messages[0].GetLogMessage().MessageType = events.LogMessage_OUT.Enum()
+		case protoEditor:
+			e.SetLogToStdout()
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -200,8 +199,8 @@ func WithGaugeAppInfo(appID string) EmitGaugeOption {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
 			e.SourceId = appID
-		case *EnvelopeWrapper:
-			e.Tags["source_id"] = appID
+		case protoEditor:
+			e.SetGaugeAppInfo(appID)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -221,14 +220,8 @@ func WithGaugeValue(name string, value float64, unit string) EmitGaugeOption {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
 			e.GetGauge().Metrics[name] = &loggregator_v2.GaugeValue{Value: value, Unit: unit}
-		case *EnvelopeWrapper:
-			e.Messages = append(e.Messages, &events.Envelope{
-				ValueMetric: &events.ValueMetric{
-					Name:  proto.String(name),
-					Value: proto.Float64(value),
-					Unit:  proto.String(unit),
-				},
-			})
+		case protoEditor:
+			e.SetGaugeValue(name, value, unit)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -269,8 +262,8 @@ func WithDelta(d uint64) EmitCounterOption {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
 			e.GetCounter().Value = &loggregator_v2.Counter_Delta{Delta: d}
-		case *EnvelopeWrapper:
-			e.Messages[0].GetCounterEvent().Delta = proto.Uint64(d)
+		case protoEditor:
+			e.SetDelta(d)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -385,8 +378,8 @@ func WithEnvelopeTag(name, value string) func(proto.Message) {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
 			e.Tags[name] = value
-		case *EnvelopeWrapper:
-			e.Tags[name] = value
+		case protoEditor:
+			e.SetTag(name, value)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -403,9 +396,9 @@ func WithEnvelopeTags(tags map[string]string) func(proto.Message) {
 			for name, value := range tags {
 				e.Tags[name] = value
 			}
-		case *EnvelopeWrapper:
+		case protoEditor:
 			for name, value := range tags {
-				e.Tags[name] = value
+				e.SetTag(name, value)
 			}
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
