@@ -95,6 +95,10 @@ func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 		o(&w)
 	}
 
+	if c.promoteToContainerMetric(w) {
+		return
+	}
+
 	for _, e := range w.Messages {
 		e.Timestamp = proto.Int64(time.Now().UnixNano())
 		e.EventType = events.Envelope_ValueMetric.Enum()
@@ -102,6 +106,66 @@ func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 	}
 
 	c.emitEnvelope(w)
+}
+
+// Check to see if the envelope should be promoted to a ContainerMetric.
+func (c *Client) promoteToContainerMetric(w envelopeWrapper) bool {
+	appID, ok := w.Tags["source_id"]
+	if !ok || len(w.Messages) != 6 {
+		return false
+	}
+
+	// We need 6 bools to determine if the envelope has all the required
+	// name/value pairs. Each name will store it's presence in increasing
+	// signifigance (i.e., 'instance_index' is stored to bit 0, and 'cpu'
+	// is stored to bit 1 ...).
+	cMetric := events.ContainerMetric{
+		ApplicationId: proto.String(appID),
+	}
+
+	var allPresent uint16
+	for _, m := range w.Messages {
+		switch m.GetValueMetric().GetName() {
+		case "instance_index":
+			allPresent |= 1
+			cMetric.InstanceIndex = proto.Int32(int32(m.GetValueMetric().GetValue()))
+		case "cpu":
+			allPresent |= 2
+			cMetric.CpuPercentage = proto.Float64(m.GetValueMetric().GetValue())
+		case "memory":
+			allPresent |= 4
+			cMetric.MemoryBytes = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
+		case "disk":
+			allPresent |= 8
+			cMetric.DiskBytes = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
+		case "memory_quota":
+			allPresent |= 16
+			cMetric.MemoryBytesQuota = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
+		case "disk_quota":
+			allPresent |= 32
+			cMetric.DiskBytesQuota = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
+		default:
+			break
+		}
+	}
+
+	// 0x3F implies that each of the required six fields were populated.
+	if allPresent != 0x3F {
+		return false
+	}
+
+	// Promote to Container
+	container := &events.Envelope{
+		Timestamp:       proto.Int64(time.Now().UnixNano()),
+		EventType:       events.Envelope_ContainerMetric.Enum(),
+		Tags:            w.Tags,
+		ContainerMetric: &cMetric,
+	}
+
+	w.Messages = []*events.Envelope{container}
+	c.emitEnvelope(w)
+
+	return true
 }
 
 // EmitCounter sends a counter envelope with a delta of 1.
