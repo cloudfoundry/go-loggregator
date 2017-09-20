@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -124,7 +125,7 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 // protoEditor is required for v1 envelopes. It should be removed once v1
 // is removed. It is necessary to prevent any v1 dependency in the v2 path.
 type protoEditor interface {
-	SetGaugeAppInfo(appID string)
+	SetGaugeAppInfo(appID string, index int)
 	SetLogAppInfo(appID, sourceType, sourceInstance string)
 	SetLogToStdout()
 	SetGaugeValue(name string, value float64, unit string)
@@ -190,17 +191,18 @@ func (c *IngressClient) EmitLog(message string, opts ...EmitLogOption) {
 	c.envelopes <- e
 }
 
-// EmitGaugeOption is the option type passed into EmitGauge
+// EmitGaugeOption is the option type passed into EmitGauge.
 type EmitGaugeOption func(proto.Message)
 
-// WithGaugeAppInfo configures an ID associated with the gauge
-func WithGaugeAppInfo(appID string) EmitGaugeOption {
+// WithGaugeAppInfo configures an envelope with both the app ID and index.
+func WithGaugeAppInfo(appID string, index int) EmitGaugeOption {
 	return func(m proto.Message) {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
 			e.SourceId = appID
+			e.InstanceId = strconv.Itoa(index)
 		case protoEditor:
-			e.SetGaugeAppInfo(appID)
+			e.SetGaugeAppInfo(appID, index)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}

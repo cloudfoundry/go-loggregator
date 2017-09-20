@@ -9,6 +9,7 @@ package v1
 import (
 	"io/ioutil"
 	"log"
+	"strconv"
 	"time"
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
@@ -110,47 +111,55 @@ func (c *Client) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 
 // Check to see if the envelope should be promoted to a ContainerMetric.
 func (c *Client) promoteToContainerMetric(w envelopeWrapper) bool {
+	if len(w.Messages) != 5 {
+		return false
+	}
 	appID, ok := w.Tags["source_id"]
-	if !ok || len(w.Messages) != 6 {
+	if !ok {
+		return false
+	}
+	instanceIndex, err := strconv.Atoi(w.Tags["instance_id"])
+	if err != nil {
+		// Note: it should not be possible to get into this code path as the
+		// first length check protects us. We are leaving them here in case
+		// things change in the future.
 		return false
 	}
 
-	// We need 6 bools to determine if the envelope has all the required
+	// We need 5 bools to determine if the envelope has all the required
 	// name/value pairs. Each name will store it's presence in increasing
-	// signifigance (i.e., 'instance_index' is stored to bit 0, and 'cpu'
-	// is stored to bit 1 ...).
+	// signifigance (i.e., 'cpu' is stored to bit 0, and 'memory' is stored to
+	// bit 1 ...).
 	cMetric := events.ContainerMetric{
 		ApplicationId: proto.String(appID),
+		InstanceIndex: proto.Int32(int32(instanceIndex)),
 	}
 
 	var allPresent uint16
 	for _, m := range w.Messages {
 		switch m.GetValueMetric().GetName() {
-		case "instance_index":
-			allPresent |= 1
-			cMetric.InstanceIndex = proto.Int32(int32(m.GetValueMetric().GetValue()))
 		case "cpu":
-			allPresent |= 2
+			allPresent |= 1
 			cMetric.CpuPercentage = proto.Float64(m.GetValueMetric().GetValue())
 		case "memory":
-			allPresent |= 4
+			allPresent |= 2
 			cMetric.MemoryBytes = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
 		case "disk":
-			allPresent |= 8
+			allPresent |= 4
 			cMetric.DiskBytes = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
 		case "memory_quota":
-			allPresent |= 16
+			allPresent |= 8
 			cMetric.MemoryBytesQuota = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
 		case "disk_quota":
-			allPresent |= 32
+			allPresent |= 16
 			cMetric.DiskBytesQuota = proto.Uint64(uint64(m.GetValueMetric().GetValue()))
 		default:
 			break
 		}
 	}
 
-	// 0x3F implies that each of the required six fields were populated.
-	if allPresent != 0x3F {
+	// 0x1f implies that each of the required five fields were populated.
+	if allPresent != 0x1f {
 		return false
 	}
 
@@ -215,8 +224,9 @@ type envelopeWrapper struct {
 	Tags     map[string]string
 }
 
-func (e *envelopeWrapper) SetGaugeAppInfo(appID string) {
+func (e *envelopeWrapper) SetGaugeAppInfo(appID string, index int) {
 	e.Tags["source_id"] = appID
+	e.Tags["instance_id"] = strconv.Itoa(index)
 }
 
 func (e *envelopeWrapper) SetLogAppInfo(appID string, sourceType string, sourceInstance string) {

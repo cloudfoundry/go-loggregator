@@ -3,12 +3,14 @@ package v1_test
 import (
 	"time"
 
+	"code.cloudfoundry.org/go-loggregator"
 	loggregator_v2 "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/v1"
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -169,14 +171,15 @@ var _ = Describe("DropsondeClient", func() {
 				It("emits envelopes with app info as a tag", func() {
 					client.EmitGauge(
 						loggregator_v2.WithGaugeValue("gauge-name", 123.45, "nanofortnights"),
-						loggregator_v2.WithGaugeAppInfo("app-id"),
+						loggregator_v2.WithGaugeAppInfo("app-id", 123),
 					)
 
 					var env *events.Envelope
 					Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 
 					Expect(env.GetTags()).To(Equal(map[string]string{
-						"source_id": "app-id",
+						"source_id":   "app-id",
+						"instance_id": "123",
 					}))
 				})
 
@@ -230,20 +233,19 @@ var _ = Describe("DropsondeClient", func() {
 				Context("when the envelope should be promoted to a ContainerMetric", func() {
 					It("promotes the envelope", func() {
 						client.EmitGauge(
-							loggregator_v2.WithGaugeValue("instance_index", 1, ""),
 							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
 							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
 							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
-							loggregator_v2.WithGaugeAppInfo("some-app-id"),
+							loggregator_v2.WithGaugeAppInfo("some-app-id", 123),
 						)
 
 						var env *events.Envelope
 						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(1))
 						Expect(spyEmitter.emittedEnvelopes).To(Receive(&env))
 						Expect(env.GetContainerMetric()).ToNot(BeNil())
-						Expect(env.GetContainerMetric().GetInstanceIndex()).To(Equal(int32(1)))
+						Expect(env.GetContainerMetric().GetInstanceIndex()).To(Equal(int32(123)))
 						Expect(env.GetContainerMetric().GetCpuPercentage()).To(Equal(float64(2)))
 						Expect(env.GetContainerMetric().GetMemoryBytes()).To(Equal(uint64(3)))
 						Expect(env.GetContainerMetric().GetDiskBytes()).To(Equal(uint64(4)))
@@ -254,51 +256,95 @@ var _ = Describe("DropsondeClient", func() {
 
 					It("does not promote the envelope if missing required name/value", func() {
 						client.EmitGauge(
-							loggregator_v2.WithGaugeValue("instance_index", 1, ""),
 							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
 							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
 							// Missing Disk Quota
-							loggregator_v2.WithGaugeAppInfo("some-app-id"),
+							loggregator_v2.WithGaugeAppInfo("some-app-id", 123),
 						)
 
 						// It will not promote the envelope, and therefore
 						// emit each one individually.
-						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(5))
+						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(4))
 					})
+
+					DescribeTable("does not promote the envelope if a typo exists in one of the required metric names",
+						func(opts []loggregator.EmitGaugeOption) {
+							opts = append(opts, loggregator_v2.WithGaugeAppInfo("some-app-id", 123))
+
+							client.EmitGauge(opts...)
+
+							// It will not promote the envelope, and therefore
+							// emit each one individually.
+							Expect(spyEmitter.emittedEnvelopes).To(HaveLen(5))
+						},
+						Entry("cpu misspelled", []loggregator.EmitGaugeOption{
+							loggregator_v2.WithGaugeValue("ccpu", 2, "percentage"),
+							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
+							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
+							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
+							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
+						}),
+						Entry("memory misspelled", []loggregator.EmitGaugeOption{
+							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
+							loggregator_v2.WithGaugeValue("mmemory", 3, "bytes"),
+							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
+							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
+							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
+						}),
+						Entry("disk misspelled", []loggregator.EmitGaugeOption{
+							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
+							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
+							loggregator_v2.WithGaugeValue("ddisk", 4, "bytes"),
+							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
+							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
+						}),
+						Entry("memory_quota misspelled", []loggregator.EmitGaugeOption{
+							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
+							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
+							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
+							loggregator_v2.WithGaugeValue("mmemory_quota", 5, "bytes"),
+							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
+						}),
+						Entry("disk_quota misspelled", []loggregator.EmitGaugeOption{
+							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
+							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
+							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
+							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
+							loggregator_v2.WithGaugeValue("ddisk_quota", 6, "bytes"),
+						}),
+					)
 
 					It("does not promote the envelope if there are any extra name/value pairs", func() {
 						client.EmitGauge(
-							loggregator_v2.WithGaugeValue("instance_index", 1, ""),
 							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
 							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
 							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
 							loggregator_v2.WithGaugeValue("extra", 9999, "bytes"),
-							loggregator_v2.WithGaugeAppInfo("some-app-id"),
-						)
-
-						// It will not promote the envelope, and therefore
-						// emit each one individually.
-						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(7))
-					})
-
-					It("does not promote the envelope if 'source_id' tag is missing", func() {
-						client.EmitGauge(
-							loggregator_v2.WithGaugeValue("instance_index", 1, ""),
-							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
-							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
-							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
-							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
-							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
-							//	 Missing App-Id
+							loggregator_v2.WithGaugeAppInfo("some-app-id", 123),
 						)
 
 						// It will not promote the envelope, and therefore
 						// emit each one individually.
 						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(6))
+					})
+
+					It("does not promote the envelope if 'source_id' tag is missing", func() {
+						client.EmitGauge(
+							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
+							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
+							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
+							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
+							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
+							//	 Missing App Info
+						)
+
+						// It will not promote the envelope, and therefore
+						// emit each one individually.
+						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(5))
 					})
 				})
 			})

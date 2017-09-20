@@ -122,7 +122,7 @@ var _ = Describe("IngressClient", func() {
 				loggregator.WithGaugeValue("name-a", 1, "unit-a"),
 				loggregator.WithGaugeValue("name-b", 2, "unit-b"),
 				loggregator.WithEnvelopeTags(map[string]string{"some-tag": "some-tag-value"}),
-				loggregator.WithGaugeAppInfo("app-id"),
+				loggregator.WithGaugeAppInfo("app-id", 123),
 			)
 
 			env, err := getEnvelopeAt(server.receivers, 0)
@@ -133,6 +133,7 @@ var _ = Describe("IngressClient", func() {
 			metrics := env.GetGauge()
 			Expect(metrics).NotTo(BeNil())
 			Expect(env.SourceId).To(Equal("app-id"))
+			Expect(env.InstanceId).To(Equal("123"))
 			Expect(metrics.GetMetrics()).To(HaveLen(2))
 			Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 			Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
