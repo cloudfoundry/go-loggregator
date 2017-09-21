@@ -346,6 +346,24 @@ var _ = Describe("DropsondeClient", func() {
 						// emit each one individually.
 						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(5))
 					})
+
+					It("does not promote the envelope if 'instance_id' tag is invalid", func() {
+						client.EmitGauge(
+							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
+							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
+							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
+							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
+							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
+							loggregator_v2.WithGaugeAppInfo("some-app-id", 123),
+
+							// Squash previously set instance_id tag
+							loggregator_v2.WithEnvelopeTag("instance_id", "invalid"),
+						)
+
+						// It will not promote the envelope, and therefore
+						// emit each one individually.
+						Expect(spyEmitter.emittedEnvelopes).To(HaveLen(5))
+					})
 				})
 			})
 		})

@@ -120,9 +120,6 @@ func (c *Client) promoteToContainerMetric(w envelopeWrapper) bool {
 	}
 	instanceIndex, err := strconv.Atoi(w.Tags["instance_id"])
 	if err != nil {
-		// Note: it should not be possible to get into this code path as the
-		// first length check protects us. We are leaving them here in case
-		// things change in the future.
 		return false
 	}
 
