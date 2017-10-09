@@ -272,14 +272,6 @@ func WithDelta(d uint64) EmitCounterOption {
 	}
 }
 
-// CloseSend will flush the envelope buffers and close the stream to the
-// ingress server. This method will block until the buffers are flushed.
-func (c *IngressClient) CloseSend() error {
-	close(c.envelopes)
-
-	return <-c.closeErrors
-}
-
 // EmitCounter sends a counter envelope with a delta of 1.
 func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 	e := &loggregator_v2.Envelope{
@@ -302,6 +294,41 @@ func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 	}
 
 	c.envelopes <- e
+}
+
+// EmitEventOption is the option type passed into EmitEvent.
+type EmitEventOption func(proto.Message)
+
+// EmitEvent sends an Event envelope.
+func (c *IngressClient) EmitEvent(title, body string, opts ...EmitEventOption) {
+	e := &loggregator_v2.Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &loggregator_v2.Envelope_Event{
+			Event: &loggregator_v2.Event{
+				Title: title,
+				Body:  body,
+			},
+		},
+		Tags: make(map[string]string),
+	}
+
+	for k, v := range c.tags {
+		e.Tags[k] = v
+	}
+
+	for _, o := range opts {
+		o(e)
+	}
+
+	c.envelopes <- e
+}
+
+// CloseSend will flush the envelope buffers and close the stream to the
+// ingress server. This method will block until the buffers are flushed.
+func (c *IngressClient) CloseSend() error {
+	close(c.envelopes)
+
+	return <-c.closeErrors
 }
 
 func (c *IngressClient) startSender() {

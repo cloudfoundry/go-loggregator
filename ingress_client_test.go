@@ -132,7 +132,7 @@ var _ = Describe("IngressClient", func() {
 		runtimeemitter.New(client)
 	})
 
-	DescribeTable("tagging", func(emit func()) {
+	DescribeTable("emitting different envelope types", func(emit func()) {
 		emit()
 
 		env, err := getEnvelopeAt(server.receivers, 0)
@@ -159,6 +159,13 @@ var _ = Describe("IngressClient", func() {
 				loggregator.WithEnvelopeTag("envelope-string", "envelope-string-tag"),
 			)
 		}),
+		Entry("event", func() {
+			client.EmitEvent(
+				"some-title",
+				"some-body",
+				loggregator.WithEnvelopeTag("envelope-string", "envelope-string-tag"),
+			)
+		}),
 	)
 
 	It("sets the counter's delta to the given value", func() {
@@ -169,6 +176,20 @@ var _ = Describe("IngressClient", func() {
 		}
 		loggregator.WithDelta(99)(e)
 		Expect(e.GetCounter().GetDelta()).To(Equal(uint64(99)))
+	})
+
+	It("sets the title and body of an event envelope", func() {
+		client.EmitEvent(
+			"some-title",
+			"some-body",
+		)
+
+		env, err := getEnvelopeAt(server.receivers, 0)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(env.GetEvent()).ToNot(BeNil())
+		Expect(env.GetEvent().GetTitle()).To(Equal("some-title"))
+		Expect(env.GetEvent().GetBody()).To(Equal("some-body"))
 	})
 
 	It("flushes current batch and sends", func() {
