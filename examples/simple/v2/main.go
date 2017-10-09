@@ -29,6 +29,7 @@ func main() {
 
 	for i := 0; i < 50; i++ {
 		client.EmitLog("some log goes here")
+		client.EmitEvent("event-title", "event-body")
 
 		time.Sleep(10 * time.Millisecond)
 	}
