@@ -263,7 +263,7 @@ func WithDelta(d uint64) EmitCounterOption {
 	return func(m proto.Message) {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
-			e.GetCounter().Value = &loggregator_v2.Counter_Delta{Delta: d}
+			e.GetCounter().Delta = d
 		case protoEditor:
 			e.SetDelta(d)
 		default:
@@ -286,10 +286,8 @@ func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Counter{
 			Counter: &loggregator_v2.Counter{
-				Name: name,
-				Value: &loggregator_v2.Counter_Delta{
-					Delta: uint64(1),
-				},
+				Name:  name,
+				Delta: uint64(1),
 			},
 		},
 		Tags: make(map[string]string),
