@@ -53,6 +53,9 @@ func (*testIngressServer) Sender(srv loggregator_v2.Ingress_SenderServer) error 
 
 func (t *testIngressServer) BatchSender(srv loggregator_v2.Ingress_BatchSenderServer) error {
 	t.receivers <- srv
+
+	<-srv.Context().Done()
+
 	return nil
 }
 
