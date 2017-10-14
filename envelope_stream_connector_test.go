@@ -17,7 +17,6 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"code.cloudfoundry.org/refnozzle"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -56,7 +55,7 @@ var _ = Describe("Connector", func() {
 		// it will grab the same port.
 		go producer.start()
 
-		tlsConf, err := refnozzle.NewClientMutualTLSConfig(
+		tlsConf, err := NewClientMutualTLSConfig(
 			fixture("server.crt"),
 			fixture("server.key"),
 			fixture("CA.crt"),

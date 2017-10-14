@@ -42,11 +42,12 @@ func NewEnvelopeStreamConnector(
 	return c
 }
 
-type EnvelopeStreamConnectorOption func(*EnvelopeStreamConnector)
+// EnvelopeStreamOption configures a EnvelopeStreamConnector.
+type EnvelopeStreamOption func(*EnvelopeStreamConnector)
 
-// WithLogger allows for the configuration of a logger.
+// WithEnvelopeStreamLogger allows for the configuration of a logger.
 // By default, the logger is disabled.
-func WithConnectorLogger(l Logger) EnvelopeStreamConnectorOption {
+func WithEnvelopeStreamLogger(l Logger) EnvelopeStreamOption {
 	return func(c *EnvelopeStreamConnector) {
 		c.log = l
 	}
