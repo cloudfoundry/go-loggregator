@@ -1,4 +1,5 @@
-# go-loggregator [![ci][ci-badge]][ci-pipeline][![slack.cloudfoundry.org][slack-badge]][loggregator-slack][![GoDoc][go-doc-badge]][go-doc]
+# go-loggregator
+[![GoDoc][go-doc-badge]][go-doc] [![travis][travis-badge]][travis] [![slack.cloudfoundry.org][slack-badge]][loggregator-slack]
 
 This is a golang client library for [Loggregator][loggregator].
 
@@ -25,10 +26,10 @@ Build the example client by running `go build -o client main.go`
 Collocate the `client` with a metron agent and set the following environment
 variables: `CA_CERT_PATH`, `CERT_PATH`, `KEY_PATH`
 
-[ci-badge]:                 https://loggregator.ci.cf-app.com/api/v1/teams/main/pipelines/go-loggregator/jobs/tests/badge
-[ci-pipeline]:              https://loggregator.ci.cf-app.com/teams/main/pipelines/go-loggregator
 [slack-badge]:              https://slack.cloudfoundry.org/badge.svg
 [loggregator-slack]:        https://cloudfoundry.slack.com/archives/loggregator
 [loggregator]:              https://github.com/cloudfoundry/loggregator
 [go-doc-badge]:             https://godoc.org/code.cloudfoundry.org/go-loggregator?status.svg
 [go-doc]:                   https://godoc.org/code.cloudfoundry.org/go-loggregator
+[travis-badge]:             https://travis-ci.org/cloudfoundry/go-loggregator.svg?branch=master
+[travis]:                   https://travis-ci.org/cloudfoundry/go-loggregator?branch=master
