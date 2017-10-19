@@ -1,0 +1,16 @@
+language: go
+
+go:
+  - 1.8.x
+  - 1.9.x
+  - master
+
+install:
+- go get -d -v -t code.cloudfoundry.org/go-loggregator/...
+- go generate code.cloudfoundry.org/go-loggregator/...
+
+script: go test code.cloudfoundry.org/go-loggregator/...
+
+matrix:
+  allow_failures:
+  - go: master
