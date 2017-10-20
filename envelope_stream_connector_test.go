@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -25,7 +26,7 @@ var _ = Describe("Connector", func() {
 	It("initiates a connection to receive envelopes", func() {
 		producer, err := newFakeEventProducer()
 		Expect(err).NotTo(HaveOccurred())
-		go producer.start()
+		producer.start()
 		defer producer.stop()
 		tlsConf, err := NewClientMutualTLSConfig(
 			fixture("server.crt"),
@@ -35,9 +36,10 @@ var _ = Describe("Connector", func() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
+		addr := producer.addr
 		req := &loggregator_v2.EgressBatchRequest{ShardId: "some-id"}
 		c := loggregator.NewEnvelopeStreamConnector(
-			producer.addr,
+			addr,
 			tlsConf,
 		)
 
@@ -53,7 +55,7 @@ var _ = Describe("Connector", func() {
 
 		// Producer will grab a port on start. When the producer is restarted,
 		// it will grab the same port.
-		go producer.start()
+		producer.start()
 
 		tlsConf, err := NewClientMutualTLSConfig(
 			fixture("server.crt"),
@@ -63,8 +65,9 @@ var _ = Describe("Connector", func() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
+		addr := producer.addr
 		c := loggregator.NewEnvelopeStreamConnector(
-			producer.addr,
+			addr,
 			tlsConf,
 		)
 
@@ -77,7 +80,7 @@ var _ = Describe("Connector", func() {
 
 		Eventually(producer.connectionAttempts).Should(Equal(1))
 		producer.stop()
-		go producer.start()
+		producer.start()
 
 		// Reconnect after killing the server.
 		Eventually(producer.connectionAttempts, 5).Should(Equal(2))
@@ -139,12 +142,24 @@ func (f *fakeEventProducer) BatchedReceiver(
 }
 
 func (f *fakeEventProducer) start() {
-	if f.addr == "" {
-		f.addr = "localhost:0"
+	addr := f.addr
+	if addr == "" {
+		addr = "127.0.0.1:0"
 	}
-	lis, err := net.Listen("tcp", f.addr)
-	if err != nil {
-		panic(err)
+	var lis net.Listener
+	for i := 0; ; i++ {
+		var err error
+		lis, err = net.Listen("tcp", addr)
+		if err != nil {
+			// This can happen if the port is already in use...
+			if i < 50 {
+				log.Println("failed to bind for fake producer. Trying again (%d/50)...: %s", i+1, err)
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+			panic(err)
+		}
+		break
 	}
 	f.addr = lis.Addr().String()
 	c, err := newServerMutualTLSConfig()
@@ -155,10 +170,11 @@ func (f *fakeEventProducer) start() {
 	f.server = grpc.NewServer(opt)
 	loggregator_v2.RegisterEgressServer(f.server, f)
 
-	if err := f.server.Serve(lis); err != nil {
-		// TODO
-		// log.Fatalf("could not start gRPC server: %s", err)
-	}
+	go f.listen(lis)
+}
+
+func (f *fakeEventProducer) listen(lis net.Listener) {
+	_ = f.server.Serve(lis)
 }
 
 func (f *fakeEventProducer) stop() bool {

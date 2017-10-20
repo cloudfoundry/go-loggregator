@@ -1,14 +1,20 @@
 language: go
 
 go:
-  - 1.8.x
-  - 1.9.x
-  - master
+- 1.8.x
+- 1.9.x
+- master
 
-install:
-- go get -d -v -t code.cloudfoundry.org/go-loggregator/...
+install: |
+  mkdir -p $HOME/gopath/src/code.cloudfoundry.org/go-loggregator
+  rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/code.cloudfoundry.org/go-loggregator/
+  export TRAVIS_BUILD_DIR=$GOPATH/src/code.cloudfoundry.org/go-loggregator
+  go get -t -d -v code.cloudfoundry.org/go-loggregator/...
 
-script: go test code.cloudfoundry.org/go-loggregator/...
+script: |
+  cd $GOPATH
+  cd src/code.cloudfoundry.org/go-loggregator
+  go test ./...
 
 matrix:
   allow_failures:
