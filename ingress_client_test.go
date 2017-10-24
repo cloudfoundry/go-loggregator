@@ -202,6 +202,13 @@ var _ = Describe("IngressClient", func() {
 		_, err = getEnvelopeAt(server.receivers, 0)
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("does not block on an empty buffer", func(done Done) {
+		defer close(done)
+
+		err := client.CloseSend()
+		Expect(err).ToNot(HaveOccurred())
+	})
 })
 
 func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx int) (*loggregator_v2.Envelope, error) {

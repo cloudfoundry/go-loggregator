@@ -343,6 +343,8 @@ func (c *IngressClient) startSender() {
 					c.closeErrors <- c.flush(batch, true)
 				}
 
+				c.closeErrors <- nil
+
 				return
 			}
 
