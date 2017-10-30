@@ -98,7 +98,7 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		tags:               make(map[string]string),
 		batchMaxSize:       100,
-		batchFlushInterval: time.Second,
+		batchFlushInterval: 100 * time.Millisecond,
 		addr:               "localhost:3458",
 		logger:             log.New(ioutil.Discard, "", 0),
 		closeErrors:        make(chan error),
