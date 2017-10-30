@@ -300,7 +300,7 @@ func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 type EmitEventOption func(proto.Message)
 
 // EmitEvent sends an Event envelope.
-func (c *IngressClient) EmitEvent(title, body string, opts ...EmitEventOption) {
+func (c *IngressClient) EmitEvent(ctx context.Context, title, body string, opts ...EmitEventOption) error {
 	e := &loggregator_v2.Envelope{
 		Timestamp: time.Now().UnixNano(),
 		Message: &loggregator_v2.Envelope_Event{
@@ -320,7 +320,11 @@ func (c *IngressClient) EmitEvent(title, body string, opts ...EmitEventOption) {
 		o(e)
 	}
 
-	c.envelopes <- e
+	_, err := c.client.Send(ctx, &loggregator_v2.EnvelopeBatch{
+		Batch: []*loggregator_v2.Envelope{e},
+	})
+
+	return err
 }
 
 // CloseSend will flush the envelope buffers and close the stream to the

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -13,10 +14,11 @@ import (
 )
 
 type testIngressServer struct {
-	receivers  chan loggregator_v2.Ingress_BatchSenderServer
-	addr       string
-	tlsConfig  *tls.Config
-	grpcServer *grpc.Server
+	receivers    chan loggregator_v2.Ingress_BatchSenderServer
+	sendReceiver chan *loggregator_v2.EnvelopeBatch
+	addr         string
+	tlsConfig    *tls.Config
+	grpcServer   *grpc.Server
 	grpc.Stream
 }
 
@@ -41,9 +43,10 @@ func newTestIngressServer(serverCert, serverKey, caCert string) (*testIngressSer
 	tlsConfig.RootCAs = caCertPool
 
 	return &testIngressServer{
-		tlsConfig: tlsConfig,
-		receivers: make(chan loggregator_v2.Ingress_BatchSenderServer),
-		addr:      "localhost:0",
+		tlsConfig:    tlsConfig,
+		receivers:    make(chan loggregator_v2.Ingress_BatchSenderServer),
+		sendReceiver: make(chan *loggregator_v2.EnvelopeBatch, 100),
+		addr:         "localhost:0",
 	}, nil
 }
 
@@ -57,6 +60,11 @@ func (t *testIngressServer) BatchSender(srv loggregator_v2.Ingress_BatchSenderSe
 	<-srv.Context().Done()
 
 	return nil
+}
+
+func (t *testIngressServer) Send(_ context.Context, b *loggregator_v2.EnvelopeBatch) (*loggregator_v2.SendResponse, error) {
+	t.sendReceiver <- b
+	return &loggregator_v2.SendResponse{}, nil
 }
 
 func (t *testIngressServer) start() error {

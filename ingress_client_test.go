@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
+	"golang.org/x/net/context"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -159,13 +160,6 @@ var _ = Describe("IngressClient", func() {
 				loggregator.WithEnvelopeTag("envelope-string", "envelope-string-tag"),
 			)
 		}),
-		Entry("event", func() {
-			client.EmitEvent(
-				"some-title",
-				"some-body",
-				loggregator.WithEnvelopeTag("envelope-string", "envelope-string-tag"),
-			)
-		}),
 	)
 
 	It("sets the counter's delta to the given value", func() {
@@ -179,14 +173,18 @@ var _ = Describe("IngressClient", func() {
 	})
 
 	It("sets the title and body of an event envelope", func() {
-		client.EmitEvent(
-			"some-title",
-			"some-body",
-		)
+		Eventually(func() error {
+			return client.EmitEvent(
+				context.Background(),
+				"some-title",
+				"some-body",
+			)
+		}).Should(Succeed())
 
-		env, err := getEnvelopeAt(server.receivers, 0)
-		Expect(err).NotTo(HaveOccurred())
+		var envelopeBatch *loggregator_v2.EnvelopeBatch
+		Eventually(server.sendReceiver).Should(Receive(&envelopeBatch))
 
+		env := envelopeBatch.GetBatch()[0]
 		Expect(env.GetEvent()).ToNot(BeNil())
 		Expect(env.GetEvent().GetTitle()).To(Equal("some-title"))
 		Expect(env.GetEvent().GetBody()).To(Equal("some-body"))
@@ -194,6 +192,15 @@ var _ = Describe("IngressClient", func() {
 
 	It("flushes current batch and sends", func() {
 		client := buildIngressClient(server.addr, time.Hour)
+
+		// Ensure client/server are ready
+		Eventually(func() error {
+			return client.EmitEvent(
+				context.Background(),
+				"some-title",
+				"some-body",
+			)
+		}).Should(Succeed())
 
 		client.EmitLog("message")
 		err := client.CloseSend()
