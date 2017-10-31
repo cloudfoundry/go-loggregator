@@ -226,6 +226,11 @@ func (e *envelopeWrapper) SetGaugeAppInfo(appID string, index int) {
 	e.Tags["instance_id"] = strconv.Itoa(index)
 }
 
+func (e *envelopeWrapper) SetCounterAppInfo(appID string, index int) {
+	e.Tags["source_id"] = appID
+	e.Tags["instance_id"] = strconv.Itoa(index)
+}
+
 func (e *envelopeWrapper) SetLogAppInfo(appID string, sourceType string, sourceInstance string) {
 	e.Messages[0].GetLogMessage().AppId = proto.String(appID)
 	e.Messages[0].GetLogMessage().SourceType = proto.String(sourceType)

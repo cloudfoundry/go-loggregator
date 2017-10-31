@@ -125,8 +125,9 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 // protoEditor is required for v1 envelopes. It should be removed once v1
 // is removed. It is necessary to prevent any v1 dependency in the v2 path.
 type protoEditor interface {
-	SetGaugeAppInfo(appID string, index int)
 	SetLogAppInfo(appID, sourceType, sourceInstance string)
+	SetGaugeAppInfo(appID string, index int)
+	SetCounterAppInfo(appID string, index int)
 	SetLogToStdout()
 	SetGaugeValue(name string, value float64, unit string)
 	SetDelta(d uint64)
@@ -266,6 +267,21 @@ func WithDelta(d uint64) EmitCounterOption {
 			e.GetCounter().Delta = d
 		case protoEditor:
 			e.SetDelta(d)
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
+	}
+}
+
+// WithCounterAppInfo configures an envelope with both the app ID and index.
+func WithCounterAppInfo(appID string, index int) EmitCounterOption {
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.SourceId = appID
+			e.InstanceId = strconv.Itoa(index)
+		case protoEditor:
+			e.SetCounterAppInfo(appID, index)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}

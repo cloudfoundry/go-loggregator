@@ -172,6 +172,17 @@ var _ = Describe("IngressClient", func() {
 		Expect(e.GetCounter().GetDelta()).To(Equal(uint64(99)))
 	})
 
+	It("sets the app info for a counter", func() {
+		e := &loggregator_v2.Envelope{
+			Message: &loggregator_v2.Envelope_Counter{
+				Counter: &loggregator_v2.Counter{},
+			},
+		}
+		loggregator.WithCounterAppInfo("some-guid", 101)(e)
+		Expect(e.GetSourceId()).To(Equal("some-guid"))
+		Expect(e.GetInstanceId()).To(Equal("101"))
+	})
+
 	It("sets the title and body of an event envelope", func() {
 		Eventually(func() error {
 			return client.EmitEvent(
