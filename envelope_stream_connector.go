@@ -10,7 +10,6 @@ import (
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/naming"
 )
 
 // EnvelopeStreamConnector provides a way to connect to loggregator and
@@ -21,8 +20,7 @@ type EnvelopeStreamConnector struct {
 	addr    string
 	tlsConf *tls.Config
 
-	log      Logger
-	balancer grpc.Balancer
+	log Logger
 }
 
 // NewEnvelopeStream creates a new EnvelopeStreamConnector. Its TLS
@@ -39,13 +37,6 @@ func NewEnvelopeStreamConnector(
 
 		log: log.New(ioutil.Discard, "", 0),
 	}
-
-	dnsResolver, err := naming.NewDNSResolver()
-	if err != nil {
-		panic(err)
-	}
-
-	c.balancer = grpc.RoundRobin(dnsResolver)
 
 	for _, o := range opts {
 		o(c)
@@ -65,14 +56,6 @@ func WithEnvelopeStreamLogger(l Logger) EnvelopeStreamOption {
 	}
 }
 
-// WithEnvelopeStreamBalancer sets the balancer for connecting to Loggregator
-// endpoints. It defaults to a RoundRobin load balancer with a DNS resolver.
-func WithEnvelopeStreamBalancer(b grpc.Balancer) EnvelopeStreamOption {
-	return func(c *EnvelopeStreamConnector) {
-		c.balancer = b
-	}
-}
-
 // EnvelopeStream returns batches of envelopes. It blocks until its context
 // is done or a batch of envelopes is available.
 type EnvelopeStream func() []*loggregator_v2.Envelope
@@ -82,7 +65,7 @@ type EnvelopeStream func() []*loggregator_v2.Envelope
 // underlying gRPC stream dies, it attempts to reconnect until the context
 // is done.
 func (c *EnvelopeStreamConnector) Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) EnvelopeStream {
-	return newStream(ctx, c.addr, c.balancer, req, c.tlsConf, c.log).recv
+	return newStream(ctx, c.addr, req, c.tlsConf, c.log).recv
 }
 
 type stream struct {
@@ -96,7 +79,6 @@ type stream struct {
 func newStream(
 	ctx context.Context,
 	addr string,
-	balancer grpc.Balancer,
 	req *loggregator_v2.EgressBatchRequest,
 	c *tls.Config,
 	log Logger,
@@ -104,7 +86,6 @@ func newStream(
 	conn, err := grpc.Dial(
 		addr,
 		grpc.WithTransportCredentials(credentials.NewTLS(c)),
-		grpc.WithBalancer(balancer),
 	)
 	if err != nil {
 		// This error occurs on invalid configuration. And more notably,
