@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	gendiodes "code.cloudfoundry.org/go-diodes"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -19,6 +20,10 @@ import (
 type EnvelopeStreamConnector struct {
 	addr    string
 	tlsConf *tls.Config
+
+	// Buffering
+	bufferSize int
+	alerter    func(int)
 
 	log Logger
 }
@@ -56,6 +61,17 @@ func WithEnvelopeStreamLogger(l Logger) EnvelopeStreamOption {
 	}
 }
 
+// WithEnvelopeStreamBuffer enables the EnvelopeStream to read more quickly
+// from the stream. It puts each envelope in a buffer that overwrites data if
+// it is not being drained quick enough. If the buffer drops data, the
+// 'alerter' function will be invoked with the number of envelopes dropped.
+func WithEnvelopeStreamBuffer(size int, alerter func(missed int)) EnvelopeStreamOption {
+	return func(c *EnvelopeStreamConnector) {
+		c.bufferSize = size
+		c.alerter = alerter
+	}
+}
+
 // EnvelopeStream returns batches of envelopes. It blocks until its context
 // is done or a batch of envelopes is available.
 type EnvelopeStream func() []*loggregator_v2.Envelope
@@ -65,7 +81,29 @@ type EnvelopeStream func() []*loggregator_v2.Envelope
 // underlying gRPC stream dies, it attempts to reconnect until the context
 // is done.
 func (c *EnvelopeStreamConnector) Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) EnvelopeStream {
-	return newStream(ctx, c.addr, req, c.tlsConf, c.log).recv
+	s := newStream(ctx, c.addr, req, c.tlsConf, c.log)
+	if c.alerter != nil || c.bufferSize > 0 {
+		d := NewOneToOneEnvelopeBatch(
+			c.bufferSize,
+			gendiodes.AlertFunc(c.alerter),
+			gendiodes.WithPollingContext(ctx),
+		)
+
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
+				d.Set(s.recv())
+			}
+		}()
+		return d.Next
+	}
+
+	return s.recv
 }
 
 type stream struct {

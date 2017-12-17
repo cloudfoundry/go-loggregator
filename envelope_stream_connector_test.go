@@ -81,12 +81,70 @@ var _ = Describe("Connector", func() {
 		Eventually(producer.connectionAttempts).Should(Equal(1))
 		producer.stop()
 		producer.start()
+		defer producer.stop()
 
 		// Reconnect after killing the server.
 		Eventually(producer.connectionAttempts, 5).Should(Equal(2))
 
 		// Ensure we don't create new connections when we don't need to.
 		Consistently(producer.connectionAttempts).Should(Equal(2))
+	})
+
+	It("enables buffering", func() {
+		producer, err := newFakeEventProducer()
+		Expect(err).NotTo(HaveOccurred())
+
+		// Producer will grab a port on start. When the producer is restarted,
+		// it will grab the same port.
+		producer.start()
+		defer producer.stop()
+
+		tlsConf, err := NewClientMutualTLSConfig(
+			fixture("server.crt"),
+			fixture("server.key"),
+			fixture("CA.crt"),
+			"metron",
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		var (
+			mu     sync.Mutex
+			missed int
+		)
+		addr := producer.addr
+		c := loggregator.NewEnvelopeStreamConnector(
+			addr,
+			tlsConf,
+			loggregator.WithEnvelopeStreamBuffer(5, func(m int) {
+				mu.Lock()
+				defer mu.Unlock()
+				missed += m
+			}),
+		)
+		rx := c.Stream(context.Background(), &loggregator_v2.EgressBatchRequest{})
+
+		var count int
+		// Read to allow the diode to notice it dropped data
+		go func() {
+			for range time.Tick(500 * time.Millisecond) {
+				// Do not invoke rx while mu is locked
+				l := len(rx())
+				mu.Lock()
+				count += l
+				mu.Unlock()
+			}
+		}()
+
+		Eventually(func() int {
+			mu.Lock()
+			defer mu.Unlock()
+			return missed
+		}).ShouldNot(BeZero())
+
+		mu.Lock()
+		l := count
+		mu.Unlock()
+		Expect(l).ToNot(BeZero())
 	})
 })
 
