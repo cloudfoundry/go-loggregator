@@ -6,7 +6,6 @@ Package loggregator_v2 is a generated protocol buffer package.
 
 It is generated from these files:
 	egress.proto
-	egress_query.proto
 	envelope.proto
 	ingress.proto
 
@@ -19,8 +18,6 @@ It has these top-level messages:
 	CounterSelector
 	TimerSelector
 	EventSelector
-	ContainerMetricRequest
-	QueryResponse
 	Envelope
 	EnvelopeBatch
 	Value
