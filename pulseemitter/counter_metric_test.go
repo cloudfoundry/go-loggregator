@@ -14,7 +14,11 @@ import (
 var _ = Describe("CounterMetric", func() {
 	Context("Emit", func() {
 		It("prepares an envelope for delivery", func() {
-			metric := pulseemitter.NewCounterMetric("name", pulseemitter.WithVersion(1, 2))
+			metric := pulseemitter.NewCounterMetric(
+				"name",
+				"my-source-id",
+				pulseemitter.WithVersion(1, 2),
+			)
 
 			metric.Increment(10)
 
@@ -37,7 +41,7 @@ var _ = Describe("CounterMetric", func() {
 		})
 
 		It("decrements its value on success", func() {
-			metric := pulseemitter.NewCounterMetric("name")
+			metric := pulseemitter.NewCounterMetric("name", "my-source-id")
 			spy := newSpyLoggClient()
 
 			metric.Increment(10)

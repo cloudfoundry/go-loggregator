@@ -16,6 +16,7 @@ var _ = Describe("Pulse EmitterClient", func() {
 		client := pulseemitter.New(
 			spyLoggClient,
 			pulseemitter.WithPulseInterval(50*time.Millisecond),
+			pulseemitter.WithSourceID("my-source-id"),
 		)
 
 		client.NewCounterMetric("some-name")
@@ -31,6 +32,7 @@ var _ = Describe("Pulse EmitterClient", func() {
 			o(e)
 		}
 		Expect(e.GetCounter().GetDelta()).To(Equal(uint64(0)))
+		Expect(e.GetSourceId()).To(Equal("my-source-id"))
 	})
 
 	It("emits a gauge with a zero value", func() {
@@ -38,10 +40,11 @@ var _ = Describe("Pulse EmitterClient", func() {
 		client := pulseemitter.New(
 			spyLoggClient,
 			pulseemitter.WithPulseInterval(50*time.Millisecond),
+			pulseemitter.WithSourceID("my-source-id"),
 		)
 
 		client.NewGaugeMetric("some-name", "some-unit")
-		Eventually(spyLoggClient.GaugeOpts).Should(HaveLen(1))
+		Eventually(spyLoggClient.GaugeOpts).Should(HaveLen(2))
 
 		e := &loggregator_v2.Envelope{
 			Message: &loggregator_v2.Envelope_Gauge{
@@ -58,6 +61,7 @@ var _ = Describe("Pulse EmitterClient", func() {
 		Expect(e.GetGauge().GetMetrics()).To(HaveKey("some-name"))
 		Expect(e.GetGauge().GetMetrics()["some-name"].GetUnit()).To(Equal("some-unit"))
 		Expect(e.GetGauge().GetMetrics()["some-name"].GetValue()).To(Equal(0.0))
+		Expect(e.GetSourceId()).To(Equal("my-source-id"))
 	})
 
 	It("pulses", func() {

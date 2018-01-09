@@ -26,11 +26,20 @@ func WithPulseInterval(d time.Duration) PulseEmitterOption {
 	}
 }
 
+// WithSourceID is a PulseEmitterOption for setting the source ID that will be
+// set on all outgoing metrics.
+func WithSourceID(id string) PulseEmitterOption {
+	return func(c *PulseEmitter) {
+		c.sourceID = id
+	}
+}
+
 // PulseEmitter will emit metrics on a given interval.
 type PulseEmitter struct {
 	loggClient LoggClient
 
 	pulseInterval time.Duration
+	sourceID      string
 }
 
 // New returns a PulseEmitter configured with the given LoggClient and
@@ -54,7 +63,7 @@ func New(c LoggClient, opts ...PulseEmitterOption) *PulseEmitter {
 // not changed since last emitted a 0 value will be emitted. Every time the
 // counter metric is emitted, its delta is reset to 0.
 func (c *PulseEmitter) NewCounterMetric(name string, opts ...MetricOption) CounterMetric {
-	m := NewCounterMetric(name, opts...)
+	m := NewCounterMetric(name, c.sourceID, opts...)
 	go c.pulse(m)
 
 	return m
@@ -66,7 +75,7 @@ func (c *PulseEmitter) NewCounterMetric(name string, opts ...MetricOption) Count
 // metric, it will use the last value given when calling set on the gauge
 // metric.
 func (c *PulseEmitter) NewGaugeMetric(name, unit string, opts ...MetricOption) GaugeMetric {
-	g := NewGaugeMetric(name, unit, opts...)
+	g := NewGaugeMetric(name, unit, c.sourceID, opts...)
 	go c.pulse(g)
 
 	return g

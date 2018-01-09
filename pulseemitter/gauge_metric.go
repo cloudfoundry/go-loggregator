@@ -4,6 +4,8 @@ import (
 	"sync/atomic"
 
 	loggregator "code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"github.com/golang/protobuf/proto"
 )
 
 // GaugeMetric is used by the pulse emitter to emit gauge metrics to the
@@ -19,19 +21,21 @@ type GaugeMetric interface {
 // gaugeMetric is used by the pulse emitter to emit gauge metrics to the
 // LoggClient.
 type gaugeMetric struct {
-	name  string
-	unit  string
-	value int64
-	tags  map[string]string
+	name     string
+	unit     string
+	sourceID string
+	value    int64
+	tags     map[string]string
 }
 
 // NewGaugeMetric returns a new gaugeMetric that has a value that can be set
 // and emitted via a LoggClient.
-func NewGaugeMetric(name, unit string, opts ...MetricOption) GaugeMetric {
+func NewGaugeMetric(name, unit, sourceID string, opts ...MetricOption) GaugeMetric {
 	g := &gaugeMetric{
-		name: name,
-		unit: unit,
-		tags: make(map[string]string),
+		name:     name,
+		unit:     unit,
+		sourceID: sourceID,
+		tags:     make(map[string]string),
 	}
 
 	for _, opt := range opts {
@@ -55,6 +59,7 @@ func (g *gaugeMetric) Emit(c LoggClient) {
 			float64(atomic.LoadInt64(&g.value)),
 			g.unit,
 		),
+		g.sourceIDOption,
 	}
 
 	for k, v := range g.tags {
@@ -62,4 +67,11 @@ func (g *gaugeMetric) Emit(c LoggClient) {
 	}
 
 	c.EmitGauge(options...)
+}
+
+func (g *gaugeMetric) sourceIDOption(p proto.Message) {
+	env, ok := p.(*loggregator_v2.Envelope)
+	if ok {
+		env.SourceId = g.sourceID
+	}
 }

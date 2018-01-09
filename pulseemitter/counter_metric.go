@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"github.com/golang/protobuf/proto"
+
 	loggregator "code.cloudfoundry.org/go-loggregator"
 )
 
@@ -30,9 +33,10 @@ func WithTags(tags map[string]string) MetricOption {
 // counterMetric is used by the pulse emitter to emit counter metrics to the
 // LoggClient.
 type counterMetric struct {
-	name  string
-	delta uint64
-	tags  map[string]string
+	name     string
+	sourceID string
+	delta    uint64
+	tags     map[string]string
 }
 
 // CounterMetric is used by the pulse emitter to emit counter metrics to the
@@ -47,10 +51,11 @@ type CounterMetric interface {
 
 // NewCounterMetric returns a new counterMetric that can be incremented and
 // emitted via a LoggClient.
-func NewCounterMetric(name string, opts ...MetricOption) CounterMetric {
+func NewCounterMetric(name, sourceID string, opts ...MetricOption) CounterMetric {
 	m := &counterMetric{
-		name: name,
-		tags: make(map[string]string),
+		name:     name,
+		sourceID: sourceID,
+		tags:     make(map[string]string),
 	}
 
 	for _, opt := range opts {
@@ -69,11 +74,21 @@ func (m *counterMetric) Increment(c uint64) {
 // be emitted. The delta on the counterMetric will be reset to 0.
 func (m *counterMetric) Emit(c LoggClient) {
 	d := atomic.SwapUint64(&m.delta, 0)
-	options := []loggregator.EmitCounterOption{loggregator.WithDelta(d)}
+	options := []loggregator.EmitCounterOption{
+		loggregator.WithDelta(d),
+		m.sourceIDOption,
+	}
 
 	for k, v := range m.tags {
 		options = append(options, loggregator.WithEnvelopeTag(k, v))
 	}
 
 	c.EmitCounter(m.name, options...)
+}
+
+func (m *counterMetric) sourceIDOption(p proto.Message) {
+	env, ok := p.(*loggregator_v2.Envelope)
+	if ok {
+		env.SourceId = m.sourceID
+	}
 }

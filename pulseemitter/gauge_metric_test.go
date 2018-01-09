@@ -12,6 +12,7 @@ var _ = Describe("GaugeMetric", func() {
 		g := pulseemitter.NewGaugeMetric(
 			"some-gauge",
 			"some-unit",
+			"my-source-id",
 			pulseemitter.WithVersion(1, 2),
 		)
 
