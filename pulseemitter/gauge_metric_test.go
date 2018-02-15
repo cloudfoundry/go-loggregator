@@ -16,7 +16,7 @@ var _ = Describe("GaugeMetric", func() {
 			pulseemitter.WithVersion(1, 2),
 		)
 
-		g.Set(10)
+		g.Set(10.21)
 
 		spy := newSpyLoggClient()
 		g.Emit(spy)
@@ -35,7 +35,7 @@ var _ = Describe("GaugeMetric", func() {
 		}
 		Expect(e.GetGauge().GetMetrics()).To(HaveLen(1))
 		Expect(e.GetGauge().GetMetrics()).To(HaveKey("some-gauge"))
-		Expect(e.GetGauge().GetMetrics()["some-gauge"].GetValue()).To(Equal(10.0))
+		Expect(e.GetGauge().GetMetrics()["some-gauge"].GetValue()).To(Equal(10.21))
 		Expect(e.GetGauge().GetMetrics()["some-gauge"].GetUnit()).To(Equal("some-unit"))
 
 		Expect(e.GetTags()).To(HaveKey("metric_version"))
