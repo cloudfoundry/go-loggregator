@@ -222,13 +222,16 @@ type envelopeWrapper struct {
 }
 
 func (e *envelopeWrapper) SetGaugeAppInfo(appID string, index int) {
-	e.Tags["source_id"] = appID
-	e.Tags["instance_id"] = strconv.Itoa(index)
+	e.SetSourceInfo(appID, strconv.Itoa(index))
 }
 
 func (e *envelopeWrapper) SetCounterAppInfo(appID string, index int) {
-	e.Tags["source_id"] = appID
-	e.Tags["instance_id"] = strconv.Itoa(index)
+	e.SetSourceInfo(appID, strconv.Itoa(index))
+}
+
+func (e *envelopeWrapper) SetSourceInfo(sourceID, instanceID string) {
+	e.Tags["source_id"] = sourceID
+	e.Tags["instance_id"] = instanceID
 }
 
 func (e *envelopeWrapper) SetLogAppInfo(appID string, sourceType string, sourceInstance string) {

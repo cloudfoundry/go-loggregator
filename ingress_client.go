@@ -128,6 +128,7 @@ type protoEditor interface {
 	SetLogAppInfo(appID, sourceType, sourceInstance string)
 	SetGaugeAppInfo(appID string, index int)
 	SetCounterAppInfo(appID string, index int)
+	SetSourceInfo(sourceID, instanceID string)
 	SetLogToStdout()
 	SetGaugeValue(name string, value float64, unit string)
 	SetDelta(d uint64)
@@ -137,16 +138,22 @@ type protoEditor interface {
 // EmitLogOption is the option type passed into EmitLog
 type EmitLogOption func(proto.Message)
 
-// WithAppInfo configures the meta data associated with emitted data
+// WithAppInfo configures the meta data associated with emitted data. Exists
+// for backward compatability. If possible, use WithSourceInfo instead.
 func WithAppInfo(appID, sourceType, sourceInstance string) EmitLogOption {
+	return WithSourceInfo(appID, sourceType, sourceInstance)
+}
+
+// WithSourceInfo configures the meta data associated with emitted data
+func WithSourceInfo(sourceID, sourceType, sourceInstance string) EmitLogOption {
 	return func(m proto.Message) {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
-			e.SourceId = appID
+			e.SourceId = sourceID
 			e.InstanceId = sourceInstance
 			e.Tags["source_type"] = sourceType
 		case protoEditor:
-			e.SetLogAppInfo(appID, sourceType, sourceInstance)
+			e.SetLogAppInfo(sourceID, sourceType, sourceInstance)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -196,14 +203,22 @@ func (c *IngressClient) EmitLog(message string, opts ...EmitLogOption) {
 type EmitGaugeOption func(proto.Message)
 
 // WithGaugeAppInfo configures an envelope with both the app ID and index.
+// Exists for backward compatability. If possible, use WithGaugeSourceInfo
+// instead.
 func WithGaugeAppInfo(appID string, index int) EmitGaugeOption {
+	return WithGaugeSourceInfo(appID, strconv.Itoa(index))
+}
+
+// WithGaugeSourceInfo configures an envelope with both the source ID and
+// instance ID.
+func WithGaugeSourceInfo(sourceID, instanceID string) EmitGaugeOption {
 	return func(m proto.Message) {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
-			e.SourceId = appID
-			e.InstanceId = strconv.Itoa(index)
+			e.SourceId = sourceID
+			e.InstanceId = instanceID
 		case protoEditor:
-			e.SetGaugeAppInfo(appID, index)
+			e.SetSourceInfo(sourceID, instanceID)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
@@ -274,14 +289,22 @@ func WithDelta(d uint64) EmitCounterOption {
 }
 
 // WithCounterAppInfo configures an envelope with both the app ID and index.
+// Exists for backward compatability. If possible, use WithCounterSourceInfo
+// instead.
 func WithCounterAppInfo(appID string, index int) EmitCounterOption {
+	return WithCounterSourceInfo(appID, strconv.Itoa(index))
+}
+
+// WithCounterSourceInfo configures an envelope with both the app ID and
+// source ID.
+func WithCounterSourceInfo(sourceID, instanceID string) EmitCounterOption {
 	return func(m proto.Message) {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
-			e.SourceId = appID
-			e.InstanceId = strconv.Itoa(index)
+			e.SourceId = sourceID
+			e.InstanceId = instanceID
 		case protoEditor:
-			e.SetCounterAppInfo(appID, index)
+			e.SetSourceInfo(sourceID, instanceID)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}

@@ -82,6 +82,26 @@ var _ = Describe("IngressClient", func() {
 		Expect(log.Type).To(Equal(loggregator_v2.Log_OUT))
 	})
 
+	It("sends logs", func() {
+		client.EmitLog(
+			"message",
+			loggregator.WithSourceInfo("source-id", "source-type", "source-instance"),
+			loggregator.WithStdout(),
+		)
+		env, err := getEnvelopeAt(server.receivers, 0)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(env.SourceId).To(Equal("source-id"))
+		Expect(env.InstanceId).To(Equal("source-instance"))
+
+		ts := time.Unix(0, env.Timestamp)
+		Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
+		log := env.GetLog()
+		Expect(log).NotTo(BeNil())
+		Expect(log.Payload).To(Equal([]byte("message")))
+		Expect(log.Type).To(Equal(loggregator_v2.Log_OUT))
+	})
+
 	It("sends app error logs", func() {
 		client.EmitLog(
 			"message",
@@ -119,6 +139,29 @@ var _ = Describe("IngressClient", func() {
 		Expect(metrics).NotTo(BeNil())
 		Expect(env.SourceId).To(Equal("app-id"))
 		Expect(env.InstanceId).To(Equal("123"))
+		Expect(metrics.GetMetrics()).To(HaveLen(2))
+		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
+		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
+		Expect(env.Tags["some-tag"]).To(Equal("some-tag-value"))
+	})
+
+	It("sends metrics", func() {
+		client.EmitGauge(
+			loggregator.WithGaugeValue("name-a", 1, "unit-a"),
+			loggregator.WithGaugeValue("name-b", 2, "unit-b"),
+			loggregator.WithEnvelopeTags(map[string]string{"some-tag": "some-tag-value"}),
+			loggregator.WithGaugeSourceInfo("source-id", "instance-id"),
+		)
+
+		env, err := getEnvelopeAt(server.receivers, 0)
+		Expect(err).NotTo(HaveOccurred())
+
+		ts := time.Unix(0, env.Timestamp)
+		Expect(ts).Should(BeTemporally("~", time.Now(), time.Second))
+		metrics := env.GetGauge()
+		Expect(metrics).NotTo(BeNil())
+		Expect(env.SourceId).To(Equal("source-id"))
+		Expect(env.InstanceId).To(Equal("instance-id"))
 		Expect(metrics.GetMetrics()).To(HaveLen(2))
 		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
@@ -181,6 +224,17 @@ var _ = Describe("IngressClient", func() {
 		loggregator.WithCounterAppInfo("some-guid", 101)(e)
 		Expect(e.GetSourceId()).To(Equal("some-guid"))
 		Expect(e.GetInstanceId()).To(Equal("101"))
+	})
+
+	It("sets the source info for a counter", func() {
+		e := &loggregator_v2.Envelope{
+			Message: &loggregator_v2.Envelope_Counter{
+				Counter: &loggregator_v2.Counter{},
+			},
+		}
+		loggregator.WithCounterSourceInfo("source-id", "instance-id")(e)
+		Expect(e.GetSourceId()).To(Equal("source-id"))
+		Expect(e.GetInstanceId()).To(Equal("instance-id"))
 	})
 
 	It("sets the title and body of an event envelope", func() {
