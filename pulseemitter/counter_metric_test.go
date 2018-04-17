@@ -22,7 +22,7 @@ var _ = Describe("CounterMetric", func() {
 
 			metric.Increment(10)
 
-			spy := newSpyLoggClient()
+			spy := newSpyLogClient()
 			metric.Emit(spy)
 			Expect(spy.CounterName()).To(Equal("name"))
 
@@ -42,7 +42,7 @@ var _ = Describe("CounterMetric", func() {
 
 		It("decrements its value on success", func() {
 			metric := pulseemitter.NewCounterMetric("name", "my-source-id")
-			spy := newSpyLoggClient()
+			spy := newSpyLogClient()
 
 			metric.Increment(10)
 			metric.Emit(spy)
@@ -50,7 +50,7 @@ var _ = Describe("CounterMetric", func() {
 			metric.Emit(spy)
 			e := &loggregator_v2.Envelope{
 				Message: &loggregator_v2.Envelope_Counter{
-					&loggregator_v2.Counter{},
+					Counter: &loggregator_v2.Counter{},
 				},
 			}
 
@@ -63,7 +63,7 @@ var _ = Describe("CounterMetric", func() {
 	})
 })
 
-type spyLoggClient struct {
+type spyLogClient struct {
 	mu             sync.Mutex
 	name           string
 	counterOpts    []loggregator.EmitCounterOption
@@ -71,46 +71,46 @@ type spyLoggClient struct {
 	gaugeCallCount int
 }
 
-func newSpyLoggClient() *spyLoggClient {
-	return &spyLoggClient{}
+func newSpyLogClient() *spyLogClient {
+	return &spyLogClient{}
 }
 
-func (s *spyLoggClient) EmitCounter(name string, opts ...loggregator.EmitCounterOption) {
+func (s *spyLogClient) EmitCounter(name string, opts ...loggregator.EmitCounterOption) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.name = name
 	s.counterOpts = opts
 }
 
-func (s *spyLoggClient) EmitGauge(opts ...loggregator.EmitGaugeOption) {
+func (s *spyLogClient) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.gaugeCallCount++
 	s.gaugeOpts = opts
 }
 
-func (s *spyLoggClient) CounterName() string {
+func (s *spyLogClient) CounterName() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return s.name
 }
 
-func (s *spyLoggClient) CounterOpts() []loggregator.EmitCounterOption {
+func (s *spyLogClient) CounterOpts() []loggregator.EmitCounterOption {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return s.counterOpts
 }
 
-func (s *spyLoggClient) GaugeOpts() []loggregator.EmitGaugeOption {
+func (s *spyLogClient) GaugeOpts() []loggregator.EmitGaugeOption {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return s.gaugeOpts
 }
 
-func (s *spyLoggClient) GaugeCallCount() int {
+func (s *spyLogClient) GaugeCallCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

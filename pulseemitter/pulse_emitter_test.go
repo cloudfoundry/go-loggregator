@@ -12,15 +12,15 @@ import (
 
 var _ = Describe("Pulse EmitterClient", func() {
 	It("emits a counter with a zero delta", func() {
-		spyLoggClient := newSpyLoggClient()
+		spyLogClient := newSpyLogClient()
 		client := pulseemitter.New(
-			spyLoggClient,
+			spyLogClient,
 			pulseemitter.WithPulseInterval(50*time.Millisecond),
 			pulseemitter.WithSourceID("my-source-id"),
 		)
 
 		client.NewCounterMetric("some-name")
-		Eventually(spyLoggClient.CounterName).Should(Equal("some-name"))
+		Eventually(spyLogClient.CounterName).Should(Equal("some-name"))
 
 		e := &loggregator_v2.Envelope{
 			Message: &loggregator_v2.Envelope_Counter{
@@ -28,7 +28,7 @@ var _ = Describe("Pulse EmitterClient", func() {
 			},
 			DeprecatedTags: make(map[string]*loggregator_v2.Value),
 		}
-		for _, o := range spyLoggClient.CounterOpts() {
+		for _, o := range spyLogClient.CounterOpts() {
 			o(e)
 		}
 		Expect(e.GetCounter().GetDelta()).To(Equal(uint64(0)))
@@ -36,15 +36,15 @@ var _ = Describe("Pulse EmitterClient", func() {
 	})
 
 	It("emits a gauge with a zero value", func() {
-		spyLoggClient := newSpyLoggClient()
+		spyLogClient := newSpyLogClient()
 		client := pulseemitter.New(
-			spyLoggClient,
+			spyLogClient,
 			pulseemitter.WithPulseInterval(50*time.Millisecond),
 			pulseemitter.WithSourceID("my-source-id"),
 		)
 
 		client.NewGaugeMetric("some-name", "some-unit")
-		Eventually(spyLoggClient.GaugeOpts).Should(HaveLen(2))
+		Eventually(spyLogClient.GaugeOpts).Should(HaveLen(2))
 
 		e := &loggregator_v2.Envelope{
 			Message: &loggregator_v2.Envelope_Gauge{
@@ -54,7 +54,7 @@ var _ = Describe("Pulse EmitterClient", func() {
 			},
 			DeprecatedTags: make(map[string]*loggregator_v2.Value),
 		}
-		for _, o := range spyLoggClient.GaugeOpts() {
+		for _, o := range spyLogClient.GaugeOpts() {
 			o(e)
 		}
 		Expect(e.GetGauge().GetMetrics()).To(HaveLen(1))
@@ -65,14 +65,13 @@ var _ = Describe("Pulse EmitterClient", func() {
 	})
 
 	It("pulses", func() {
-		spyLoggClient := newSpyLoggClient()
+		spyLogClient := newSpyLogClient()
 		client := pulseemitter.New(
-			spyLoggClient,
+			spyLogClient,
 			pulseemitter.WithPulseInterval(time.Millisecond),
 		)
 
 		client.NewGaugeMetric("some-name", "some-unit")
-		Eventually(spyLoggClient.GaugeCallCount).Should(BeNumerically(">", 1))
+		Eventually(spyLogClient.GaugeCallCount).Should(BeNumerically(">", 1))
 	})
-
 })

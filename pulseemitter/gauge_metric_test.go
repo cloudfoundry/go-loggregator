@@ -18,7 +18,7 @@ var _ = Describe("GaugeMetric", func() {
 
 		g.Set(10.21)
 
-		spy := newSpyLoggClient()
+		spy := newSpyLogClient()
 		g.Emit(spy)
 
 		e := &loggregator_v2.Envelope{

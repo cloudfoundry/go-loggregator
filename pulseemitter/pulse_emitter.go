@@ -8,13 +8,13 @@ import (
 
 // LogClient is the client used by PulseEmitter to emit metrics. This would
 // usually be the go-loggregator v2 client.
-type LoggClient interface {
+type LogClient interface {
 	EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 	EmitGauge(opts ...loggregator.EmitGaugeOption)
 }
 
 type emitter interface {
-	Emit(c LoggClient)
+	Emit(c LogClient)
 }
 
 type PulseEmitterOption func(*PulseEmitter)
@@ -36,18 +36,18 @@ func WithSourceID(id string) PulseEmitterOption {
 
 // PulseEmitter will emit metrics on a given interval.
 type PulseEmitter struct {
-	loggClient LoggClient
+	logClient LogClient
 
 	pulseInterval time.Duration
 	sourceID      string
 }
 
-// New returns a PulseEmitter configured with the given LoggClient and
+// New returns a PulseEmitter configured with the given LogClient and
 // PulseEmitterOptions. The default pulse interval is 60 seconds.
-func New(c LoggClient, opts ...PulseEmitterOption) *PulseEmitter {
+func New(c LogClient, opts ...PulseEmitterOption) *PulseEmitter {
 	pe := &PulseEmitter{
 		pulseInterval: 60 * time.Second,
-		loggClient:    c,
+		logClient:     c,
 	}
 
 	for _, opt := range opts {
@@ -83,6 +83,6 @@ func (c *PulseEmitter) NewGaugeMetric(name, unit string, opts ...MetricOption) G
 
 func (c *PulseEmitter) pulse(e emitter) {
 	for range time.Tick(c.pulseInterval) {
-		e.Emit(c.loggClient)
+		e.Emit(c.logClient)
 	}
 }
