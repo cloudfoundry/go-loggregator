@@ -145,7 +145,7 @@ var _ = Describe("IngressClient", func() {
 		Expect(env.Tags["some-tag"]).To(Equal("some-tag-value"))
 	})
 
-	It("sends metrics", func() {
+	It("sends gauge metrics", func() {
 		client.EmitGauge(
 			loggregator.WithGaugeValue("name-a", 1, "unit-a"),
 			loggregator.WithGaugeValue("name-b", 2, "unit-b"),
@@ -166,6 +166,29 @@ var _ = Describe("IngressClient", func() {
 		Expect(metrics.GetMetrics()["name-a"].Value).To(Equal(1.0))
 		Expect(metrics.GetMetrics()["name-b"].Value).To(Equal(2.0))
 		Expect(env.Tags["some-tag"]).To(Equal("some-tag-value"))
+	})
+
+	It("sends timers", func() {
+		stopTime := time.Now()
+		startTime := stopTime.Add(-time.Minute)
+
+		client.EmitTimer("http", startTime, stopTime,
+			loggregator.WithEnvelopeTags(map[string]string{"some-tag": "some-tag-value"}),
+			loggregator.WithTimerSourceInfo("source-id", "instance-id"),
+		)
+
+		env, err := getEnvelopeAt(server.receivers, 0)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(env.GetSourceId()).To(Equal("source-id"))
+		Expect(env.GetInstanceId()).To(Equal("instance-id"))
+		Expect(env.Tags["some-tag"]).To(Equal("some-tag-value"))
+
+		timer := env.GetTimer()
+		Expect(timer).ToNot(BeNil())
+		Expect(timer.GetName()).To(Equal("http"))
+		Expect(timer.GetStart()).To(Equal(startTime.UnixNano()))
+		Expect(timer.GetStop()).To(Equal(stopTime.UnixNano()))
 	})
 
 	It("works with the runtime emitter", func() {

@@ -335,6 +335,50 @@ func (c *IngressClient) EmitCounter(name string, opts ...EmitCounterOption) {
 	c.envelopes <- e
 }
 
+// EmitTimerOption is the option type passed into EmitTimer.
+type EmitTimerOption func(proto.Message)
+
+// WithTimerSourceInfo configures an envelope with both the source and instance
+// IDs.
+func WithTimerSourceInfo(sourceID, instanceID string) EmitTimerOption {
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.SourceId = sourceID
+			e.InstanceId = instanceID
+		case protoEditor:
+			e.SetSourceInfo(sourceID, instanceID)
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
+	}
+}
+
+// EmitTimer sends a timer envelope with the given name, start time and stop time.
+func (c *IngressClient) EmitTimer(name string, start, stop time.Time, opts ...EmitTimerOption) {
+	e := &loggregator_v2.Envelope{
+		Timestamp: time.Now().UnixNano(),
+		Message: &loggregator_v2.Envelope_Timer{
+			Timer: &loggregator_v2.Timer{
+				Name:  name,
+				Start: start.UnixNano(),
+				Stop:  stop.UnixNano(),
+			},
+		},
+		Tags: make(map[string]string),
+	}
+
+	for k, v := range c.tags {
+		e.Tags[k] = v
+	}
+
+	for _, o := range opts {
+		o(e)
+	}
+
+	c.envelopes <- e
+}
+
 // EmitEventOption is the option type passed into EmitEvent.
 type EmitEventOption func(proto.Message)
 

@@ -45,5 +45,10 @@ func main() {
 		time.Sleep(10 * time.Millisecond)
 	}
 
+	startTime := time.Now()
+	for i := 0; i < 5; i++ {
+		client.EmitTimer("loop_times", startTime, time.Now())
+	}
+
 	client.CloseSend()
 }
