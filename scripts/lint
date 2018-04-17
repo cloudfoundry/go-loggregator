@@ -7,7 +7,6 @@ function run_linters {
 
     echo "Running Linters"
 
-    local dir
     if [ "$1" = "" ]; then
         go_loggregator_pkg="./..."
     else
@@ -15,12 +14,12 @@ function run_linters {
     fi
 
     gometalinter --vendor \
-      --disable-all $go_loggregator_pkg \
+      --disable-all "$go_loggregator_pkg" \
       --skip rpc \
       --enable "vet" \
       --enable "deadcode" \
       --enable "golint" \
-      --enable "aligncheck" \
+      --enable "maligned" \
       --enable "structcheck" \
       --enable "varcheck" \
       --enable "errcheck" \
@@ -31,4 +30,4 @@ function run_linters {
     return 0
 }
 
-run_linters $@
+run_linters "$@"

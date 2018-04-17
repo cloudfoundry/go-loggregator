@@ -1,4 +1,4 @@
-// v1 provides a client to connect with the loggregtor v1 API
+// Package v1 provides a client to connect with the loggregtor v1 API
 //
 // Loggregator's v1 client library is better known to the Cloud Foundry
 // community as Dropsonde (github.com/cloudfoundry/dropsonde). The code here

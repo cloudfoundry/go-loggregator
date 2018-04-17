@@ -51,13 +51,13 @@ func New(sender Sender, opts ...RuntimeEmitterOption) *Emitter {
 	return e
 }
 
-// Sender is the interface of the v1 client that can be used to emit value
+// V1Sender is the interface of the v1 client that can be used to emit value
 // metrics.
 type V1Sender interface {
 	SendComponentMetric(name string, value float64, unit string) error
 }
 
-// New returns an Emitter that is configured with the given v1 sender and
+// NewV1 returns an Emitter that is configured with the given v1 sender and
 // RuntimeEmitterOptions.
 func NewV1(sender V1Sender, opts ...RuntimeEmitterOption) *Emitter {
 	e := &Emitter{

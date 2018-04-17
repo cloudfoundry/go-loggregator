@@ -10,6 +10,8 @@ import (
 	loggregator "code.cloudfoundry.org/go-loggregator"
 )
 
+// MetricOption defines a function type that can be used to configure tags for
+// many types of metrics.
 type MetricOption func(map[string]string)
 
 // WithVersion will apply a `metric_version` tag to all envelopes sent about

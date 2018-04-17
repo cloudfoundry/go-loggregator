@@ -28,7 +28,7 @@ type EnvelopeStreamConnector struct {
 	log Logger
 }
 
-// NewEnvelopeStream creates a new EnvelopeStreamConnector. Its TLS
+// NewEnvelopeStreamConnector creates a new EnvelopeStreamConnector. Its TLS
 // configuration must share a CA with the loggregator server.
 func NewEnvelopeStreamConnector(
 	addr string,

@@ -211,7 +211,7 @@ func (f *fakeEventProducer) start() {
 		if err != nil {
 			// This can happen if the port is already in use...
 			if i < 50 {
-				log.Println("failed to bind for fake producer. Trying again (%d/50)...: %s", i+1, err)
+				log.Printf("failed to bind for fake producer. Trying again (%d/50)...: %s", i+1, err)
 				time.Sleep(100 * time.Millisecond)
 				continue
 			}

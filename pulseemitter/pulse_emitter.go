@@ -17,6 +17,8 @@ type emitter interface {
 	Emit(c LogClient)
 }
 
+// PulseEmitterOption is a function type that is used to configure optional
+// settings for a PulseEmitter.
 type PulseEmitterOption func(*PulseEmitter)
 
 // WithPulseInterval is a PulseEmitterOption for setting the pulsing interval.
