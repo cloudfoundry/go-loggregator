@@ -1,6 +1,7 @@
 package loggregator
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 )
@@ -17,9 +19,9 @@ import (
 // IngressOption is the type of a configurable client option.
 type IngressOption func(*IngressClient)
 
-func WithDialOption(o grpc.DialOption) IngressOption {
+func WithDialOptions(opts ...grpc.DialOption) IngressOption {
 	return func(c *IngressClient) {
-		c.dialOpts = append(c.dialOpts, o)
+		c.dialOpts = append(c.dialOpts, opts...)
 	}
 }
 
@@ -99,7 +101,7 @@ type IngressClient struct {
 
 // NewIngressClient creates a v2 loggregator client. Its TLS configuration
 // must share a CA with the loggregator server.
-func NewIngressClient(opts ...IngressOption) (*IngressClient, error) {
+func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressClient, error) {
 	c := &IngressClient{
 		envelopes:          make(chan *loggregator_v2.Envelope, 100),
 		tags:               make(map[string]string),
@@ -113,6 +115,8 @@ func NewIngressClient(opts ...IngressOption) (*IngressClient, error) {
 	for _, o := range opts {
 		o(c)
 	}
+
+	c.dialOpts = append(c.dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 
 	conn, err := grpc.Dial(
 		c.addr,
