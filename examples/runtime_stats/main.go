@@ -7,6 +7,8 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func main() {
@@ -20,9 +22,9 @@ func main() {
 	}
 
 	client, err := loggregator.NewIngressClient(
-		tlsConfig,
 		loggregator.WithAddr("localhost:3458"),
 		loggregator.WithLogger(log.New(os.Stdout, "", log.LstdFlags)),
+		loggregator.WithDialOption(grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))),
 	)
 
 	if err != nil {
