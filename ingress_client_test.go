@@ -8,8 +8,6 @@ import (
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -335,10 +333,10 @@ func buildIngressClient(serverAddr string, flushInterval time.Duration) *loggreg
 	}
 
 	client, err := loggregator.NewIngressClient(
+		tlsConfig,
 		loggregator.WithAddr(serverAddr),
 		loggregator.WithBatchFlushInterval(flushInterval),
 		loggregator.WithTag("string", "client-string-tag"),
-		loggregator.WithDialOption(grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))),
 	)
 	if err != nil {
 		panic(err)
