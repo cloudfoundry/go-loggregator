@@ -487,12 +487,13 @@ func (c *IngressClient) emit(batch []*loggregator_v2.Envelope, close bool) error
 
 	err := c.sender.Send(&loggregator_v2.EnvelopeBatch{Batch: batch})
 	if err != nil {
+		c.sender.CloseAndRecv()
 		c.sender = nil
 		return err
 	}
 
 	if close {
-		return c.sender.CloseSend()
+		c.sender.CloseAndRecv()
 	}
 
 	return nil
