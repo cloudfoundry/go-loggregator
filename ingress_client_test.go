@@ -18,6 +18,8 @@ var _ = Describe("IngressClient", func() {
 	var (
 		client *loggregator.IngressClient
 		server *testIngressServer
+		ctx    context.Context
+		cancel func()
 	)
 
 	BeforeEach(func() {
@@ -32,7 +34,7 @@ var _ = Describe("IngressClient", func() {
 		err = server.start()
 		Expect(err).NotTo(HaveOccurred())
 
-		client = buildIngressClient(server.addr, 50*time.Millisecond)
+		client, ctx, cancel = buildIngressClient(server.addr, 50*time.Millisecond, false)
 	})
 
 	AfterEach(func() {
@@ -60,6 +62,22 @@ var _ = Describe("IngressClient", func() {
 
 			return len(b.Batch)
 		}).Should(BeNumerically(">", 1))
+	})
+
+	It("returns an error after context has been cancelled", func() {
+		client, _, cancel := buildIngressClient(server.addr, time.Hour, false)
+		cancel()
+		go func(client *loggregator.IngressClient) {
+			for range time.Tick(1 * time.Millisecond) {
+				client.EmitLog(
+					"message",
+					loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
+					loggregator.WithStdout(),
+				)
+			}
+		}(client)
+
+		Consistently(server.receivers).ShouldNot(Receive())
 	})
 
 	It("sends app logs", func() {
@@ -279,7 +297,7 @@ var _ = Describe("IngressClient", func() {
 	})
 
 	It("flushes current batch and sends", func() {
-		client := buildIngressClient(server.addr, time.Hour)
+		client, _, _ := buildIngressClient(server.addr, time.Hour, false)
 
 		// Ensure client/server are ready
 		Eventually(func() error {
@@ -322,7 +340,7 @@ func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx 
 	return envBatch.Batch[idx], nil
 }
 
-func buildIngressClient(serverAddr string, flushInterval time.Duration) *loggregator.IngressClient {
+func buildIngressClient(serverAddr string, flushInterval time.Duration, addContext bool) (*loggregator.IngressClient, context.Context, func()) {
 	tlsConfig, err := loggregator.NewIngressTLSConfig(
 		fixture("CA.crt"),
 		fixture("client.crt"),
@@ -332,15 +350,25 @@ func buildIngressClient(serverAddr string, flushInterval time.Duration) *loggreg
 		panic(err)
 	}
 
-	client, err := loggregator.NewIngressClient(
-		tlsConfig,
+	ctx, cancel := context.WithCancel(context.Background())
+
+	opts := []loggregator.IngressOption{
 		loggregator.WithAddr(serverAddr),
 		loggregator.WithBatchFlushInterval(flushInterval),
 		loggregator.WithTag("string", "client-string-tag"),
+	}
+
+	if addContext {
+		opts = append(opts, loggregator.WithContext(ctx))
+	}
+
+	client, err := loggregator.NewIngressClient(
+		tlsConfig,
+		opts...,
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	return client
+	return client, ctx, cancel
 }
