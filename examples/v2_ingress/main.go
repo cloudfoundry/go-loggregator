@@ -50,5 +50,7 @@ func main() {
 		client.EmitTimer("loop_times", startTime, time.Now())
 	}
 
+	time.Sleep(2 * time.Second)
+	
 	client.CloseSend()
 }
