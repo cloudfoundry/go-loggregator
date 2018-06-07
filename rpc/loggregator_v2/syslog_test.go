@@ -399,7 +399,8 @@ var _ = Describe("Syslog", func() {
 	DescribeTable("returns an error when envelope can not be converted", func(
 		f func() *loggregator_v2.Envelope,
 	) {
-		_, err := f().Syslog()
+		v, err := f().Syslog()
+		Expect(v).To(BeNil())
 		Expect(err).To(HaveOccurred())
 	},
 		Entry("log message with non-printable source id", func() *loggregator_v2.Envelope {

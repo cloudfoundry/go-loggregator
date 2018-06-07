@@ -72,7 +72,10 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		msg := basicSyslogMessage(c, timestamp, priority)
 		msg.Message = appendNewline(removeNulls(m.GetLog().Payload))
 		d, err := msg.MarshalBinary()
-		return [][]byte{d}, err
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{d}, nil
 	case *Envelope_Gauge:
 		metrics := m.GetGauge().GetMetrics()
 		messages := make([][]byte, 0, len(metrics))
@@ -126,7 +129,10 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 			},
 		}
 		d, err := msg.MarshalBinary()
-		return [][]byte{d}, err
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{d}, nil
 	case *Envelope_Event:
 		msg := basicSyslogMessage(c, timestamp, priority)
 		msg.Message = []byte(fmt.Sprintf(
@@ -135,7 +141,10 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 			m.GetEvent().GetBody(),
 		))
 		d, err := msg.MarshalBinary()
-		return [][]byte{d}, err
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{d}, nil
 	case *Envelope_Timer:
 		msg := basicSyslogMessage(c, timestamp, priority)
 		msg.StructuredData = []rfc5424.StructuredData{
@@ -158,11 +167,17 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 			},
 		}
 		d, err := msg.MarshalBinary()
-		return [][]byte{d}, err
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{d}, nil
 	default:
 		msg := basicSyslogMessage(c, timestamp, priority)
 		d, err := msg.MarshalBinary()
-		return [][]byte{d}, err
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{d}, nil
 	}
 }
 
