@@ -47,10 +47,10 @@ func WithSyslogProcessID(processID string) SyslogOption {
 	}
 }
 
-// Syslog converts an envelope into syslog messages. Typically, this will be
-// one to one (envelope to syslog) but for certain envelope type such as
-// gauges the single envelope maps onto multiple syslog messages (one per gauge
-// metric).
+// Syslog converts an envelope into RFC 5424 compliant syslog messages.
+// Typically, this will be a one to one (envelope to syslog) but for certain
+// envelope type such as gauges a single envelope maps to multiple syslog
+// messages (one per gauge metric).
 func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 	c := &syslogConfig{
 		processID: m.InstanceId,
