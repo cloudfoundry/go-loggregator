@@ -145,6 +145,27 @@ var _ = Describe("Syslog", func() {
 		Expect(msg.Message).To(Equal([]byte("\n")))
 	})
 
+	It("sets the tags as part of structured data", func() {
+		env := &loggregator_v2.Envelope{}
+		env.Tags = map[string]string{
+			"namespace":  "oratos",
+			"cluster-id": "some-cluster-id",
+		}
+
+		d, err := env.Syslog()
+
+		Expect(err).ToNot(HaveOccurred())
+		var msg rfc5424.Message
+		err = msg.UnmarshalBinary(d[0])
+		Expect(err).ToNot(HaveOccurred())
+		Expect(msg.StructuredData).To(HaveLen(1))
+		Expect(msg.StructuredData[0].ID).To(Equal("tags@47450"))
+		Expect(msg.StructuredData[0].Parameters).To(ConsistOf(
+			rfc5424.SDParam{Name: "namespace", Value: "oratos"},
+			rfc5424.SDParam{Name: "cluster-id", Value: "some-cluster-id"},
+		))
+	})
+
 	Describe("Log Message", func() {
 		It("converts a log to syslog bytes", func() {
 			env := buildLogEnvelope("test-message", loggregator_v2.Log_OUT)

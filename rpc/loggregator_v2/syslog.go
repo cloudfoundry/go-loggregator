@@ -15,6 +15,7 @@ const (
 	gaugeStructuredDataID   = "gauge@47450"
 	counterStructuredDataID = "counter@47450"
 	timerStructuredDataID   = "timer@47450"
+	tagsStructuredDataID    = "tags@47450"
 )
 
 type syslogConfig struct {
@@ -61,15 +62,14 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		o(c)
 	}
 
-	priority, err := generatePriority(m)
+	priority, err := m.generatePriority()
 	if err != nil {
 		return nil, err
 	}
-	timestamp := time.Unix(0, m.GetTimestamp()).UTC()
 
 	switch m.GetMessage().(type) {
 	case *Envelope_Log:
-		msg := basicSyslogMessage(c, timestamp, priority)
+		msg := m.basicSyslogMessage(c, priority)
 		msg.Message = appendNewline(removeNulls(m.GetLog().Payload))
 		d, err := msg.MarshalBinary()
 		if err != nil {
@@ -80,9 +80,9 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		metrics := m.GetGauge().GetMetrics()
 		messages := make([][]byte, 0, len(metrics))
 		for name, g := range metrics {
-			msg := basicSyslogMessage(c, timestamp, priority)
-			msg.StructuredData = []rfc5424.StructuredData{
-				{
+			msg := m.basicSyslogMessage(c, priority)
+			msg.StructuredData = append(msg.StructuredData,
+				rfc5424.StructuredData{
 					ID: gaugeStructuredDataID,
 					Parameters: []rfc5424.SDParam{
 						{
@@ -99,7 +99,7 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 						},
 					},
 				},
-			}
+			)
 			d, err := msg.MarshalBinary()
 			if err != nil {
 				return nil, err
@@ -108,9 +108,9 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		}
 		return messages, nil
 	case *Envelope_Counter:
-		msg := basicSyslogMessage(c, timestamp, priority)
-		msg.StructuredData = []rfc5424.StructuredData{
-			{
+		msg := m.basicSyslogMessage(c, priority)
+		msg.StructuredData = append(msg.StructuredData,
+			rfc5424.StructuredData{
 				ID: counterStructuredDataID,
 				Parameters: []rfc5424.SDParam{
 					{
@@ -127,14 +127,14 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 					},
 				},
 			},
-		}
+		)
 		d, err := msg.MarshalBinary()
 		if err != nil {
 			return nil, err
 		}
 		return [][]byte{d}, nil
 	case *Envelope_Event:
-		msg := basicSyslogMessage(c, timestamp, priority)
+		msg := m.basicSyslogMessage(c, priority)
 		msg.Message = []byte(fmt.Sprintf(
 			"%s: %s\n",
 			m.GetEvent().GetTitle(),
@@ -146,9 +146,9 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		}
 		return [][]byte{d}, nil
 	case *Envelope_Timer:
-		msg := basicSyslogMessage(c, timestamp, priority)
-		msg.StructuredData = []rfc5424.StructuredData{
-			{
+		msg := m.basicSyslogMessage(c, priority)
+		msg.StructuredData = append(msg.StructuredData,
+			rfc5424.StructuredData{
 				ID: timerStructuredDataID,
 				Parameters: []rfc5424.SDParam{
 					{
@@ -165,14 +165,14 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 					},
 				},
 			},
-		}
+		)
 		d, err := msg.MarshalBinary()
 		if err != nil {
 			return nil, err
 		}
 		return [][]byte{d}, nil
 	default:
-		msg := basicSyslogMessage(c, timestamp, priority)
+		msg := m.basicSyslogMessage(c, priority)
 		d, err := msg.MarshalBinary()
 		if err != nil {
 			return nil, err
@@ -181,23 +181,38 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 	}
 }
 
-func basicSyslogMessage(
+func (m *Envelope) basicSyslogMessage(
 	c *syslogConfig,
-	timestamp time.Time,
 	priority rfc5424.Priority,
 ) rfc5424.Message {
-	return rfc5424.Message{
+	msg := rfc5424.Message{
 		Priority:  priority,
-		Timestamp: timestamp,
+		Timestamp: time.Unix(0, m.GetTimestamp()).UTC(),
 		Hostname:  c.hostname,
 		AppName:   c.appName,
 		ProcessID: c.processID,
 		Message:   []byte("\n"),
 	}
+
+	tags := m.GetTags()
+	if len(tags) > 0 {
+		params := make([]rfc5424.SDParam, 0, len(tags))
+		for k, v := range tags {
+			params = append(params, rfc5424.SDParam{Name: k, Value: v})
+		}
+		msg.StructuredData = append(msg.StructuredData,
+			rfc5424.StructuredData{
+				ID:         tagsStructuredDataID,
+				Parameters: params,
+			},
+		)
+	}
+
+	return msg
 }
 
-func generatePriority(e *Envelope) (rfc5424.Priority, error) {
-	if l := e.GetLog(); l != nil {
+func (m *Envelope) generatePriority() (rfc5424.Priority, error) {
+	if l := m.GetLog(); l != nil {
 		switch l.Type {
 		case Log_OUT:
 			return rfc5424.Info + rfc5424.User, nil
