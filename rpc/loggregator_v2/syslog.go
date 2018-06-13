@@ -81,24 +81,23 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		messages := make([][]byte, 0, len(metrics))
 		for name, g := range metrics {
 			msg := m.basicSyslogMessage(c, priority)
-			msg.StructuredData = append(msg.StructuredData,
-				rfc5424.StructuredData{
-					ID: gaugeStructuredDataID,
-					Parameters: []rfc5424.SDParam{
-						{
-							Name:  "name",
-							Value: name,
-						},
-						{
-							Name:  "value",
-							Value: strconv.FormatFloat(g.GetValue(), 'g', -1, 64),
-						},
-						{
-							Name:  "unit",
-							Value: g.GetUnit(),
-						},
+			msg.StructuredData = append(msg.StructuredData, rfc5424.StructuredData{
+				ID: gaugeStructuredDataID,
+				Parameters: []rfc5424.SDParam{
+					{
+						Name:  "name",
+						Value: name,
+					},
+					{
+						Name:  "value",
+						Value: strconv.FormatFloat(g.GetValue(), 'g', -1, 64),
+					},
+					{
+						Name:  "unit",
+						Value: g.GetUnit(),
 					},
 				},
+			},
 			)
 			d, err := msg.MarshalBinary()
 			if err != nil {
@@ -109,24 +108,23 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		return messages, nil
 	case *Envelope_Counter:
 		msg := m.basicSyslogMessage(c, priority)
-		msg.StructuredData = append(msg.StructuredData,
-			rfc5424.StructuredData{
-				ID: counterStructuredDataID,
-				Parameters: []rfc5424.SDParam{
-					{
-						Name:  "name",
-						Value: m.GetCounter().GetName(),
-					},
-					{
-						Name:  "total",
-						Value: fmt.Sprint(m.GetCounter().GetTotal()),
-					},
-					{
-						Name:  "delta",
-						Value: fmt.Sprint(m.GetCounter().GetDelta()),
-					},
+		msg.StructuredData = append(msg.StructuredData, rfc5424.StructuredData{
+			ID: counterStructuredDataID,
+			Parameters: []rfc5424.SDParam{
+				{
+					Name:  "name",
+					Value: m.GetCounter().GetName(),
+				},
+				{
+					Name:  "total",
+					Value: fmt.Sprint(m.GetCounter().GetTotal()),
+				},
+				{
+					Name:  "delta",
+					Value: fmt.Sprint(m.GetCounter().GetDelta()),
 				},
 			},
+		},
 		)
 		d, err := msg.MarshalBinary()
 		if err != nil {
@@ -147,24 +145,23 @@ func (m *Envelope) Syslog(opts ...SyslogOption) ([][]byte, error) {
 		return [][]byte{d}, nil
 	case *Envelope_Timer:
 		msg := m.basicSyslogMessage(c, priority)
-		msg.StructuredData = append(msg.StructuredData,
-			rfc5424.StructuredData{
-				ID: timerStructuredDataID,
-				Parameters: []rfc5424.SDParam{
-					{
-						Name:  "name",
-						Value: m.GetTimer().GetName(),
-					},
-					{
-						Name:  "start",
-						Value: fmt.Sprint(m.GetTimer().GetStart()),
-					},
-					{
-						Name:  "stop",
-						Value: fmt.Sprint(m.GetTimer().GetStop()),
-					},
+		msg.StructuredData = append(msg.StructuredData, rfc5424.StructuredData{
+			ID: timerStructuredDataID,
+			Parameters: []rfc5424.SDParam{
+				{
+					Name:  "name",
+					Value: m.GetTimer().GetName(),
+				},
+				{
+					Name:  "start",
+					Value: fmt.Sprint(m.GetTimer().GetStart()),
+				},
+				{
+					Name:  "stop",
+					Value: fmt.Sprint(m.GetTimer().GetStop()),
 				},
 			},
+		},
 		)
 		d, err := msg.MarshalBinary()
 		if err != nil {
@@ -200,12 +197,12 @@ func (m *Envelope) basicSyslogMessage(
 		for k, v := range tags {
 			params = append(params, rfc5424.SDParam{Name: k, Value: v})
 		}
-		msg.StructuredData = append(msg.StructuredData,
-			rfc5424.StructuredData{
+		msg.StructuredData = []rfc5424.StructuredData{
+			{
 				ID:         tagsStructuredDataID,
 				Parameters: params,
 			},
-		)
+		}
 	}
 
 	return msg
