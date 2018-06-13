@@ -231,6 +231,9 @@ var _ = Describe("Syslog", func() {
 			env.SourceId = "some-source-id"
 			env.InstanceId = "some-instance-id"
 			env.Timestamp = int64(time.Hour)
+			env.Tags = map[string]string{
+				"namespace": "test-ns",
+			}
 
 			d, err := env.Syslog(
 				loggregator_v2.WithSyslogHostname("some-hostname"),
@@ -238,8 +241,8 @@ var _ = Describe("Syslog", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(d).To(ConsistOf(
-				[]byte(`<14>1 1970-01-01T01:00:00+00:00 some-hostname some-source-id some-instance-id - [gauge@47450 name="cpu" value="0.23" unit="percentage"] `+"\n"),
-				[]byte(`<14>1 1970-01-01T01:00:00+00:00 some-hostname some-source-id some-instance-id - [gauge@47450 name="memory" value="5423" unit="bytes"] `+"\n"),
+				[]byte(`<14>1 1970-01-01T01:00:00+00:00 some-hostname some-source-id some-instance-id - [tags@47450 namespace="test-ns"][gauge@47450 name="cpu" value="0.23" unit="percentage"] `+"\n"),
+				[]byte(`<14>1 1970-01-01T01:00:00+00:00 some-hostname some-source-id some-instance-id - [tags@47450 namespace="test-ns"][gauge@47450 name="memory" value="5423" unit="bytes"] `+"\n"),
 			))
 		})
 
