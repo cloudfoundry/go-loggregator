@@ -64,6 +64,39 @@ var _ = Describe("Pulse EmitterClient", func() {
 		Expect(e.GetSourceId()).To(Equal("my-source-id"))
 	})
 
+	It("emits a timer", func() {
+		spyLogClient := newSpyLogClient()
+		client := pulseemitter.New(
+			spyLogClient,
+			pulseemitter.WithPulseInterval(50*time.Millisecond),
+			pulseemitter.WithSourceID("my-source-id"),
+		)
+
+		t := client.NewTimerMetric("some-name")
+
+		startTime := time.Now().Add(-time.Minute)
+		stopTime := time.Now()
+		t.Record(startTime, stopTime)
+
+		Eventually(spyLogClient.Timers).Should(HaveLen(1))
+
+		timers := spyLogClient.Timers()
+		Expect(timers[0].name).To(Equal("some-name"))
+		Expect(timers[0].start).To(Equal(startTime))
+		Expect(timers[0].stop).To(Equal(stopTime))
+
+		e := &loggregator_v2.Envelope{
+			Message: &loggregator_v2.Envelope_Timer{
+				Timer: &loggregator_v2.Timer{},
+			},
+			Tags: make(map[string]string),
+		}
+		for _, o := range timers[0].opts {
+			o(e)
+		}
+		Expect(e.GetSourceId()).To(Equal("my-source-id"))
+	})
+
 	It("pulses", func() {
 		spyLogClient := newSpyLogClient()
 		client := pulseemitter.New(

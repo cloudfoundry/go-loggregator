@@ -15,7 +15,7 @@ type GaugeMetric interface {
 	// Set sets the current value of the gauge metric.
 	Set(n float64)
 
-	// Emit sends the counter values to the LogClient.
+	// Emit sends the latest gauge value to the LogClient.
 	Emit(c LogClient)
 }
 

@@ -3,12 +3,13 @@ package pulseemitter_test
 import (
 	"sync"
 
-	loggregator "code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/pulseemitter"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("CounterMetric", func() {
@@ -63,12 +64,20 @@ var _ = Describe("CounterMetric", func() {
 	})
 })
 
+type spyTimer struct {
+	name  string
+	start time.Time
+	stop  time.Time
+	opts  []loggregator.EmitTimerOption
+}
+
 type spyLogClient struct {
 	mu             sync.Mutex
-	name           string
+	counterName    string
 	counterOpts    []loggregator.EmitCounterOption
 	gaugeOpts      []loggregator.EmitGaugeOption
 	gaugeCallCount int
+	timers         []spyTimer
 }
 
 func newSpyLogClient() *spyLogClient {
@@ -78,7 +87,7 @@ func newSpyLogClient() *spyLogClient {
 func (s *spyLogClient) EmitCounter(name string, opts ...loggregator.EmitCounterOption) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.name = name
+	s.counterName = name
 	s.counterOpts = opts
 }
 
@@ -89,11 +98,22 @@ func (s *spyLogClient) EmitGauge(opts ...loggregator.EmitGaugeOption) {
 	s.gaugeOpts = opts
 }
 
+func (s *spyLogClient) EmitTimer(name string, start, stop time.Time, opts ...loggregator.EmitTimerOption) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.timers = append(s.timers, spyTimer{
+		name:  name,
+		start: start,
+		stop:  stop,
+		opts:  opts,
+	})
+}
+
 func (s *spyLogClient) CounterName() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return s.name
+	return s.counterName
 }
 
 func (s *spyLogClient) CounterOpts() []loggregator.EmitCounterOption {
@@ -115,4 +135,18 @@ func (s *spyLogClient) GaugeCallCount() int {
 	defer s.mu.Unlock()
 
 	return s.gaugeCallCount
+}
+
+func (s *spyLogClient) ResetTimers() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.timers = nil
+}
+
+func (s *spyLogClient) Timers() []spyTimer {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.timers
 }
