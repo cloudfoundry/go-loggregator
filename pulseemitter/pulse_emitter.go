@@ -11,6 +11,7 @@ import (
 type LogClient interface {
 	EmitCounter(name string, opts ...loggregator.EmitCounterOption)
 	EmitGauge(opts ...loggregator.EmitGaugeOption)
+	EmitTimer(name string, start, stop time.Time, opts ...loggregator.EmitTimerOption)
 }
 
 type emitter interface {
@@ -81,6 +82,17 @@ func (c *PulseEmitter) NewGaugeMetric(name, unit string, opts ...MetricOption) G
 	go c.pulse(g)
 
 	return g
+}
+
+// NewTimerMetric returns a TimerMetric that has a queue of timer metrics.
+// After calling NewTimerMetric, the timer metric will begin to be emitted on
+// the interval configured on the PulseEmitter. At each interval, all timer
+// values that have been recorded since the last interval will be emitted.
+func (c *PulseEmitter) NewTimerMetric(name string, opts ...MetricOption) TimerMetric {
+	t := NewTimerMetric(name, c.sourceID, opts...)
+	go c.pulse(t)
+
+	return t
 }
 
 func (c *PulseEmitter) pulse(e emitter) {
