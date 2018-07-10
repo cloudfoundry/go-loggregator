@@ -40,7 +40,9 @@ func main() {
 	}
 
 	for i := 0; i < 50; i++ {
-		client.EmitLog("some log goes here")
+		client.EmitLog("some log goes here",
+			loggregator.WithSourceInfo("v2-example-source-id", "platform", "v2-example-source-instance"),
+		)
 
 		time.Sleep(10 * time.Millisecond)
 	}

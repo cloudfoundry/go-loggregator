@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	dropsonde.Initialize("127.0.0.1:3457", "example-origin")
+	dropsonde.Initialize("127.0.0.1:3457", "example-source")
 
 	client, err := v1.NewClient()
 	if err != nil {
@@ -20,7 +20,7 @@ func main() {
 
 	for {
 		client.EmitLog("some log goes here",
-			loggregator.WithAppInfo("app-id", "source-id", "source-instance"),
+			loggregator.WithSourceInfo("v1-example-source-id", "platform", "v1-example-source-instance"),
 		)
 		time.Sleep(time.Second)
 	}
