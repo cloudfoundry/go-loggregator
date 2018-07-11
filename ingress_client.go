@@ -453,9 +453,13 @@ func (c *IngressClient) startSender() {
 		case env, ok := <-c.envelopes:
 			if !ok {
 				if len(batch) > 0 {
-					c.closeErrors <- c.flush(batch)
+					err := c.flush(batch)
+					c.closeAndRecv()
+					c.closeErrors <- err
+					return
 				}
 
+				c.closeAndRecv()
 				c.closeErrors <- nil
 
 				return
@@ -479,6 +483,13 @@ func (c *IngressClient) startSender() {
 			t.Reset(c.batchFlushInterval)
 		}
 	}
+}
+
+func (c *IngressClient) closeAndRecv() {
+	if c.sender == nil {
+		return
+	}
+	c.sender.CloseAndRecv()
 }
 
 func (c *IngressClient) flush(batch []*loggregator_v2.Envelope) error {

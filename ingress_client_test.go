@@ -2,6 +2,11 @@ package loggregator_test
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"sync"
+	"testing"
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator"
@@ -13,6 +18,24 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
+
+// logCount is set to 3000 to ensure that the gRPC stream HAS to send messages
+// instead of just buffering them. It seems to buffer up until 2000.
+const logCount = 3000
+
+//TestMain acts as the log emitter for gRPC SendRecv() test.
+func TestMain(m *testing.M) {
+	if os.Getenv("INGRESS_CLIENT_TEST_PROCESS") != "" {
+		client, _, _ := buildIngressClient(os.Getenv("INGRESS_CLIENT_TEST_PROCESS"), time.Hour, false)
+		for i := 0; i < logCount; i++ {
+			client.EmitLog(fmt.Sprint("message", i))
+		}
+		client.CloseSend()
+		return
+	}
+
+	os.Exit(m.Run())
+}
 
 var _ = Describe("IngressClient", func() {
 	var (
@@ -296,25 +319,34 @@ var _ = Describe("IngressClient", func() {
 		Expect(env.GetEvent().GetBody()).To(Equal("some-body"))
 	})
 
+	// So this test is a bit... crazy. We want to ensure that gRPC gets to
+	// flush its buffer. However, gRPC is pretty good about getting data out
+	// of its process, therefore we have to fight it. We need to run the
+	// sending side on a different process and have that process exit to
+	// ensure we are actually excercising the need for CloseAndRecv().
 	It("flushes current batch and sends", func() {
-		client, _, _ := buildIngressClient(server.addr, time.Hour, false)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		defer wg.Wait()
+		go func() {
+			defer wg.Done()
+			defer GinkgoRecover()
+			es, err := getEnvelopesN(server.receivers, logCount)
+			Expect(err).ToNot(HaveOccurred())
 
-		// Ensure client/server are ready
-		Eventually(func() error {
-			return client.EmitEvent(
-				context.Background(),
-				"some-title",
-				"some-body",
-			)
-		}).Should(Succeed())
+			Expect(len(es)).To(Equal(logCount))
+			server.stop()
+		}()
 
-		client.EmitLog("message")
-		err := client.CloseSend()
+		path, err := os.Executable()
 		Expect(err).ToNot(HaveOccurred())
-
-		_, err = getEnvelopeAt(server.receivers, 0)
-		Expect(err).ToNot(HaveOccurred())
-	})
+		cmd := exec.Command(path)
+		cmd.Env = []string{
+			"INGRESS_CLIENT_TEST_PROCESS=" + server.addr,
+		}
+		Expect(cmd.Start()).To(Succeed())
+		cmd.Wait()
+	}, 5)
 
 	It("does not block on an empty buffer", func(done Done) {
 		defer close(done)
@@ -323,6 +355,26 @@ var _ = Describe("IngressClient", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 })
+
+func getEnvelopesN(receivers chan loggregator_v2.Ingress_BatchSenderServer, n int) ([]*loggregator_v2.Envelope, error) {
+	var recv loggregator_v2.Ingress_BatchSenderServer
+	Eventually(receivers, 10).Should(Receive(&recv))
+
+	var results []*loggregator_v2.Envelope
+	for {
+		envBatch, err := recv.Recv()
+		if err != nil {
+			// Return what you have. The connection may be killed
+			// (delibarately) by the other process.
+			return results, nil
+		}
+
+		results = append(results, envBatch.Batch...)
+		if len(results) >= n {
+			return results, nil
+		}
+	}
+}
 
 func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx int) (*loggregator_v2.Envelope, error) {
 	var recv loggregator_v2.Ingress_BatchSenderServer
