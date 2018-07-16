@@ -69,6 +69,7 @@ func WithAddr(addr string) IngressOption {
 // Logger declares the minimal logging interface used within the v2 client
 type Logger interface {
 	Printf(string, ...interface{})
+	Panicf(string, ...interface{})
 }
 
 // WithLogger allows for the configuration of a logger.

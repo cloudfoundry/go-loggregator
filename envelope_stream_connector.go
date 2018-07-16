@@ -128,8 +128,17 @@ func newStream(
 	if err != nil {
 		// This error occurs on invalid configuration. And more notably,
 		// it does NOT occur if the server is not up.
-		panic("Invalid gRPC dial configuration: " + err.Error())
+		log.Panicf("invalid gRPC dial configuration: %s", err)
 	}
+
+	// Protect against a go-routine leak. gRPC will keep a go-routine active
+	// within the connection to keep the connectin alive. We have to close
+	// this or the go-routine leaks. This is untested. We had trouble exposing
+	// the underlying connectin was still active.
+	go func() {
+		<-ctx.Done()
+		conn.Close()
+	}()
 
 	client := loggregator_v2.NewEgressClient(conn)
 
