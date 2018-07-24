@@ -407,6 +407,22 @@ func (c *IngressClient) EmitTimer(name string, start, stop time.Time, opts ...Em
 // EmitEventOption is the option type passed into EmitEvent.
 type EmitEventOption func(proto.Message)
 
+// WithEventSourceInfo configures an envelope with both the source and instance
+// IDs.
+func WithEventSourceInfo(sourceID, instanceID string) EmitEventOption {
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.SourceId = sourceID
+			e.InstanceId = instanceID
+		case protoEditor:
+			e.SetSourceInfo(sourceID, instanceID)
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
+	}
+}
+
 // EmitEvent sends an Event envelope.
 func (c *IngressClient) EmitEvent(ctx context.Context, title, body string, opts ...EmitEventOption) error {
 	e := &loggregator_v2.Envelope{

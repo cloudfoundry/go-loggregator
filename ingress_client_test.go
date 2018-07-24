@@ -319,6 +319,24 @@ var _ = Describe("IngressClient", func() {
 		Expect(env.GetEvent().GetBody()).To(Equal("some-body"))
 	})
 
+	It("sets the source info for an event", func() {
+		Eventually(func() error {
+			return client.EmitEvent(
+				context.Background(),
+				"some-title",
+				"some-body",
+				loggregator.WithEventSourceInfo("source-id", "instance-id"),
+			)
+		}).Should(Succeed())
+		var envelopeBatch *loggregator_v2.EnvelopeBatch
+		Eventually(server.sendReceiver).Should(Receive(&envelopeBatch))
+
+		env := envelopeBatch.GetBatch()[0]
+		Expect(env.GetEvent()).ToNot(BeNil())
+		Expect(env.GetSourceId()).To(Equal("source-id"))
+		Expect(env.GetInstanceId()).To(Equal("instance-id"))
+	})
+
 	// So this test is a bit... crazy. We want to ensure that gRPC gets to
 	// flush its buffer. However, gRPC is pretty good about getting data out
 	// of its process, therefore we have to fight it. We need to run the
