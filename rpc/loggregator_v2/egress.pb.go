@@ -191,9 +191,7 @@ func (m *Selector) String() string            { return proto.CompactTextString(m
 func (*Selector) ProtoMessage()               {}
 func (*Selector) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
-type isSelector_Message interface {
-	isSelector_Message()
-}
+type isSelector_Message interface{ isSelector_Message() }
 
 type Selector_Log struct {
 	Log *LogSelector `protobuf:"bytes,2,opt,name=log,oneof"`
