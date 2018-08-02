@@ -2,6 +2,7 @@ package loggregator
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -123,31 +124,34 @@ func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v
 		return
 	}
 
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "data:") {
-			continue
-		}
-		line = line[len("data:"):]
-
-		var eb loggregator_v2.EnvelopeBatch
-		if err := jsonpb.Unmarshal(strings.NewReader(line), &eb); err != nil {
-			c.log.Printf("failed to unmarshal envelope: %s", err)
-			continue
+	buf := bytes.NewBuffer(nil)
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			c.log.Printf("failed while reading stream: %s", err)
+			return
 		}
 
-		for _, e := range eb.Batch {
-			select {
-			case <-ctx.Done():
-				return
-			case es <- e:
+		switch {
+		case bytes.HasPrefix(line, []byte("data: ")):
+			buf.Write(line[len("data: "):])
+		case bytes.Equal(line, []byte("\n")):
+			var eb loggregator_v2.EnvelopeBatch
+			if err := jsonpb.Unmarshal(buf, &eb); err != nil {
+				c.log.Printf("failed to unmarshal envelope: %s", err)
+				continue
+			}
+
+			for _, e := range eb.Batch {
+				select {
+				case <-ctx.Done():
+					return
+				case es <- e:
+				}
 			}
 		}
-	}
 
-	if scanner.Err() != nil {
-		c.log.Printf("failed while reading stream: %s", scanner.Err())
 	}
 }
 
