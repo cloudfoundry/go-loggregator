@@ -208,11 +208,29 @@ func (c *RLPGatewayClient) buildQuery(req *loggregator_v2.EgressBatchRequest) st
 		query = filter(query, "gauge")
 	}
 
+	query = removeDuplicateSourceIDs(query)
 	if len(query) == 0 {
 		return ""
 	}
 
 	return "?" + strings.Join(query, "&")
+}
+
+func removeDuplicateSourceIDs(query []string) []string {
+	sids := map[string]bool{}
+	duplicates := 0
+	for i, j := 0, 0; i < len(query); i++ {
+		if strings.HasPrefix(query[i], "source_id=") && sids[query[i]] {
+			// Duplicate source ID
+			duplicates++
+			continue
+		}
+		sids[query[i]] = true
+		query[j] = query[i]
+		j++
+	}
+
+	return query[:len(query)-duplicates]
 }
 
 func containsPrefix(arr []string, prefix string) bool {

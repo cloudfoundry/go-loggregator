@@ -166,6 +166,9 @@ var _ = Describe("RlpGatewayClient", func() {
 				{
 					SourceId: "some-id-2",
 				},
+				{
+					SourceId: "some-id-2",
+				},
 			}, "source_id", []string{"some-id-1", "some-id-2"}),
 	)
 
