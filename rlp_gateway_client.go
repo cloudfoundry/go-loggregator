@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"github.com/golang/protobuf/jsonpb"
@@ -88,6 +89,8 @@ func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.Egres
 				if len(batch) > 0 {
 					return batch
 				}
+
+				time.Sleep(50 * time.Millisecond)
 			}
 		}
 	}
