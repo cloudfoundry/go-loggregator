@@ -94,11 +94,13 @@ func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.Egres
 
 func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v2.Envelope, logReq *loggregator_v2.EgressBatchRequest) {
 	readAddr := fmt.Sprintf("%s/v2/read%s", c.addr, c.buildQuery(logReq))
+
 	req, err := http.NewRequest(http.MethodGet, readAddr, nil)
 	if err != nil {
 		c.log.Fatalf("failed to build request %s", err)
 	}
-	req.Header.Set("Content-Type", "text/event-stream")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Cache-Control", "no-cache")
 
 	resp, err := c.doer.Do(req)
 	if err != nil {
