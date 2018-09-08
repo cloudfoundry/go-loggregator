@@ -26,7 +26,7 @@ const logCount = 3000
 //TestMain acts as the log emitter for gRPC SendRecv() test.
 func TestMain(m *testing.M) {
 	if os.Getenv("INGRESS_CLIENT_TEST_PROCESS") != "" {
-		client, _, _ := buildIngressClient(os.Getenv("INGRESS_CLIENT_TEST_PROCESS"), time.Hour, false)
+		client, _ := buildIngressClient(os.Getenv("INGRESS_CLIENT_TEST_PROCESS"), time.Hour, false)
 		for i := 0; i < logCount; i++ {
 			client.EmitLog(fmt.Sprint("message", i))
 		}
@@ -41,7 +41,6 @@ var _ = Describe("IngressClient", func() {
 	var (
 		client *loggregator.IngressClient
 		server *testIngressServer
-		ctx    context.Context
 		cancel func()
 	)
 
@@ -57,10 +56,11 @@ var _ = Describe("IngressClient", func() {
 		err = server.start()
 		Expect(err).NotTo(HaveOccurred())
 
-		client, ctx, cancel = buildIngressClient(server.addr, 50*time.Millisecond, false)
+		client, cancel = buildIngressClient(server.addr, 50*time.Millisecond, false)
 	})
 
 	AfterEach(func() {
+		cancel()
 		server.stop()
 	})
 
@@ -88,7 +88,7 @@ var _ = Describe("IngressClient", func() {
 	})
 
 	It("returns an error after context has been cancelled", func() {
-		client, _, cancel := buildIngressClient(server.addr, time.Hour, false)
+		client, cancel := buildIngressClient(server.addr, time.Hour, false)
 		cancel()
 		go func(client *loggregator.IngressClient) {
 			for range time.Tick(1 * time.Millisecond) {
@@ -410,7 +410,7 @@ func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx 
 	return envBatch.Batch[idx], nil
 }
 
-func buildIngressClient(serverAddr string, flushInterval time.Duration, addContext bool) (*loggregator.IngressClient, context.Context, func()) {
+func buildIngressClient(serverAddr string, flushInterval time.Duration, addContext bool) (*loggregator.IngressClient, func()) {
 	tlsConfig, err := loggregator.NewIngressTLSConfig(
 		fixture("CA.crt"),
 		fixture("client.crt"),
@@ -440,5 +440,5 @@ func buildIngressClient(serverAddr string, flushInterval time.Duration, addConte
 		panic(err)
 	}
 
-	return client, ctx, cancel
+	return client, cancel
 }
