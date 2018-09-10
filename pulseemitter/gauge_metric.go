@@ -15,12 +15,6 @@ type GaugeMetric interface {
 	// Set sets the current value of the gauge metric.
 	Set(n float64)
 
-	// Increment adds the given value to the gauge metrics current value.
-	Increment(n float64)
-
-	// Decrement subtracts the given value from the gauge metrics current value.
-	Decrement(n float64)
-
 	// Emit sends the counter values to the LogClient.
 	Emit(c LogClient)
 }
@@ -55,16 +49,6 @@ func NewGaugeMetric(name, unit, sourceID string, opts ...MetricOption) GaugeMetr
 // Set will set the current value of the gauge metric to the given number.
 func (g *gaugeMetric) Set(n float64) {
 	atomic.StoreUint64(&g.value, toUint64(n, 2))
-}
-
-// Increment adds the given value to the gauge metrics current value.
-func (g *gaugeMetric) Increment(n float64) {
-	atomic.AddUint64(&g.value, toUint64(n, 2))
-}
-
-// Decrement subtracts the given value from the gauge metrics current value.
-func (g *gaugeMetric) Decrement(n float64) {
-	atomic.AddUint64(&g.value, -toUint64(n, 2))
 }
 
 // Emit will send the current value and tagging options to the LogClient to
