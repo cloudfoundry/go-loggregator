@@ -101,7 +101,7 @@ func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v
 
 	req, err := http.NewRequest(http.MethodGet, readAddr, nil)
 	if err != nil {
-		c.log.Fatalf("failed to build request %s", err)
+		c.log.Panicf("failed to build request %s", err)
 	}
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("Cache-Control", "no-cache")
