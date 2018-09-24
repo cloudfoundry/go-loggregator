@@ -137,9 +137,15 @@ func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v
 		}
 
 		switch {
+		case bytes.HasPrefix(line, []byte("heartbeat: ")):
+			continue
 		case bytes.HasPrefix(line, []byte("data: ")):
 			buf.Write(line[len("data: "):])
 		case bytes.Equal(line, []byte("\n")):
+			if buf.Len() == 0 {
+				continue
+			}
+
 			var eb loggregator_v2.EnvelopeBatch
 			if err := jsonpb.Unmarshal(buf, &eb); err != nil {
 				c.log.Printf("failed to unmarshal envelope: %s", err)

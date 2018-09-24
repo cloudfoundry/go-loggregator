@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"golang.org/x/net/context"
 
 	"code.cloudfoundry.org/go-loggregator"
@@ -21,15 +23,18 @@ import (
 
 var _ = Describe("RlpGatewayClient", func() {
 	var (
-		spyDoer *spyDoer
-		c       *loggregator.RLPGatewayClient
+		spyDoer   *spyDoer
+		c         *loggregator.RLPGatewayClient
+		logBuffer *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
 		spyDoer = newSpyDoer()
+		logBuffer = gbytes.NewBuffer()
 		c = loggregator.NewRLPGatewayClient(
 			"https://some.addr",
 			loggregator.WithRLPGatewayHTTPClient(spyDoer),
+			loggregator.WithRLPGatewayClientLogger(log.New(logBuffer, "", 0)),
 		)
 	})
 
@@ -209,6 +214,31 @@ var _ = Describe("RlpGatewayClient", func() {
 		}()
 
 		Eventually(envelopes).Should(HaveLen(10))
+	})
+
+	It("handles heartbeats", func() {
+		ch := make(chan []byte, 100)
+		spyDoer.resps = append(spyDoer.resps, &http.Response{
+			StatusCode: 200,
+			Body:       ioutil.NopCloser(channelReader(ch)),
+		})
+		spyDoer.errs = []error{nil}
+
+		go func() {
+			for i := 0; i < 10; i++ {
+				ch <- []byte("heartbeat: keep-alive\n\n")
+			}
+		}()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+
+		// TODO: Asserting on the logs is far from ideal, however the only
+		// output from an unmarshalling error is a log line. If we decide to
+		// do more with an error (e.g., metrics), this test should be
+		// adjusted.
+		Consistently(logBuffer.Contents).Should(BeEmpty())
 	})
 
 	It("batches envelopes", func() {
