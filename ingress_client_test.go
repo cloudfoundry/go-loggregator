@@ -232,6 +232,39 @@ var _ = Describe("IngressClient", func() {
 		Expect(timer.GetStop()).To(Equal(stopTime.UnixNano()))
 	})
 
+	It("sends envelopes", func() {
+		stopTime := time.Now()
+		startTime := stopTime.Add(-time.Minute)
+
+		client.Emit(&loggregator_v2.Envelope{
+			Timestamp:  stopTime.UnixNano(),
+			SourceId:   "source-id",
+			InstanceId: "instance-id",
+			Tags: map[string]string{
+				"some-tag": "some-tag-value",
+			},
+			Message: &loggregator_v2.Envelope_Timer{
+				Timer: &loggregator_v2.Timer{
+					Name:  "http",
+					Start: startTime.UnixNano(),
+					Stop:  stopTime.UnixNano(),
+				},
+			},
+		})
+		env, err := getEnvelopeAt(server.receivers, 0)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(env.GetSourceId()).To(Equal("source-id"))
+		Expect(env.GetInstanceId()).To(Equal("instance-id"))
+		Expect(env.Tags["some-tag"]).To(Equal("some-tag-value"))
+
+		timer := env.GetTimer()
+		Expect(timer).ToNot(BeNil())
+		Expect(timer.GetName()).To(Equal("http"))
+		Expect(timer.GetStart()).To(Equal(startTime.UnixNano()))
+		Expect(timer.GetStop()).To(Equal(stopTime.UnixNano()))
+	})
+
 	It("works with the runtime emitter", func() {
 		// This test is to ensure that the v2 client satisfies the
 		// runtimeemitter.Sender interface. If it does not satisfy the
