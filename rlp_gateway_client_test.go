@@ -226,7 +226,7 @@ var _ = Describe("RlpGatewayClient", func() {
 
 		go func() {
 			for i := 0; i < 10; i++ {
-				ch <- []byte("heartbeat: keep-alive\n\n")
+				ch <- []byte("event: heartbeat\ndata: 1541438163\n\n")
 			}
 		}()
 

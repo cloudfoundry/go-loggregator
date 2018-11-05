@@ -138,6 +138,13 @@ func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v
 
 		switch {
 		case bytes.HasPrefix(line, []byte("heartbeat: ")):
+			// TODO: Remove this old case
+			continue
+		case bytes.HasPrefix(line, []byte("event: heartbeat")):
+			// Throw away the data of the heartbeat event and the next
+			// newline.
+			_, _ = reader.ReadBytes('\n')
+			_, _ = reader.ReadBytes('\n')
 			continue
 		case bytes.HasPrefix(line, []byte("data: ")):
 			buf.Write(line[len("data: "):])
