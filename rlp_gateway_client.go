@@ -96,7 +96,11 @@ func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.Egres
 	}
 }
 
-func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v2.Envelope, logReq *loggregator_v2.EgressBatchRequest) {
+func (c *RLPGatewayClient) connect(
+	ctx context.Context,
+	es chan<- *loggregator_v2.Envelope,
+	logReq *loggregator_v2.EgressBatchRequest,
+) {
 	readAddr := fmt.Sprintf("%s/v2/read%s", c.addr, c.buildQuery(logReq))
 
 	req, err := http.NewRequest(http.MethodGet, readAddr, nil)
@@ -106,7 +110,7 @@ func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("Cache-Control", "no-cache")
 
-	resp, err := c.doer.Do(req)
+	resp, err := c.doer.Do(req.WithContext(ctx))
 	if err != nil {
 		c.log.Printf("error making request: %s", err)
 		return
@@ -140,6 +144,8 @@ func (c *RLPGatewayClient) connect(ctx context.Context, es chan<- *loggregator_v
 		case bytes.HasPrefix(line, []byte("heartbeat: ")):
 			// TODO: Remove this old case
 			continue
+		case bytes.HasPrefix(line, []byte("event: closing")):
+			return
 		case bytes.HasPrefix(line, []byte("event: heartbeat")):
 			// Throw away the data of the heartbeat event and the next
 			// newline.

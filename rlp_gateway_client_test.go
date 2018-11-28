@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -241,6 +242,32 @@ var _ = Describe("RlpGatewayClient", func() {
 		Consistently(logBuffer.Contents).Should(BeEmpty())
 	})
 
+	It("handles closing events", func() {
+		ch := make(chan []byte, 100)
+		noCloseCh := make(chan []byte, 100)
+		spyDoer.resps = append(spyDoer.resps,
+			&http.Response{
+				StatusCode: 200,
+				Body:       ioutil.NopCloser(channelReader(ch)),
+			},
+			&http.Response{
+				StatusCode: 200,
+				Body:       ioutil.NopCloser(channelReader(noCloseCh)),
+			})
+		spyDoer.errs = []error{nil, nil}
+
+		ch <- []byte("event: closing\ndata: message\n\n")
+		close(ch)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+
+		Eventually(func() int {
+			return len(spyDoer.Reqs())
+		}).Should(BeNumerically("==", 2))
+	})
+
 	It("batches envelopes", func() {
 		ch := make(chan []byte, 100)
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
@@ -361,7 +388,10 @@ func (s *spyDoer) Reqs() []*http.Request {
 type channelReader <-chan []byte
 
 func (r channelReader) Read(buf []byte) (int, error) {
-	data := <-r
+	data, ok := <-r
+	if !ok {
+		return 0, io.EOF
+	}
 	n := copy(buf, data)
 	return n, nil
 }
