@@ -157,6 +157,7 @@ type protoEditor interface {
 	SetLogToStdout()
 	SetGaugeValue(name string, value float64, unit string)
 	SetDelta(d uint64)
+	SetTotal(d uint64)
 	SetTag(name, value string)
 }
 
@@ -307,6 +308,20 @@ func WithDelta(d uint64) EmitCounterOption {
 			e.GetCounter().Delta = d
 		case protoEditor:
 			e.SetDelta(d)
+		default:
+			panic(fmt.Sprintf("unsupported Message type: %T", m))
+		}
+	}
+}
+
+// WithTotal is an option that sets the total for a counter.
+func WithTotal(d uint64) EmitCounterOption {
+	return func(m proto.Message) {
+		switch e := m.(type) {
+		case *loggregator_v2.Envelope:
+			e.GetCounter().Total = d
+		case protoEditor:
+			e.SetTotal(d)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
