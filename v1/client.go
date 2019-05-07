@@ -258,9 +258,9 @@ func (e *envelopeWrapper) SetDelta(d uint64) {
 	e.Messages[0].GetCounterEvent().Delta = proto.Uint64(d)
 }
 
-func (e *envelopeWrapper) SetTotal(d uint64) {
+func (e *envelopeWrapper) SetTotal(t uint64) {
 	e.Messages[0].GetCounterEvent().Delta = proto.Uint64(0)
-	e.Messages[0].GetCounterEvent().Total = proto.Uint64(d)
+	e.Messages[0].GetCounterEvent().Total = proto.Uint64(t)
 }
 
 func (e *envelopeWrapper) SetTag(name string, value string) {

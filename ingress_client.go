@@ -157,7 +157,7 @@ type protoEditor interface {
 	SetLogToStdout()
 	SetGaugeValue(name string, value float64, unit string)
 	SetDelta(d uint64)
-	SetTotal(d uint64)
+	SetTotal(t uint64)
 	SetTag(name, value string)
 }
 
