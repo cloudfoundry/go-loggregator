@@ -315,13 +315,14 @@ func WithDelta(d uint64) EmitCounterOption {
 }
 
 // WithTotal is an option that sets the total for a counter.
-func WithTotal(d uint64) EmitCounterOption {
+func WithTotal(t uint64) EmitCounterOption {
 	return func(m proto.Message) {
 		switch e := m.(type) {
 		case *loggregator_v2.Envelope:
-			e.GetCounter().Total = d
+			e.GetCounter().Total = t
+			e.GetCounter().Delta = 0
 		case protoEditor:
-			e.SetTotal(d)
+			e.SetTotal(t)
 		default:
 			panic(fmt.Sprintf("unsupported Message type: %T", m))
 		}
