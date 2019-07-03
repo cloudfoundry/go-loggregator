@@ -58,6 +58,20 @@ func (s *SpyMetricsRegistry) GetMetric(name string, tags map[string]string) *Spy
 	panic(fmt.Sprintf("unknown metric: %s", name))
 }
 
+// Returns -1 to signify no metric
+func (s *SpyMetricsRegistry) GetMetricValue(name string, tags map[string]string) float64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	n := getMetricName(name, tags)
+
+	if m, ok := s.Metrics[n]; ok {
+		return m.Value()
+	}
+
+	return -1
+}
+
 func (s *SpyMetricsRegistry) HasMetric(name string, tags map[string]string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
