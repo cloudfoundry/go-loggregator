@@ -6,15 +6,13 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
-
-	dto "github.com/prometheus/client_model/go"
 	"github.com/gogo/protobuf/proto"
+	dto "github.com/prometheus/client_model/go"
 )
 
 var _ = Describe("PrometheusMetrics", func() {
@@ -30,12 +28,6 @@ var _ = Describe("PrometheusMetrics", func() {
 		// the /metrics route with the default http mux which is
 		// global
 		http.DefaultServeMux = new(http.ServeMux)
-
-		// Resetting prometheus registry because we use the global
-		// DefaultRegisterer for the default instrumentation
-		r := prometheus.NewRegistry()
-		prometheus.DefaultRegisterer = r
-		prometheus.DefaultGatherer = r
 	})
 
 	It("serves metrics on a prometheus endpoint", func() {
@@ -61,27 +53,6 @@ var _ = Describe("PrometheusMetrics", func() {
 		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring("a counter help text for test_counter"))
 		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring(`test_gauge{bar="baz"} 11`))
 		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring("a gauge help text for test_gauge"))
-	})
-
-	It("accepts custom default tags", func() {
-		ct := map[string]string{
-			"tag": "custom",
-		}
-
-		r := metrics.NewRegistry(l, metrics.WithDefaultTags(ct), metrics.WithServer(0))
-
-		r.NewCounter(
-			"test_counter",
-			metrics.WithHelpText("a counter help text for test_counter"),
-		)
-
-		r.NewGauge(
-			"test_gauge",
-			metrics.WithHelpText("a gauge help text for test_gauge"),
-		)
-
-		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring(`test_counter{tag="custom"} 0`))
-		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring(`test_gauge{tag="custom"} 0`))
 	})
 
 	It("accepts custom default tags", func() {
