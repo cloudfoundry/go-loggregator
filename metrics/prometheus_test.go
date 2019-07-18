@@ -1,14 +1,20 @@
 package metrics_test
 
 import (
+	"bytes"
 	"code.cloudfoundry.org/go-loggregator/metrics"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/expfmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/gogo/protobuf/proto"
 )
 
 var _ = Describe("PrometheusMetrics", func() {
@@ -76,6 +82,41 @@ var _ = Describe("PrometheusMetrics", func() {
 
 		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring(`test_counter{tag="custom"} 0`))
 		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring(`test_gauge{tag="custom"} 0`))
+	})
+
+	It("accepts custom default tags", func() {
+		ct := map[string]string{
+			"tag": "custom",
+		}
+
+		r := metrics.NewRegistry(l, metrics.WithDefaultTags(ct), metrics.WithServer(0))
+
+		r.NewCounter(
+			"test_counter",
+			metrics.WithHelpText("a counter help text for test_counter"),
+		)
+
+		r.NewGauge(
+			"test_gauge",
+			metrics.WithHelpText("a gauge help text for test_gauge"),
+		)
+
+		Eventually(func() string { return getMetrics(r.Port()) }).Should(And(
+			ContainSubstring("test_counter"),
+			ContainSubstring("test_gauge"),
+		))
+
+		metrics := getMetrics(r.Port())
+		metricFamilies, err := new(expfmt.TextParser).TextToMetricFamilies(bytes.NewReader([]byte(metrics)))
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, family := range metricFamilies {
+			for _, metric := range family.GetMetric() {
+				Expect(metric.Label).To(ContainElement(
+					&dto.LabelPair{Name: proto.String("tag"), Value: proto.String("custom")},
+				), fmt.Sprintf("family %s contained a metric without default tags", family.GetName()))
+			}
+		}
 	})
 
 	It("returns the metric when duplicate is created", func() {

@@ -45,6 +45,7 @@ func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 		o(pr)
 	}
 
+	prometheus.DefaultRegisterer = prometheus.WrapRegistererWith(pr.defaultTags, prometheus.DefaultRegisterer)
 	http.Handle("/metrics", promhttp.Handler())
 	return pr
 }
@@ -93,10 +94,6 @@ func (p *Registry) toPromOpt(name, helpText string, mOpts ...MetricOption) prome
 
 	for _, o := range mOpts {
 		o(&opt)
-	}
-
-	for k, v := range p.defaultTags {
-		opt.ConstLabels[k] = v
 	}
 
 	return opt
