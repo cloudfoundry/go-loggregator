@@ -40,7 +40,7 @@ func (s *SpyMetricsRegistry) NewGauge(name string, opts ...metrics.MetricOption)
 	return m
 }
 
-func (s *SpyMetricsRegistry) addMetric(sm *SpyMetric) {
+func (s *SpyMetricsRegistry) addMetric(sm *SpyMetric) *SpyMetric {
 	n := getMetricName(sm.name, sm.Opts.ConstLabels)
 
 	_, ok := s.Metrics[n]
