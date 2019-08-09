@@ -3,6 +3,8 @@ package metrics_test
 import (
 	"bytes"
 	"code.cloudfoundry.org/go-loggregator/metrics"
+	"code.cloudfoundry.org/tlsconfig/certtest"
+	"crypto/tls"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,14 +18,11 @@ import (
 )
 
 var _ = Describe("PrometheusMetrics", func() {
-
 	var (
-		l *log.Logger
+		l = log.New(GinkgoWriter, "", log.LstdFlags)
 	)
 
 	BeforeEach(func() {
-		l = log.New(GinkgoWriter, "", log.LstdFlags)
-
 		// This is needed because the prom registry will register
 		// the /metrics route with the default http mux which is
 		// global
@@ -125,6 +124,34 @@ var _ = Describe("PrometheusMetrics", func() {
 			r.NewGauge("test-counter")
 		}).To(Panic())
 	})
+
+	Context("WithTLSServer", func() {
+		It("starts a TLS server", func() {
+			ca, caFile := generateCA("someCA")
+			certFile, keyFile := generateCertKeyPair(ca, "server")
+
+			r := metrics.NewRegistry(
+				l,
+				metrics.WithTLSServer(0, certFile, keyFile, caFile, "server"),
+			)
+
+			g := r.NewGauge(
+				"test_gauge",
+				metrics.WithHelpText("a gauge help text for test_gauge"),
+				metrics.WithMetricTags(map[string]string{"bar": "baz"}),
+			)
+			g.Set(10)
+
+			Eventually(func() string {
+				return getMetricsTLS(r.Port(), ca)
+			}).Should(ContainSubstring(`test_gauge{bar="baz"} 10`))
+
+			addr := fmt.Sprintf("http://127.0.0.1:%s/metrics", r.Port())
+			resp, err := http.Get(addr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+		})
+	})
 })
 
 func getMetrics(port string) string {
@@ -138,4 +165,89 @@ func getMetrics(port string) string {
 	Expect(err).ToNot(HaveOccurred())
 
 	return string(respBytes)
+}
+
+func getMetricsTLS(port string, ca *certtest.Authority) string {
+	caPool, err := ca.CertPool()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cert, err := ca.BuildSignedCertificate("client")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tlsCert, err := cert.TLSCertificate()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{tlsCert},
+				RootCAs:      caPool,
+			},
+		},
+	}
+
+	addr := fmt.Sprintf("https://127.0.0.1:%s/metrics", port)
+	resp, err := client.Get(addr)
+	if err != nil {
+		return ""
+	}
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	Expect(err).ToNot(HaveOccurred())
+
+	return string(respBytes)
+}
+
+func generateCA(caName string) (*certtest.Authority, string) {
+	ca, err := certtest.BuildCA(caName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	caBytes, err := ca.CertificatePEM()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fileName := tmpFile(caName+".crt", caBytes)
+
+	return ca, fileName
+}
+
+func tmpFile(prefix string, caBytes []byte) string {
+	file, err := ioutil.TempFile("", prefix)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(caBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return file.Name()
+}
+
+func generateCertKeyPair(ca *certtest.Authority, commonName string) (string, string) {
+	cert, err := ca.BuildSignedCertificate(commonName, certtest.WithDomains(commonName))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	certBytes, keyBytes, err := cert.CertificatePEMAndPrivateKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	certFile := tmpFile(commonName+".crt", certBytes)
+	keyFile := tmpFile(commonName+".key", keyBytes)
+
+	return certFile, keyFile
 }
