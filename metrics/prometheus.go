@@ -130,9 +130,9 @@ func WithServer(port int) RegistryOption {
 }
 
 // Starts an https server on the given port to host metrics.
-func WithTLSServer(port int, certFile, keyFile, caFile, commonName string) RegistryOption {
+func WithTLSServer(port int, certFile, keyFile, caFile string) RegistryOption {
 	return func(r *Registry) {
-		r.startTLS(port, certFile, keyFile, caFile, commonName)
+		r.startTLS(port, certFile, keyFile, caFile)
 	}
 }
 
@@ -156,7 +156,7 @@ func (p *Registry) start(port int) {
 	go s.Serve(lis)
 }
 
-func (p *Registry) startTLS(port int, certFile, keyFile, caFile, commonName string) {
+func (p *Registry) startTLS(port int, certFile, keyFile, caFile string) {
 	tlsConfig, err := tlsconfig.Build(
 		tlsconfig.WithInternalServiceDefaults(),
 		tlsconfig.WithIdentityFromFile(certFile, keyFile),

@@ -132,7 +132,7 @@ var _ = Describe("PrometheusMetrics", func() {
 
 			r := metrics.NewRegistry(
 				l,
-				metrics.WithTLSServer(0, certFile, keyFile, caFile, "server"),
+				metrics.WithTLSServer(0, certFile, keyFile, caFile),
 			)
 
 			g := r.NewGauge(
