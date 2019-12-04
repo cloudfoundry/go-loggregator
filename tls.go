@@ -29,6 +29,13 @@ func newTLSConfig(caPath, certPath, keyPath, cn string) (*tls.Config, error) {
 		ServerName:         cn,
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: false,
+		MinVersion: tls.VersionTLS12,
+		MaxVersion: tls.VersionTLS12,
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		},
 	}
 
 	caCertBytes, err := ioutil.ReadFile(caPath)
