@@ -3,10 +3,7 @@ package loggregator_test
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"sync"
@@ -18,6 +15,7 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/tlsconfig"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -263,30 +261,13 @@ func newServerMutualTLSConfig() (*tls.Config, error) {
 	keyFile := fixture("server.key")
 	caCertFile := fixture("CA.crt")
 
-	tlsCert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load keypair: %s", err)
-	}
-
-	certBytes, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read ca cert file: %s", err)
-	}
-
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM(certBytes); !ok {
-		return nil, errors.New("unable to load ca cert file")
-	}
-
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: false,
-		MinVersion:         tls.VersionTLS12,
-		Certificates:       []tls.Certificate{tlsCert},
-		ClientCAs:          caCertPool,
-		ClientAuth:         tls.RequireAndVerifyClientCert,
-	}
-
-	return tlsConfig, nil
+	return tlsconfig.Build(
+		tlsconfig.WithInternalServiceDefaults(),
+		tlsconfig.WithIdentityFromFile(certFile, keyFile),
+	).Client(
+		tlsconfig.WithAuthorityFromFile(caCertFile),
+		tlsconfig.WithServerName("127.0.0.1"),
+	)
 }
 
 func NewClientMutualTLSConfig(
@@ -295,43 +276,11 @@ func NewClientMutualTLSConfig(
 	caCertFile string,
 	serverName string,
 ) (*tls.Config, error) {
-	tlsCert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load keypair: %s", err)
-	}
-
-	certBytes, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read ca cert file: %s", err)
-	}
-
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM(certBytes); !ok {
-		return nil, errors.New("unable to load ca cert file")
-	}
-
-	certificate, err := x509.ParseCertificate(tlsCert.Certificate[0])
-	if err != nil {
-		return nil, err
-	}
-
-	verifyOptions := x509.VerifyOptions{
-		Roots: caCertPool,
-		KeyUsages: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageAny,
-		},
-	}
-	if _, err := certificate.Verify(verifyOptions); err != nil {
-		return nil, fmt.Errorf("failed to verify certificate: %s", err)
-	}
-
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: false,
-		MinVersion:         tls.VersionTLS12,
-		Certificates:       []tls.Certificate{tlsCert},
-		ServerName:         serverName,
-		RootCAs:            caCertPool,
-	}
-
-	return tlsConfig, err
+	return tlsconfig.Build(
+		tlsconfig.WithInternalServiceDefaults(),
+		tlsconfig.WithIdentityFromFile(certFile, keyFile),
+	).Client(
+		tlsconfig.WithAuthorityFromFile(caCertFile),
+		tlsconfig.WithServerName(serverName),
+	)
 }
