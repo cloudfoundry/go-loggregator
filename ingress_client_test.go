@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/runtimeemitter"
+	"code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/runtimeemitter"
 	"golang.org/x/net/context"
 
 	. "github.com/onsi/ginkgo"

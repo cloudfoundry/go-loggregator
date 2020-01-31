@@ -3,7 +3,7 @@ package conversion_test
 import (
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/conversion"
+	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
