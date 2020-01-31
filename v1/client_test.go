@@ -3,9 +3,9 @@ package v1_test
 import (
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v8"
-	loggregator_v2 "code.cloudfoundry.org/go-loggregator/v8"
-	"code.cloudfoundry.org/go-loggregator/v8/v1"
+	"code.cloudfoundry.org/go-loggregator"
+	loggregator_v2 "code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator/v1"
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/cloudfoundry/sonde-go/events"
 
