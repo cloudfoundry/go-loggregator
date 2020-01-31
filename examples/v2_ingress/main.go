@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/go-loggregator"
 )
 
 func main() {

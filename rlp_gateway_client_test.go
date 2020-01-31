@@ -18,8 +18,8 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"golang.org/x/net/context"
 
-	"code.cloudfoundry.org/go-loggregator/v8"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 )
 
 var _ = Describe("RlpGatewayClient", func() {

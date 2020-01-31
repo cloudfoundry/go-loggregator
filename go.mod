@@ -1,4 +1,4 @@
-module code.cloudfoundry.org/go-loggregator/v8
+module code.cloudfoundry.org/go-loggregator
 
 go 1.12
 
