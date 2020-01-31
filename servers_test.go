@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/tlsconfig"
 )
 
 type testIngressServer struct {
