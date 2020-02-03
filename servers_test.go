@@ -25,9 +25,8 @@ func newTestIngressServer(serverCert, serverKey, caCert string) (*testIngressSer
 	tlsConfig, err := tlsconfig.Build(
 		tlsconfig.WithInternalServiceDefaults(),
 		tlsconfig.WithIdentityFromFile(serverCert, serverKey),
-	).Client(
-		tlsconfig.WithAuthorityFromFile(caCert),
-		tlsconfig.WithServerName("127.0.0.1"),
+	).Server(
+		tlsconfig.WithClientAuthenticationFromFile(caCert),
 	)
 
 	if err != nil {
