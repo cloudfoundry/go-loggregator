@@ -27,11 +27,10 @@ var _ = Describe("Connector", func() {
 		Expect(err).NotTo(HaveOccurred())
 		producer.start()
 		defer producer.stop()
-		tlsConf, err := NewClientMutualTLSConfig(
+		tlsConf, err := loggregator.NewIngressTLSConfig(
+			fixture("CA.crt"),
 			fixture("server.crt"),
 			fixture("server.key"),
-			fixture("CA.crt"),
-			"metron",
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -56,11 +55,10 @@ var _ = Describe("Connector", func() {
 		// it will grab the same port.
 		producer.start()
 
-		tlsConf, err := NewClientMutualTLSConfig(
+		tlsConf, err := loggregator.NewIngressTLSConfig(
+			fixture("CA.crt"),
 			fixture("server.crt"),
 			fixture("server.key"),
-			fixture("CA.crt"),
-			"metron",
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -98,11 +96,10 @@ var _ = Describe("Connector", func() {
 		producer.start()
 		defer producer.stop()
 
-		tlsConf, err := NewClientMutualTLSConfig(
+		tlsConf, err := loggregator.NewIngressTLSConfig(
+			fixture("CA.crt"),
 			fixture("server.crt"),
 			fixture("server.key"),
-			fixture("CA.crt"),
-			"metron",
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -264,23 +261,7 @@ func newServerMutualTLSConfig() (*tls.Config, error) {
 	return tlsconfig.Build(
 		tlsconfig.WithInternalServiceDefaults(),
 		tlsconfig.WithIdentityFromFile(certFile, keyFile),
-	).Client(
-		tlsconfig.WithAuthorityFromFile(caCertFile),
-		tlsconfig.WithServerName("127.0.0.1"),
-	)
-}
-
-func NewClientMutualTLSConfig(
-	certFile string,
-	keyFile string,
-	caCertFile string,
-	serverName string,
-) (*tls.Config, error) {
-	return tlsconfig.Build(
-		tlsconfig.WithInternalServiceDefaults(),
-		tlsconfig.WithIdentityFromFile(certFile, keyFile),
-	).Client(
-		tlsconfig.WithAuthorityFromFile(caCertFile),
-		tlsconfig.WithServerName(serverName),
+	).Server(
+		tlsconfig.WithClientAuthenticationFromFile(caCertFile),
 	)
 }
