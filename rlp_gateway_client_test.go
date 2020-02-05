@@ -265,7 +265,7 @@ var _ = Describe("RlpGatewayClient", func() {
 
 		Eventually(func() int {
 			return len(spyDoer.Reqs())
-		}).Should(BeNumerically("==", 2))
+		}, 5*time.Second).Should(BeNumerically("==", 2))
 	})
 
 	It("batches envelopes", func() {
@@ -318,7 +318,7 @@ var _ = Describe("RlpGatewayClient", func() {
 
 		c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
 
-		Eventually(spyDoer.Reqs).Should(HaveLen(3))
+		Eventually(spyDoer.Reqs, 5*time.Second).Should(HaveLen(3))
 	})
 
 	It("reconnects for any errors", func() {
@@ -334,7 +334,33 @@ var _ = Describe("RlpGatewayClient", func() {
 
 		c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
 
-		Eventually(spyDoer.Reqs).Should(HaveLen(3))
+		Eventually(spyDoer.Reqs, 5*time.Second).Should(HaveLen(3))
+	})
+
+	It("sends errors to error stream", func() {
+		errorCh := make(chan error)
+
+		c = loggregator.NewRLPGatewayClient(
+			"https://some.addr",
+			loggregator.WithRLPGatewayHTTPClient(spyDoer),
+			loggregator.WithRLPGatewayClientLogger(log.New(logBuffer, "", 0)),
+			loggregator.WithRLPGatewayErrorStream(errorCh),
+		)
+
+		spyDoer.resps = append(spyDoer.resps, &http.Response{StatusCode: 200})
+		spyDoer.resps = append(spyDoer.resps, &http.Response{StatusCode: 200})
+		spyDoer.resps = append(spyDoer.resps, &http.Response{
+			StatusCode: 200,
+			Body:       ioutil.NopCloser(channelReader(nil)),
+		})
+		spyDoer.errs = []error{errors.New("some-error"), errors.New("some-error"), nil}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+
+		Eventually(errorCh, 5*time.Second).Should(Receive())
+		Eventually(errorCh, 5*time.Second).Should(Receive())
 	})
 })
 
