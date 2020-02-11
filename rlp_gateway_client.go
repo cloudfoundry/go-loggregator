@@ -18,8 +18,13 @@ import (
 
 type RLPGatewayClient struct {
 	addr string
-	log  *log.Logger
+	log  Logger
 	doer Doer
+}
+
+type GatewayLogger interface {
+	Printf(format string, v ...interface{})
+	Panicf(format string, v ...interface{})
 }
 
 func NewRLPGatewayClient(addr string, opts ...RLPGatewayClientOption) *RLPGatewayClient {
@@ -41,7 +46,7 @@ type RLPGatewayClientOption func(*RLPGatewayClient)
 
 // WithRLPGatewayClientLogger returns a RLPGatewayClientOption to configure
 // the logger of the RLPGatewayClient. It defaults to a silent logger.
-func WithRLPGatewayClientLogger(log *log.Logger) RLPGatewayClientOption {
+func WithRLPGatewayClientLogger(log GatewayLogger) RLPGatewayClientOption {
 	return func(c *RLPGatewayClient) {
 		c.log = log
 	}
