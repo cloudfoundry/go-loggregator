@@ -17,9 +17,10 @@ import (
 )
 
 type RLPGatewayClient struct {
-	addr string
-	log  Logger
-	doer Doer
+	addr       string
+	log        Logger
+	doer       Doer
+	maxRetries int
 }
 
 type GatewayLogger interface {
@@ -29,9 +30,10 @@ type GatewayLogger interface {
 
 func NewRLPGatewayClient(addr string, opts ...RLPGatewayClientOption) *RLPGatewayClient {
 	c := &RLPGatewayClient{
-		addr: addr,
-		log:  log.New(ioutil.Discard, "", 0),
-		doer: http.DefaultClient,
+		addr:       addr,
+		log:        log.New(ioutil.Discard, "", 0),
+		doer:       http.DefaultClient,
+		maxRetries: 10,
 	}
 
 	for _, o := range opts {
@@ -60,6 +62,15 @@ func WithRLPGatewayHTTPClient(d Doer) RLPGatewayClientOption {
 	}
 }
 
+// WithRLPGatewayMaxRetries returns a RLPGatewayClientOption to configure
+// how many times the client will attempt to connect to the RLP gateway
+// before giving up.
+func WithRLPGatewayMaxRetries(r int) RLPGatewayClientOption {
+	return func(c *RLPGatewayClient) {
+		c.maxRetries = r
+	}
+}
+
 // Doer is used to make HTTP requests to the RLP Gateway.
 type Doer interface {
 	// Do is a implementation of the http.Client's Do method.
@@ -71,11 +82,17 @@ type Doer interface {
 // underlying SSE stream dies, it attempts to reconnect until the context
 // is done. Any errors are logged via the client's logger.
 func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) EnvelopeStream {
+	var numRetries int
 	es := make(chan *loggregator_v2.Envelope, 100)
 	go func() {
 		defer close(es)
-		for ctx.Err() == nil {
-			c.connect(ctx, es, req)
+		for ctx.Err() == nil && numRetries <= c.maxRetries {
+			connectionSucceeded := c.connect(ctx, es, req)
+			if connectionSucceeded {
+				numRetries = 0
+				continue
+			}
+			numRetries++
 		}
 	}()
 
@@ -105,7 +122,7 @@ func (c *RLPGatewayClient) connect(
 	ctx context.Context,
 	es chan<- *loggregator_v2.Envelope,
 	logReq *loggregator_v2.EgressBatchRequest,
-) {
+) bool {
 	readAddr := fmt.Sprintf("%s/v2/read%s", c.addr, c.buildQuery(logReq))
 
 	req, err := http.NewRequest(http.MethodGet, readAddr, nil)
@@ -118,7 +135,7 @@ func (c *RLPGatewayClient) connect(
 	resp, err := c.doer.Do(req.WithContext(ctx))
 	if err != nil {
 		c.log.Printf("error making request: %s", err)
-		return
+		return false
 	}
 
 	defer func() {
@@ -130,10 +147,10 @@ func (c *RLPGatewayClient) connect(
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			c.log.Printf("failed to read body: %s", err)
-			return
+			return false
 		}
 		c.log.Printf("unexpected status code %d: %s", resp.StatusCode, body)
-		return
+		return false
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -142,7 +159,7 @@ func (c *RLPGatewayClient) connect(
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			c.log.Printf("failed while reading stream: %s", err)
-			return
+			return true
 		}
 
 		switch {
@@ -150,7 +167,7 @@ func (c *RLPGatewayClient) connect(
 			// TODO: Remove this old case
 			continue
 		case bytes.HasPrefix(line, []byte("event: closing")):
-			return
+			return true
 		case bytes.HasPrefix(line, []byte("event: heartbeat")):
 			// Throw away the data of the heartbeat event and the next
 			// newline.
@@ -173,7 +190,7 @@ func (c *RLPGatewayClient) connect(
 			for _, e := range eb.Batch {
 				select {
 				case <-ctx.Done():
-					return
+					return true
 				case es <- e:
 				}
 			}

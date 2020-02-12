@@ -323,26 +323,90 @@ var _ = Describe("RlpGatewayClient", func() {
 
 	It("reconnects for any errors", func() {
 		spyDoer.resps = append(spyDoer.resps, &http.Response{StatusCode: 200})
+		spyDoer.errs = append(spyDoer.errs, errors.New("some-error"))
+
 		spyDoer.resps = append(spyDoer.resps, &http.Response{StatusCode: 200})
+		spyDoer.errs = append(spyDoer.errs, errors.New("some-error"))
+
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
 			StatusCode: 200,
 			Body:       ioutil.NopCloser(channelReader(nil)),
 		})
-		spyDoer.errs = []error{errors.New("some-error"), errors.New("some-error"), nil}
+		spyDoer.errs = append(spyDoer.errs, nil)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
 		c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
 
 		Eventually(spyDoer.Reqs).Should(HaveLen(3))
+		Consistently(spyDoer.Reqs).Should(HaveLen(3))
+	})
+
+	It("stops trying to reconnect after maxRetries", func() {
+		c = loggregator.NewRLPGatewayClient(
+			"https://some.addr",
+			loggregator.WithRLPGatewayHTTPClient(spyDoer),
+			loggregator.WithRLPGatewayClientLogger(log.New(logBuffer, "", 0)),
+			loggregator.WithRLPGatewayMaxRetries(3),
+		)
+		spyDoer.onlyErrs = true
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		es := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+
+		Eventually(es).Should(BeNil())
+
+		Expect(len(spyDoer.Reqs())).To(Equal(4)) //1 initial try + 3 retries
+	})
+
+	It("resets connection attempts when connection succeeds", func() {
+		c = loggregator.NewRLPGatewayClient(
+			"https://some.addr",
+			loggregator.WithRLPGatewayHTTPClient(spyDoer),
+			loggregator.WithRLPGatewayClientLogger(log.New(logBuffer, "", 0)),
+			loggregator.WithRLPGatewayMaxRetries(2),
+		)
+
+		errorResponse(spyDoer)
+		errorResponse(spyDoer)
+
+		ch := make(chan []byte, 100)
+		spyDoer.resps = append(spyDoer.resps, &http.Response{
+			StatusCode: 200,
+			Body:       ioutil.NopCloser(channelReader(ch)),
+		})
+		spyDoer.errs = append(spyDoer.errs, nil)
+
+		ch <- []byte("event: closing\ndata: message\n\n")
+		close(ch)
+
+		errorResponse(spyDoer)
+		errorResponse(spyDoer)
+		errorResponse(spyDoer)
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		es := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+		Eventually(es).Should(BeNil())
+
+		Expect(len(spyDoer.Reqs())).To(Equal(6))
 	})
 })
 
+func errorResponse(sd *spyDoer) {
+	sd.resps = append(sd.resps, &http.Response{StatusCode: 200})
+	sd.errs = append(sd.errs, errors.New("some-error"))
+}
+
 type spyDoer struct {
-	mu    sync.Mutex
-	reqs  []*http.Request
-	resps []*http.Response
-	errs  []error
+	mu       sync.Mutex
+	reqs     []*http.Request
+	resps    []*http.Response
+	errs     []error
+	onlyErrs bool
 }
 
 func newSpyDoer() *spyDoer {
@@ -357,6 +421,13 @@ func (s *spyDoer) Do(r *http.Request) (*http.Response, error) {
 
 	if len(s.resps) != len(s.errs) {
 		panic("out of sync")
+	}
+
+	if s.onlyErrs {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+		}, errors.New("default error")
 	}
 
 	if len(s.resps) == 0 {
