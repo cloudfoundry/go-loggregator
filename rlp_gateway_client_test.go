@@ -361,6 +361,56 @@ var _ = Describe("RlpGatewayClient", func() {
 		Expect(len(spyDoer.Reqs())).To(Equal(4)) //1 initial try + 3 retries
 	})
 
+	It("puts error on error channel after maxRetries", func() {
+		errChan := make(chan error, 10)
+
+		c = loggregator.NewRLPGatewayClient(
+			"https://some.addr",
+			loggregator.WithRLPGatewayHTTPClient(spyDoer),
+			loggregator.WithRLPGatewayClientLogger(log.New(logBuffer, "", 0)),
+			loggregator.WithRLPGatewayMaxRetries(3),
+			loggregator.WithRLPGatewayErrChan(errChan),
+		)
+		spyDoer.onlyErrs = true
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		es := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+
+		Eventually(es).Should(BeNil())
+
+		var err error
+		Eventually(errChan).Should(Receive(&err))
+		Expect(err).To(MatchError("client connection attempts exceeded max retries -- giving up"))
+	})
+
+	It("doesn't fail when the passed error chan is full", func() {
+		errChan := make(chan error, 1)
+		errChan <- errors.New("something that happened before")
+
+		c = loggregator.NewRLPGatewayClient(
+			"https://some.addr",
+			loggregator.WithRLPGatewayHTTPClient(spyDoer),
+			loggregator.WithRLPGatewayClientLogger(log.New(logBuffer, "", 0)),
+			loggregator.WithRLPGatewayMaxRetries(3),
+			loggregator.WithRLPGatewayErrChan(errChan),
+		)
+		spyDoer.onlyErrs = true
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		es := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+		esClosed := make(chan struct{})
+		go func() {
+			es()
+			esClosed <- struct{}{}
+		}()
+
+		Eventually(esClosed).Should(Receive())
+	})
+
 	It("resets connection attempts when connection succeeds", func() {
 		c = loggregator.NewRLPGatewayClient(
 			"https://some.addr",

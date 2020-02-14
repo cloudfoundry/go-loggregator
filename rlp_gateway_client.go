@@ -3,6 +3,7 @@ package loggregator
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,6 +22,7 @@ type RLPGatewayClient struct {
 	log        Logger
 	doer       Doer
 	maxRetries int
+	errChan    chan error
 }
 
 type GatewayLogger interface {
@@ -71,6 +73,14 @@ func WithRLPGatewayMaxRetries(r int) RLPGatewayClientOption {
 	}
 }
 
+// WithRLPGatewayErrChan returns a RLPGatewayClientOption to configure
+// an error channel to communicate errors when the client exceeds max retries
+func WithRLPGatewayErrChan(errChan chan error) RLPGatewayClientOption {
+	return func(c *RLPGatewayClient) {
+		c.errChan = errChan
+	}
+}
+
 // Doer is used to make HTTP requests to the RLP Gateway.
 type Doer interface {
 	// Do is a implementation of the http.Client's Do method.
@@ -82,9 +92,14 @@ type Doer interface {
 // underlying SSE stream dies, it attempts to reconnect until the context
 // is done. Any errors are logged via the client's logger.
 func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) EnvelopeStream {
-	var numRetries int
 	es := make(chan *loggregator_v2.Envelope, 100)
-	go func() {
+	go c.connectToStream(es, ctx, req)()
+	return streamEnvelopes(ctx, es)
+}
+
+func (c *RLPGatewayClient) connectToStream(es chan *loggregator_v2.Envelope, ctx context.Context, req *loggregator_v2.EgressBatchRequest) func() {
+	var numRetries int
+	return func() {
 		defer close(es)
 		for ctx.Err() == nil && numRetries <= c.maxRetries {
 			connectionSucceeded := c.connect(ctx, es, req)
@@ -94,8 +109,18 @@ func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.Egres
 			}
 			numRetries++
 		}
-	}()
 
+		if numRetries > c.maxRetries {
+			select {
+			case c.errChan <- errors.New("client connection attempts exceeded max retries -- giving up"):
+			default:
+				log.Printf("unable to write error to err chan -- givin up")
+			}
+		}
+	}
+}
+
+func streamEnvelopes(ctx context.Context, es chan *loggregator_v2.Envelope) func() []*loggregator_v2.Envelope {
 	return func() []*loggregator_v2.Envelope {
 		var batch []*loggregator_v2.Envelope
 		for {
