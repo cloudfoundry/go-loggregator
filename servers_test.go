@@ -2,8 +2,6 @@ package loggregator_test
 
 import (
 	"crypto/tls"
-	"crypto/x509"
-	"io/ioutil"
 	"net"
 
 	"golang.org/x/net/context"
@@ -11,6 +9,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/tlsconfig"
 )
 
 type testIngressServer struct {
@@ -23,24 +22,16 @@ type testIngressServer struct {
 }
 
 func newTestIngressServer(serverCert, serverKey, caCert string) (*testIngressServer, error) {
-	cert, err := tls.LoadX509KeyPair(serverCert, serverKey)
+	tlsConfig, err := tlsconfig.Build(
+		tlsconfig.WithInternalServiceDefaults(),
+		tlsconfig.WithIdentityFromFile(serverCert, serverKey),
+	).Server(
+		tlsconfig.WithClientAuthenticationFromFile(caCert),
+	)
+
 	if err != nil {
 		return nil, err
 	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{cert},
-		ClientAuth:         tls.RequestClientCert,
-		InsecureSkipVerify: false,
-	}
-	caCertBytes, err := ioutil.ReadFile(caCert)
-	if err != nil {
-		return nil, err
-	}
-
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCertBytes)
-	tlsConfig.RootCAs = caCertPool
 
 	return &testIngressServer{
 		tlsConfig:    tlsConfig,

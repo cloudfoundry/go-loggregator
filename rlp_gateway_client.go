@@ -3,6 +3,7 @@ package loggregator
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,16 +18,24 @@ import (
 )
 
 type RLPGatewayClient struct {
-	addr string
-	log  *log.Logger
-	doer Doer
+	addr       string
+	log        Logger
+	doer       Doer
+	maxRetries int
+	errChan    chan error
+}
+
+type GatewayLogger interface {
+	Printf(format string, v ...interface{})
+	Panicf(format string, v ...interface{})
 }
 
 func NewRLPGatewayClient(addr string, opts ...RLPGatewayClientOption) *RLPGatewayClient {
 	c := &RLPGatewayClient{
-		addr: addr,
-		log:  log.New(ioutil.Discard, "", 0),
-		doer: http.DefaultClient,
+		addr:       addr,
+		log:        log.New(ioutil.Discard, "", 0),
+		doer:       http.DefaultClient,
+		maxRetries: 10,
 	}
 
 	for _, o := range opts {
@@ -41,7 +50,7 @@ type RLPGatewayClientOption func(*RLPGatewayClient)
 
 // WithRLPGatewayClientLogger returns a RLPGatewayClientOption to configure
 // the logger of the RLPGatewayClient. It defaults to a silent logger.
-func WithRLPGatewayClientLogger(log *log.Logger) RLPGatewayClientOption {
+func WithRLPGatewayClientLogger(log GatewayLogger) RLPGatewayClientOption {
 	return func(c *RLPGatewayClient) {
 		c.log = log
 	}
@@ -52,6 +61,23 @@ func WithRLPGatewayClientLogger(log *log.Logger) RLPGatewayClientOption {
 func WithRLPGatewayHTTPClient(d Doer) RLPGatewayClientOption {
 	return func(c *RLPGatewayClient) {
 		c.doer = d
+	}
+}
+
+// WithRLPGatewayMaxRetries returns a RLPGatewayClientOption to configure
+// how many times the client will attempt to connect to the RLP gateway
+// before giving up.
+func WithRLPGatewayMaxRetries(r int) RLPGatewayClientOption {
+	return func(c *RLPGatewayClient) {
+		c.maxRetries = r
+	}
+}
+
+// WithRLPGatewayErrChan returns a RLPGatewayClientOption to configure
+// an error channel to communicate errors when the client exceeds max retries
+func WithRLPGatewayErrChan(errChan chan error) RLPGatewayClientOption {
+	return func(c *RLPGatewayClient) {
+		c.errChan = errChan
 	}
 }
 
@@ -67,13 +93,34 @@ type Doer interface {
 // is done. Any errors are logged via the client's logger.
 func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) EnvelopeStream {
 	es := make(chan *loggregator_v2.Envelope, 100)
-	go func() {
-		defer close(es)
-		for ctx.Err() == nil {
-			c.connect(ctx, es, req)
-		}
-	}()
+	go c.connectToStream(es, ctx, req)()
+	return streamEnvelopes(ctx, es)
+}
 
+func (c *RLPGatewayClient) connectToStream(es chan *loggregator_v2.Envelope, ctx context.Context, req *loggregator_v2.EgressBatchRequest) func() {
+	var numRetries int
+	return func() {
+		defer close(es)
+		for ctx.Err() == nil && numRetries <= c.maxRetries {
+			connectionSucceeded := c.connect(ctx, es, req)
+			if connectionSucceeded {
+				numRetries = 0
+				continue
+			}
+			numRetries++
+		}
+
+		if numRetries > c.maxRetries {
+			select {
+			case c.errChan <- errors.New("client connection attempts exceeded max retries -- giving up"):
+			default:
+				log.Printf("unable to write error to err chan -- givin up")
+			}
+		}
+	}
+}
+
+func streamEnvelopes(ctx context.Context, es chan *loggregator_v2.Envelope) func() []*loggregator_v2.Envelope {
 	return func() []*loggregator_v2.Envelope {
 		var batch []*loggregator_v2.Envelope
 		for {
@@ -100,7 +147,7 @@ func (c *RLPGatewayClient) connect(
 	ctx context.Context,
 	es chan<- *loggregator_v2.Envelope,
 	logReq *loggregator_v2.EgressBatchRequest,
-) {
+) bool {
 	readAddr := fmt.Sprintf("%s/v2/read%s", c.addr, c.buildQuery(logReq))
 
 	req, err := http.NewRequest(http.MethodGet, readAddr, nil)
@@ -113,7 +160,7 @@ func (c *RLPGatewayClient) connect(
 	resp, err := c.doer.Do(req.WithContext(ctx))
 	if err != nil {
 		c.log.Printf("error making request: %s", err)
-		return
+		return false
 	}
 
 	defer func() {
@@ -125,10 +172,10 @@ func (c *RLPGatewayClient) connect(
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			c.log.Printf("failed to read body: %s", err)
-			return
+			return false
 		}
 		c.log.Printf("unexpected status code %d: %s", resp.StatusCode, body)
-		return
+		return false
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -137,7 +184,7 @@ func (c *RLPGatewayClient) connect(
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			c.log.Printf("failed while reading stream: %s", err)
-			return
+			return true
 		}
 
 		switch {
@@ -145,7 +192,7 @@ func (c *RLPGatewayClient) connect(
 			// TODO: Remove this old case
 			continue
 		case bytes.HasPrefix(line, []byte("event: closing")):
-			return
+			return true
 		case bytes.HasPrefix(line, []byte("event: heartbeat")):
 			// Throw away the data of the heartbeat event and the next
 			// newline.
@@ -168,7 +215,7 @@ func (c *RLPGatewayClient) connect(
 			for _, e := range eb.Batch {
 				select {
 				case <-ctx.Done():
-					return
+					return true
 				case es <- e:
 				}
 			}
