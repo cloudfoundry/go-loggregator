@@ -92,12 +92,12 @@ type Doer interface {
 // underlying SSE stream dies, it attempts to reconnect until the context
 // is done. Any errors are logged via the client's logger.
 func (c *RLPGatewayClient) Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) EnvelopeStream {
-	es := make(chan *loggregator_v2.Envelope, 100)
+	es := make(chan []*loggregator_v2.Envelope, 100)
 	go c.connectToStream(es, ctx, req)()
 	return streamEnvelopes(ctx, es)
 }
 
-func (c *RLPGatewayClient) connectToStream(es chan *loggregator_v2.Envelope, ctx context.Context, req *loggregator_v2.EgressBatchRequest) func() {
+func (c *RLPGatewayClient) connectToStream(es chan []*loggregator_v2.Envelope, ctx context.Context, req *loggregator_v2.EgressBatchRequest) func() {
 	var numRetries int
 	return func() {
 		defer close(es)
@@ -120,9 +120,8 @@ func (c *RLPGatewayClient) connectToStream(es chan *loggregator_v2.Envelope, ctx
 	}
 }
 
-func streamEnvelopes(ctx context.Context, es chan *loggregator_v2.Envelope) func() []*loggregator_v2.Envelope {
+func streamEnvelopes(ctx context.Context, es chan []*loggregator_v2.Envelope) func() []*loggregator_v2.Envelope {
 	return func() []*loggregator_v2.Envelope {
-		var batch []*loggregator_v2.Envelope
 		for {
 			select {
 			case <-ctx.Done():
@@ -131,12 +130,8 @@ func streamEnvelopes(ctx context.Context, es chan *loggregator_v2.Envelope) func
 				if !ok {
 					return nil
 				}
-				batch = append(batch, e)
+				return e
 			default:
-				if len(batch) > 0 {
-					return batch
-				}
-
 				time.Sleep(50 * time.Millisecond)
 			}
 		}
@@ -145,7 +140,7 @@ func streamEnvelopes(ctx context.Context, es chan *loggregator_v2.Envelope) func
 
 func (c *RLPGatewayClient) connect(
 	ctx context.Context,
-	es chan<- *loggregator_v2.Envelope,
+	es chan<- []*loggregator_v2.Envelope,
 	logReq *loggregator_v2.EgressBatchRequest,
 ) bool {
 	readAddr := fmt.Sprintf("%s/v2/read%s", c.addr, c.buildQuery(logReq))
@@ -212,15 +207,8 @@ func (c *RLPGatewayClient) connect(
 				continue
 			}
 
-			for _, e := range eb.Batch {
-				select {
-				case <-ctx.Done():
-					return true
-				case es <- e:
-				}
-			}
+			es <- eb.Batch
 		}
-
 	}
 }
 
