@@ -21,7 +21,7 @@ require (
 	github.com/poy/eachers v0.0.0-20181020210610-23942921fe77 // indirect
 	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
-	google.golang.org/grpc v1.19.1
+	google.golang.org/grpc v1.23.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
