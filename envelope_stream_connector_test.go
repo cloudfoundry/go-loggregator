@@ -143,6 +143,49 @@ var _ = Describe("Connector", func() {
 		mu.Unlock()
 		Expect(l).ToNot(BeZero())
 	})
+
+	It("wont panic when context canceled", func() {
+		producer, err := newFakeEventProducer()
+		Expect(err).NotTo(HaveOccurred())
+
+		tlsConf, err := loggregator.NewIngressTLSConfig(
+			fixture("CA.crt"),
+			fixture("server.crt"),
+			fixture("server.key"),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		var (
+			mu     sync.Mutex
+			missed int
+		)
+		addr := producer.addr
+		c := loggregator.NewEnvelopeStreamConnector(
+			addr,
+			tlsConf,
+			loggregator.WithEnvelopeStreamBuffer(5, func(m int) {
+				mu.Lock()
+				defer mu.Unlock()
+				missed += m
+			}),
+		)
+
+		// Use a context that can be canceled
+		ctx, cancel := context.WithCancel(context.Background())
+		rx := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
+
+		var rxReturned bool
+		// Read to allow the diode to notice it dropped data
+		go func() {
+			msg := rx()
+			Expect(msg).To(BeNil())
+			rxReturned = true
+		}()
+
+		// When the context is canceled, the client panics
+		cancel()
+		Eventually(func() bool { return rxReturned }).Should(BeTrue())
+	})
 })
 
 type fakeEventProducer struct {
