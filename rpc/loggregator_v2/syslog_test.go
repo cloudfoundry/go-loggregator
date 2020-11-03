@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/go-loggregator/v8/rfc5424"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-	"code.cloudfoundry.org/rfc5424"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
