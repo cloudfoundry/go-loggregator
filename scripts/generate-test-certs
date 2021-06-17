@@ -23,13 +23,13 @@ mv -f ${depot_path}/loggregatorCA.key ${depot_path}/CA.key
 mv -f ${depot_path}/loggregatorCA.crl ${depot_path}/CA.crl
 
 # Client certificate
-certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metron
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metron --domain metron
 certstrap --depot-path ${depot_path} sign metron  --CA CA --expires "25 years"
 mv -f ${depot_path}/metron.crt ${depot_path}/server.crt
 mv -f ${depot_path}/metron.key ${depot_path}/server.key
 
 # Server certificate
-certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name reverselogproxy
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name reverselogproxy --domain reverselogproxy
 certstrap --depot-path ${depot_path} sign reverselogproxy --CA CA --expires "25 years"
 mv -f ${depot_path}/reverselogproxy.crt ${depot_path}/client.crt
 mv -f ${depot_path}/reverselogproxy.key ${depot_path}/client.key
