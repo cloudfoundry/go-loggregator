@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-
+	"google.golang.org/grpc/status"
 
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
@@ -208,7 +208,7 @@ func (f *fakeEventProducer) Receiver(
 	loggregator_v2.Egress_ReceiverServer,
 ) error {
 
-	return grpc.Errorf(codes.Unimplemented, "use BatchedReceiver instead")
+	return status.Errorf(codes.Unimplemented, "use BatchedReceiver instead")
 }
 
 func (f *fakeEventProducer) BatchedReceiver(
@@ -221,7 +221,7 @@ func (f *fakeEventProducer) BatchedReceiver(
 	f.mu.Unlock()
 	var i int
 	for range time.Tick(10 * time.Millisecond) {
-		srv.Send(&loggregator_v2.EnvelopeBatch{
+		err := srv.Send(&loggregator_v2.EnvelopeBatch{
 			Batch: []*loggregator_v2.Envelope{
 				{
 					SourceId: fmt.Sprintf("envelope-%d", i),
@@ -234,6 +234,9 @@ func (f *fakeEventProducer) BatchedReceiver(
 				},
 			},
 		})
+		if err != nil {
+			return err
+		}
 		i++
 	}
 	return nil

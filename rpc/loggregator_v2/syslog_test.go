@@ -322,6 +322,7 @@ var _ = Describe("Syslog", func() {
 			env := buildCounterEnvelope()
 
 			d, err := env.Syslog()
+			Expect(err).ToNot(HaveOccurred())
 
 			var msg rfc5424.Message
 			err = msg.UnmarshalBinary(d[0])
@@ -367,6 +368,7 @@ var _ = Describe("Syslog", func() {
 			env := buildEventEnvelope()
 
 			d, err := env.Syslog()
+			Expect(err).ToNot(HaveOccurred())
 
 			var msg rfc5424.Message
 			err = msg.UnmarshalBinary(d[0])
@@ -394,6 +396,7 @@ var _ = Describe("Syslog", func() {
 			env := buildTimerEnvelope()
 
 			d, err := env.Syslog()
+			Expect(err).ToNot(HaveOccurred())
 
 			var msg rfc5424.Message
 			err = msg.UnmarshalBinary(d[0])
@@ -479,11 +482,11 @@ func buildGaugeEnvelope() *loggregator_v2.Envelope {
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
 				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"cpu": &loggregator_v2.GaugeValue{
+					"cpu": {
 						Unit:  "percentage",
 						Value: 0.23,
 					},
-					"memory": &loggregator_v2.GaugeValue{
+					"memory": {
 						Unit:  "bytes",
 						Value: 5423.0,
 					},
