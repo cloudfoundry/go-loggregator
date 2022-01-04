@@ -62,8 +62,6 @@ func BenchmarkToV1EnvelopeTimer(b *testing.B) {
 var (
 	outV1           []*events.Envelope
 	outV2           *loggregator_v2.Envelope
-	resultSlice     []byte
-	err             error
 	httpStartStopV1 = events.Envelope{
 		Origin:     proto.String("origin"),
 		Timestamp:  proto.Int64(time.Now().UnixNano()),

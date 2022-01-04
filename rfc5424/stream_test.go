@@ -20,7 +20,7 @@ func (s *StreamTest) TestCanReadAndWrite(c *C) {
 		c.Assert(nbytes, Equals, int64(50))
 	}
 
-	c.Assert(string(stream.Bytes()), Equals,
+	c.Assert(stream.String(), Equals,
 		`47 <0>1 2003-08-24T05:14:15.000003-07:00 - - - - -`+
 			`47 <1>1 2003-08-24T05:14:15.000003-07:00 - - - - -`+
 			`47 <2>1 2003-08-24T05:14:15.000003-07:00 - - - - -`+

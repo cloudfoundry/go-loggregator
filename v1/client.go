@@ -118,7 +118,7 @@ func (c *Client) promoteToContainerMetric(w envelopeWrapper) bool {
 	if !ok {
 		return false
 	}
-	instanceIndex, err := strconv.Atoi(w.Tags["instance_id"])
+	instanceIndex, err := strconv.ParseInt(w.Tags["instance_id"], 10, 32)
 	if err != nil {
 		return false
 	}

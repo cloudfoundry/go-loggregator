@@ -1,6 +1,7 @@
 package pulseemitter_test
 
 import (
+	"io/ioutil"
 	"log"
 
 	. "github.com/onsi/ginkgo"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestMetricemitter(t *testing.T) {
-	grpclog.SetLogger(log.New(GinkgoWriter, "", 0))
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(GinkgoWriter, ioutil.Discard, ioutil.Discard))
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Pulse Emitter Suite")

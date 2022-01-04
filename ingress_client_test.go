@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 		for i := 0; i < logCount; i++ {
 			client.EmitLog(fmt.Sprint("message", i))
 		}
-		client.CloseSend()
+		_ = client.CloseSend()
 		return
 	}
 
@@ -408,7 +408,8 @@ var _ = Describe("IngressClient", func() {
 			"INGRESS_CLIENT_TEST_PROCESS=" + server.addr,
 		}
 		Expect(cmd.Start()).To(Succeed())
-		cmd.Wait()
+		err = cmd.Wait()
+		Expect(err).ToNot(HaveOccurred())
 	}, 5)
 
 	It("does not block on an empty buffer", func(done Done) {
