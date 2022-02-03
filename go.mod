@@ -18,7 +18,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.18.1
 	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
-	google.golang.org/grpc v1.23.0
+	google.golang.org/grpc v1.44.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
