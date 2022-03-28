@@ -16,8 +16,8 @@ require (
 	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.18.1
-	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
+	github.com/onsi/gomega v1.19.0
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	google.golang.org/grpc v1.45.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
