@@ -208,6 +208,7 @@ func (m *Message) readTimestamp(r io.RuneScanner) error {
 
 	m.Timestamp, err = time.Parse(RFC5424TimeOffsetUTC, timestampString)
 	if err == nil {
+		m.UseUTC = true
 		return nil
 	}
 
