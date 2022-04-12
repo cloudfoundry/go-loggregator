@@ -140,6 +140,13 @@ var testCases = []struct {
 		StructuredData: []StructuredData{},
 	}, `<0>1 2003-08-24T05:14:15.000003-07:00 - - - - -`},
 
+	// UTC TIMESTAMP
+	{Message{
+		Timestamp:      UTC("2003-08-24T05:14:15.000003Z"),
+		StructuredData: []StructuredData{},
+		UseUTC:         true,
+	}, `<0>1 2003-08-24T05:14:15.000003Z - - - - -`},
+
 	{Message{
 		Timestamp: T("2003-08-24T05:14:15.000003-07:00"),
 		StructuredData: []StructuredData{

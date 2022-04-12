@@ -150,10 +150,14 @@ func (m Message) MarshalBinary() ([]byte, error) {
 		return nil, err
 	}
 
+	format := RFC5424TimeOffsetNum
+	if m.UseUTC {
+		format = RFC5424TimeOffsetUTC
+	}
 	b := bytes.NewBuffer(nil)
 	fmt.Fprintf(b, "<%d>1 %s %s %s %s %s ",
 		m.Priority,
-		m.Timestamp.Format(RFC5424TimeOffsetNum),
+		m.Timestamp.Format(format),
 		nilify(m.Hostname),
 		nilify(m.AppName),
 		nilify(m.ProcessID),
