@@ -2,6 +2,7 @@ package rfc5424
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	. "gopkg.in/check.v1"
@@ -180,6 +181,22 @@ func (s *MarshalTest) TestCanMarshalAndUnmarshal(c *C) {
 	}
 }
 
+func (s *MarshalTest) TestTruncation(c *C) {
+	longMessage := Message{
+		Timestamp:      T("2003-08-24T05:14:15.000003-07:00"),
+		Hostname:       strings.Repeat("A", 300),
+		AppName:        strings.Repeat("A", 300),
+		MessageID:      strings.Repeat("A", 300),
+		ProcessID:      strings.Repeat("A", 300),
+		StructuredData: []StructuredData{},
+	}
+	actual, err := longMessage.MarshalBinary()
+	c.Assert(err, IsNil)
+	expected := fmt.Sprintf(`<0>1 2003-08-24T05:14:15.000003-07:00 %s %s %s %s -`, strings.Repeat("A", 255), strings.Repeat("A", 48), strings.Repeat("A", 128), strings.Repeat("A", 32))
+	c.Assert(string(actual), Equals, expected)
+
+}
+
 // These two strings form the basis of the invalidStrings below. (We change to
 // make sure they are valid to we know our tests are sensitive the way we want
 // them to be.
@@ -250,22 +267,9 @@ func (s *MarshalTest) TestFailsToUnmarshalInvalidStrings(c *C) {
 var invalidMessages = []Message{
 	{Hostname: "\x7f"},
 	{Hostname: "\x20"},
-	{Hostname: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-		"AAAAAA",
-	},
 	{AppName: "\x7f"},
-	{AppName: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
 	{ProcessID: "\x7f"},
-	{ProcessID: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-	},
 	{MessageID: "\x7f"},
-	{MessageID: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
 	{
 		StructuredData: []StructuredData{
 			{
