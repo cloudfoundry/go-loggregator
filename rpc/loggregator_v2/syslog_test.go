@@ -1,7 +1,6 @@
 package loggregator_v2_test
 
 import (
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rfc5424"
@@ -435,19 +434,9 @@ var _ = Describe("Syslog", func() {
 			e.SourceId = "\x01"
 			return e
 		}),
-		Entry("gauge message with source id that is > 48", func() *loggregator_v2.Envelope {
-			e := buildGaugeEnvelope()
-			e.SourceId = strings.Repeat("a", 49)
-			return e
-		}),
 		Entry("counter message with non-printable instance id", func() *loggregator_v2.Envelope {
 			e := buildCounterEnvelope()
 			e.InstanceId = "\x01"
-			return e
-		}),
-		Entry("event message with instance id that is > 128", func() *loggregator_v2.Envelope {
-			e := buildEventEnvelope()
-			e.InstanceId = strings.Repeat("a", 129)
 			return e
 		}),
 		Entry("timer message with name that is not valid UTF-8", func() *loggregator_v2.Envelope {
