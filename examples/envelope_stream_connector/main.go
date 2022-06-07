@@ -56,8 +56,8 @@ func main() {
 	)
 
 	rx := streamConnector.Stream(context.Background(), &loggregator_v2.EgressBatchRequest{
-		ShardId:   os.Getenv("SHARD_ID"),
-		Selectors: allSelectors,
+		ShardId:          os.Getenv("SHARD_ID"),
+		Selectors:        allSelectors,
 		UsePreferredTags: true,
 	})
 
