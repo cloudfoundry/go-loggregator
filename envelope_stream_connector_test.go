@@ -69,12 +69,17 @@ var _ = Describe("Connector", func() {
 			tlsConf,
 		)
 
-		go func() {
-			rx := c.Stream(context.Background(), &loggregator_v2.EgressBatchRequest{})
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		go func(ctx context.Context) {
+			rx := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
 			for {
+				if ctx.Err() != nil {
+					return
+				}
 				rx()
 			}
-		}()
+		}(ctx)
 
 		Eventually(producer.connectionAttempts).Should(Equal(1))
 		producer.stop()
@@ -121,16 +126,23 @@ var _ = Describe("Connector", func() {
 		rx := c.Stream(context.Background(), &loggregator_v2.EgressBatchRequest{})
 
 		var count int
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 		// Read to allow the diode to notice it dropped data
-		go func() {
-			for range time.Tick(500 * time.Millisecond) {
-				// Do not invoke rx while mu is locked
-				l := len(rx())
-				mu.Lock()
-				count += l
-				mu.Unlock()
+		go func(ctx context.Context) {
+			for {
+				select {
+				case <-time.Tick(500 * time.Millisecond):
+					// Do not invoke rx while mu is locked
+					l := len(rx())
+					mu.Lock()
+					count += l
+					mu.Unlock()
+				case <-ctx.Done():
+					return
+				}
 			}
-		}()
+		}(ctx)
 
 		Eventually(func() int {
 			mu.Lock()
@@ -144,7 +156,7 @@ var _ = Describe("Connector", func() {
 		Expect(l).ToNot(BeZero())
 	})
 
-	It("wont panic when context canceled", func() {
+	It("won't panic when context canceled", func() {
 		producer, err := newFakeEventProducer()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -155,36 +167,18 @@ var _ = Describe("Connector", func() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		var (
-			mu     sync.Mutex
-			missed int
-		)
-		addr := producer.addr
 		c := loggregator.NewEnvelopeStreamConnector(
-			addr,
+			producer.addr,
 			tlsConf,
-			loggregator.WithEnvelopeStreamBuffer(5, func(m int) {
-				mu.Lock()
-				defer mu.Unlock()
-				missed += m
-			}),
+			loggregator.WithEnvelopeStreamBuffer(5, func(m int) {}),
 		)
 
-		// Use a context that can be canceled
 		ctx, cancel := context.WithCancel(context.Background())
 		rx := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
 
-		var rxReturned bool
-		// Read to allow the diode to notice it dropped data
-		go func() {
-			msg := rx()
-			Expect(msg).To(BeNil())
-			rxReturned = true
-		}()
-
-		// When the context is canceled, the client panics
 		cancel()
-		Eventually(func() bool { return rxReturned }).Should(BeTrue())
+		msg := rx()
+		Expect(msg).To(BeNil())
 	})
 })
 
