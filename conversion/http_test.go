@@ -77,10 +77,9 @@ var _ = Describe("HTTP", func() {
 
 			_, err := proto.Marshal(converted)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-				"EventType":     Equal(expectedV1Envelope.EventType),
-				"HttpStartStop": Equal(expectedV1Envelope.HttpStartStop),
-			}))
+
+			Expect(proto.Equal(converted.HttpStartStop, expectedV1Envelope.HttpStartStop)).To(BeTrue())
+			Expect(converted.GetEventType()).To(Equal(expectedV1Envelope.GetEventType()))
 		})
 
 		It("converts integer tag types", func() {
@@ -92,10 +91,9 @@ var _ = Describe("HTTP", func() {
 
 			_, err := proto.Marshal(converted)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-				"EventType":     Equal(expectedV1Envelope.EventType),
-				"HttpStartStop": Equal(expectedV1Envelope.HttpStartStop),
-			}))
+
+			Expect(proto.Equal(converted.HttpStartStop, expectedV1Envelope.HttpStartStop)).To(BeTrue())
+			Expect(converted.GetEventType()).To(Equal(expectedV1Envelope.GetEventType()))
 		})
 	})
 
