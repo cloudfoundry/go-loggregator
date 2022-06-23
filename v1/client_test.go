@@ -3,9 +3,8 @@ package v1_test
 import (
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v8"
 	loggregator_v2 "code.cloudfoundry.org/go-loggregator/v8"
-	v1 "code.cloudfoundry.org/go-loggregator/v8/v1"
+	loggregator_v1 "code.cloudfoundry.org/go-loggregator/v8/v1"
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/cloudfoundry/sonde-go/events"
 
@@ -16,7 +15,7 @@ import (
 
 var _ = Describe("DropsondeClient", func() {
 	var (
-		client *v1.Client
+		client *loggregator_v1.Client
 	)
 
 	Describe("v1 and v2 interface compatibility", func() {
@@ -33,7 +32,7 @@ var _ = Describe("DropsondeClient", func() {
 				spyEmitter = NewSpyEventEmitter("my-origin")
 				dropsonde.DefaultEmitter = spyEmitter
 
-				client, _ = v1.NewClient()
+				client, _ = loggregator_v1.NewClient()
 			})
 
 			AfterEach(func() {
@@ -198,8 +197,8 @@ var _ = Describe("DropsondeClient", func() {
 
 				Context("with IngressOptions", func() {
 					BeforeEach(func() {
-						client, _ = v1.NewClient(
-							v1.WithTag("string-tag-name", "string-tag-value"),
+						client, _ = loggregator_v1.NewClient(
+							loggregator_v1.WithTag("string-tag-name", "string-tag-value"),
 						)
 					})
 
@@ -283,7 +282,7 @@ var _ = Describe("DropsondeClient", func() {
 					})
 
 					DescribeTable("does not promote the envelope if a typo exists in one of the required metric names",
-						func(opts []loggregator.EmitGaugeOption) {
+						func(opts []loggregator_v2.EmitGaugeOption) {
 							opts = append(opts, loggregator_v2.WithGaugeAppInfo("some-app-id", 123))
 
 							client.EmitGauge(opts...)
@@ -292,35 +291,35 @@ var _ = Describe("DropsondeClient", func() {
 							// emit each one individually.
 							Expect(spyEmitter.emittedEnvelopes).To(HaveLen(5))
 						},
-						Entry("cpu misspelled", []loggregator.EmitGaugeOption{
+						Entry("cpu misspelled", []loggregator_v2.EmitGaugeOption{
 							loggregator_v2.WithGaugeValue("ccpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
 							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
 							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
 						}),
-						Entry("memory misspelled", []loggregator.EmitGaugeOption{
+						Entry("memory misspelled", []loggregator_v2.EmitGaugeOption{
 							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("mmemory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
 							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
 							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
 						}),
-						Entry("disk misspelled", []loggregator.EmitGaugeOption{
+						Entry("disk misspelled", []loggregator_v2.EmitGaugeOption{
 							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("ddisk", 4, "bytes"),
 							loggregator_v2.WithGaugeValue("memory_quota", 5, "bytes"),
 							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
 						}),
-						Entry("memory_quota misspelled", []loggregator.EmitGaugeOption{
+						Entry("memory_quota misspelled", []loggregator_v2.EmitGaugeOption{
 							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
 							loggregator_v2.WithGaugeValue("mmemory_quota", 5, "bytes"),
 							loggregator_v2.WithGaugeValue("disk_quota", 6, "bytes"),
 						}),
-						Entry("disk_quota misspelled", []loggregator.EmitGaugeOption{
+						Entry("disk_quota misspelled", []loggregator_v2.EmitGaugeOption{
 							loggregator_v2.WithGaugeValue("cpu", 2, "percentage"),
 							loggregator_v2.WithGaugeValue("memory", 3, "bytes"),
 							loggregator_v2.WithGaugeValue("disk", 4, "bytes"),
@@ -395,7 +394,7 @@ var _ = Describe("DropsondeClient", func() {
 			var _ V2Interface = &loggregator_v2.IngressClient{}
 
 			By("ensuring that the v1 client conforms to v2 interface")
-			var _ V2Interface = &v1.Client{}
+			var _ V2Interface = &loggregator_v1.Client{}
 		})
 	})
 })

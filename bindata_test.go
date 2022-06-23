@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 )
+
 type asset struct {
 	bytes []byte
 	info  os.FileInfo
@@ -508,16 +509,16 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"CA.crl": caCrl,
-	"CA.crt": caCrt,
-	"CA.key": caKey,
-	"client.crt": clientCrt,
-	"client.key": clientKey,
-	"invalid-ca.crt": invalidCaCrt,
-	"metron.csr": metronCsr,
+	"CA.crl":              caCrl,
+	"CA.crt":              caCrt,
+	"CA.key":              caKey,
+	"client.crt":          clientCrt,
+	"client.key":          clientKey,
+	"invalid-ca.crt":      invalidCaCrt,
+	"metron.csr":          metronCsr,
 	"reverselogproxy.csr": reverselogproxyCsr,
-	"server.crt": serverCrt,
-	"server.key": serverKey,
+	"server.crt":          serverCrt,
+	"server.key":          serverKey,
 }
 
 // AssetDir returns the file names below a certain
@@ -559,17 +560,18 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
-	"CA.crl": &bintree{caCrl, map[string]*bintree{}},
-	"CA.crt": &bintree{caCrt, map[string]*bintree{}},
-	"CA.key": &bintree{caKey, map[string]*bintree{}},
-	"client.crt": &bintree{clientCrt, map[string]*bintree{}},
-	"client.key": &bintree{clientKey, map[string]*bintree{}},
-	"invalid-ca.crt": &bintree{invalidCaCrt, map[string]*bintree{}},
-	"metron.csr": &bintree{metronCsr, map[string]*bintree{}},
+	"CA.crl":              &bintree{caCrl, map[string]*bintree{}},
+	"CA.crt":              &bintree{caCrt, map[string]*bintree{}},
+	"CA.key":              &bintree{caKey, map[string]*bintree{}},
+	"client.crt":          &bintree{clientCrt, map[string]*bintree{}},
+	"client.key":          &bintree{clientKey, map[string]*bintree{}},
+	"invalid-ca.crt":      &bintree{invalidCaCrt, map[string]*bintree{}},
+	"metron.csr":          &bintree{metronCsr, map[string]*bintree{}},
 	"reverselogproxy.csr": &bintree{reverselogproxyCsr, map[string]*bintree{}},
-	"server.crt": &bintree{serverCrt, map[string]*bintree{}},
-	"server.key": &bintree{serverKey, map[string]*bintree{}},
+	"server.crt":          &bintree{serverCrt, map[string]*bintree{}},
+	"server.key":          &bintree{serverKey, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
@@ -618,4 +620,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

@@ -10,7 +10,6 @@ import (
 //go:generate go-bindata -nocompress -o bindata_test.go -pkg loggregator_test -prefix test-certs/ test-certs/
 //go:generate rm -rf test-certs
 
-
 func fixture(filename string) string {
 	contents := MustAsset(filename)
 
