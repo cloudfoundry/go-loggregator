@@ -16,7 +16,7 @@ import (
 
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type ClientOption func(*Client)

@@ -3,13 +3,12 @@ package conversion_test
 import (
 	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = Describe("ContainerMetric", func() {

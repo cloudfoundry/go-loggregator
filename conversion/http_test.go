@@ -5,11 +5,10 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-	goproto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = Describe("HTTP", func() {
@@ -165,11 +164,11 @@ var _ = Describe("HTTP", func() {
 
 				converted := conversion.ToV2(v1Envelope, false)
 
-				_, err := goproto.Marshal(converted)
+				_, err := proto.Marshal(converted)
 				Expect(err).ToNot(HaveOccurred())
 
 				for k, v := range expectedV2Envelope.DeprecatedTags {
-					Expect(goproto.Equal(converted.DeprecatedTags[k], v)).To(BeTrue())
+					Expect(proto.Equal(converted.DeprecatedTags[k], v)).To(BeTrue())
 				}
 
 				Expect(converted.GetSourceId()).To(Equal(expectedV2Envelope.SourceId))
@@ -261,7 +260,7 @@ var _ = Describe("HTTP", func() {
 
 				converted := conversion.ToV2(v1Envelope, true)
 
-				_, err := goproto.Marshal(converted)
+				_, err := proto.Marshal(converted)
 				Expect(err).ToNot(HaveOccurred())
 
 				for k, v := range expectedV2Envelope.DeprecatedTags {

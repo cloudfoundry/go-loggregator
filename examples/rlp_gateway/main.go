@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func main() {
@@ -46,13 +47,13 @@ func main() {
 		},
 	})
 
-	marshaler := jsonpb.Marshaler{}
-
 	for {
 		for _, e := range es() {
-			if err := marshaler.Marshal(os.Stdout, e); err != nil {
+			b, err := protojson.Marshal(e)
+			if err != nil {
 				log.Fatal(err)
 			}
+			fmt.Fprint(os.Stdout, b)
 		}
 	}
 }

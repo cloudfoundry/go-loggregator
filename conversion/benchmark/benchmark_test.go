@@ -8,7 +8,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 func BenchmarkToV2Log(b *testing.B) {

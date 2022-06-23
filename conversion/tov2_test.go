@@ -5,9 +5,9 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = Describe("ToV2", func() {
