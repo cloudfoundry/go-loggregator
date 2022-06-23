@@ -183,6 +183,8 @@ var _ = Describe("Connector", func() {
 })
 
 type fakeEventProducer struct {
+	loggregator_v2.UnimplementedEgressServer
+
 	server *grpc.Server
 	addr   string
 
