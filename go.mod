@@ -19,6 +19,7 @@ require (
 	github.com/onsi/gomega v1.19.0
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	google.golang.org/grpc v1.47.0
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
