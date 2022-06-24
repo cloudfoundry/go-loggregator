@@ -47,18 +47,16 @@ var _ = Describe("ContainerMetric", func() {
 
 			envelopes := conversion.ToV1(envelope)
 			Expect(len(envelopes)).To(Equal(1))
-			Expect(*envelopes[0]).To(MatchFields(IgnoreExtras, Fields{
-				"EventType": Equal(events.Envelope_ContainerMetric.Enum()),
-				"ContainerMetric": Equal(&events.ContainerMetric{
-					ApplicationId:    proto.String("some-id"),
-					InstanceIndex:    proto.Int32(123),
-					CpuPercentage:    proto.Float64(11),
-					MemoryBytes:      proto.Uint64(13),
-					DiskBytes:        proto.Uint64(15),
-					MemoryBytesQuota: proto.Uint64(17),
-					DiskBytesQuota:   proto.Uint64(19),
-				}),
-			}))
+			Expect(envelopes[0].GetEventType()).To(Equal(events.Envelope_ContainerMetric))
+			Expect(proto.Equal(envelopes[0].GetContainerMetric(), &events.ContainerMetric{
+				ApplicationId:    proto.String("some-id"),
+				InstanceIndex:    proto.Int32(123),
+				CpuPercentage:    proto.Float64(11),
+				MemoryBytes:      proto.Uint64(13),
+				DiskBytes:        proto.Uint64(15),
+				MemoryBytesQuota: proto.Uint64(17),
+				DiskBytesQuota:   proto.Uint64(19),
+			})).To(BeTrue())
 		})
 
 		It("sets InstanceIndex from GaugeValue if present", func() {
@@ -83,18 +81,16 @@ var _ = Describe("ContainerMetric", func() {
 
 			envelopes := conversion.ToV1(envelope)
 			Expect(len(envelopes)).To(Equal(1))
-			Expect(*envelopes[0]).To(MatchFields(IgnoreExtras, Fields{
-				"EventType": Equal(events.Envelope_ContainerMetric.Enum()),
-				"ContainerMetric": Equal(&events.ContainerMetric{
-					ApplicationId:    proto.String(""),
-					InstanceIndex:    proto.Int32(19),
-					CpuPercentage:    proto.Float64(0),
-					MemoryBytes:      proto.Uint64(0),
-					DiskBytes:        proto.Uint64(0),
-					MemoryBytesQuota: proto.Uint64(0),
-					DiskBytesQuota:   proto.Uint64(0),
-				}),
-			}))
+			Expect(envelopes[0].GetEventType()).To(Equal(events.Envelope_ContainerMetric))
+			Expect(proto.Equal(envelopes[0].GetContainerMetric(), &events.ContainerMetric{
+				ApplicationId:    proto.String(""),
+				InstanceIndex:    proto.Int32(19),
+				CpuPercentage:    proto.Float64(0),
+				MemoryBytes:      proto.Uint64(0),
+				DiskBytes:        proto.Uint64(0),
+				MemoryBytesQuota: proto.Uint64(0),
+				DiskBytesQuota:   proto.Uint64(0),
+			})).To(BeTrue())
 		})
 
 		DescribeTable("it is resilient to malformed envelopes", func(v2e *loggregator_v2.Envelope) {
@@ -206,10 +202,7 @@ var _ = Describe("ContainerMetric", func() {
 				}
 
 				converted := conversion.ToV2(localV1Envelope, false)
-
-				Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-					"SourceId": Equal(expectedV2Envelope.SourceId),
-				}))
+				Expect(converted.GetSourceId()).To(Equal(expectedV2Envelope.GetSourceId()))
 			})
 		})
 

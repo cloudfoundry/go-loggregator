@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 )
 
 var _ = Describe("LogMessage", func() {
@@ -34,17 +33,15 @@ var _ = Describe("LogMessage", func() {
 			Expect(len(envelopes)).To(Equal(1))
 			oldEnvelope := envelopes[0]
 
-			Expect(*oldEnvelope).To(MatchFields(IgnoreExtras, Fields{
-				"EventType": Equal(events.Envelope_LogMessage.Enum()),
-				"LogMessage": Equal(&events.LogMessage{
-					Message:        []byte("Hello World"),
-					MessageType:    events.LogMessage_OUT.Enum(),
-					Timestamp:      proto.Int64(99),
-					AppId:          proto.String("uuid"),
-					SourceType:     proto.String("test-source-type"),
-					SourceInstance: proto.String("test-source-instance"),
-				}),
-			}))
+			Expect(oldEnvelope.GetEventType()).To(Equal(events.Envelope_LogMessage))
+			Expect(proto.Equal(oldEnvelope.LogMessage, &events.LogMessage{
+				Message:        []byte("Hello World"),
+				MessageType:    events.LogMessage_OUT.Enum(),
+				Timestamp:      proto.Int64(99),
+				AppId:          proto.String("uuid"),
+				SourceType:     proto.String("test-source-type"),
+				SourceInstance: proto.String("test-source-instance"),
+			})).To(BeTrue())
 		})
 	})
 
@@ -88,11 +85,8 @@ var _ = Describe("LogMessage", func() {
 			}
 
 			v2Envelope := conversion.ToV2(v1Envelope, false)
-			Expect(*v2Envelope).To(MatchFields(IgnoreExtras, Fields{
-				"SourceId":       Equal(expectedV2Envelope.SourceId),
-				"DeprecatedTags": Equal(expectedV2Envelope.DeprecatedTags),
-				"Message":        Equal(expectedV2Envelope.Message),
-			}))
+
+			Expect(proto.Equal(v2Envelope, expectedV2Envelope)).To(BeTrue())
 		})
 
 		It("sets the source ID to deployment/job when App ID is missing", func() {
@@ -109,9 +103,7 @@ var _ = Describe("LogMessage", func() {
 
 			converted := conversion.ToV2(v1Envelope, false)
 
-			Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-				"SourceId": Equal(expectedV2Envelope.SourceId),
-			}))
+			Expect(converted.SourceId).To(Equal(expectedV2Envelope.SourceId))
 		})
 	})
 })

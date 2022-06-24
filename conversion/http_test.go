@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -187,9 +186,7 @@ var _ = Describe("HTTP", func() {
 
 				converted := conversion.ToV2(v1Envelope, false)
 
-				Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-					"SourceId": Equal(expectedV2Envelope.SourceId),
-				}))
+				Expect(converted.SourceId).To(Equal(expectedV2Envelope.SourceId))
 			})
 		})
 
