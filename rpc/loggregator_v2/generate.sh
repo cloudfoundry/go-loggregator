@@ -16,4 +16,4 @@ pushd $SCRIPT_DIR/../..
     rm -rf code.cloudfoundry.org
 popd
 
-rm -r $TMP_DIR
+rm -rf $TMP_DIR
