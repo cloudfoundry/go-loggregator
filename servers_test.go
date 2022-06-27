@@ -13,6 +13,8 @@ import (
 )
 
 type testIngressServer struct {
+	loggregator_v2.UnimplementedIngressServer
+
 	receivers    chan loggregator_v2.Ingress_BatchSenderServer
 	sendReceiver chan *loggregator_v2.EnvelopeBatch
 	addr         string

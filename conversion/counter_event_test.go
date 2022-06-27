@@ -3,12 +3,11 @@ package conversion_test
 import (
 	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = Describe("CounterEvent", func() {
@@ -26,14 +25,12 @@ var _ = Describe("CounterEvent", func() {
 
 				envelopes := conversion.ToV1(envelope)
 				Expect(len(envelopes)).To(Equal(1))
-				Expect(*envelopes[0]).To(MatchFields(IgnoreExtras, Fields{
-					"EventType": Equal(events.Envelope_CounterEvent.Enum()),
-					"CounterEvent": Equal(&events.CounterEvent{
-						Name:  proto.String("name"),
-						Total: proto.Uint64(99),
-						Delta: proto.Uint64(0),
-					}),
-				}))
+				Expect(envelopes[0].GetEventType()).To(Equal(events.Envelope_CounterEvent))
+				Expect(proto.Equal(envelopes[0].GetCounterEvent(), &events.CounterEvent{
+					Name:  proto.String("name"),
+					Total: proto.Uint64(99),
+					Delta: proto.Uint64(0),
+				})).To(BeTrue())
 			})
 		})
 
@@ -50,14 +47,12 @@ var _ = Describe("CounterEvent", func() {
 
 				envelopes := conversion.ToV1(envelope)
 				Expect(len(envelopes)).To(Equal(1))
-				Expect(*envelopes[0]).To(MatchFields(IgnoreExtras, Fields{
-					"EventType": Equal(events.Envelope_CounterEvent.Enum()),
-					"CounterEvent": Equal(&events.CounterEvent{
-						Name:  proto.String("name"),
-						Total: proto.Uint64(0),
-						Delta: proto.Uint64(99),
-					}),
-				}))
+				Expect(envelopes[0].GetEventType()).To(Equal(events.Envelope_CounterEvent))
+				Expect(proto.Equal(envelopes[0].GetCounterEvent(), &events.CounterEvent{
+					Name:  proto.String("name"),
+					Total: proto.Uint64(0),
+					Delta: proto.Uint64(99),
+				})).To(BeTrue())
 			})
 		})
 	})

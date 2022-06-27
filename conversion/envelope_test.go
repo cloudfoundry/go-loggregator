@@ -5,12 +5,10 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = Describe("Envelope", func() {
@@ -34,15 +32,13 @@ var _ = Describe("Envelope", func() {
 			envelopes := conversion.ToV1(envelope)
 			Expect(len(envelopes)).To(Equal(1))
 			oldEnvelope := envelopes[0]
-			Expect(*oldEnvelope).To(MatchFields(IgnoreExtras, Fields{
-				"Origin":     Equal(proto.String("origin")),
-				"EventType":  Equal(events.Envelope_LogMessage.Enum()),
-				"Timestamp":  Equal(proto.Int64(99)),
-				"Deployment": Equal(proto.String("deployment")),
-				"Job":        Equal(proto.String("job")),
-				"Index":      Equal(proto.String("index")),
-				"Ip":         Equal(proto.String("ip")),
-			}))
+			Expect(oldEnvelope.GetOrigin()).To(Equal("origin"))
+			Expect(oldEnvelope.GetEventType()).To(Equal(events.Envelope_LogMessage))
+			Expect(oldEnvelope.GetTimestamp()).To(Equal(int64(99)))
+			Expect(oldEnvelope.GetDeployment()).To(Equal("deployment"))
+			Expect(oldEnvelope.GetJob()).To(Equal("job"))
+			Expect(oldEnvelope.GetIndex()).To(Equal("index"))
+			Expect(oldEnvelope.GetIp()).To(Equal("ip"))
 			Expect(oldEnvelope.Tags).To(HaveKeyWithValue("random_text", "random_text"))
 			Expect(oldEnvelope.Tags).To(HaveKeyWithValue("random_int", "123"))
 			Expect(oldEnvelope.Tags).To(HaveKeyWithValue("random_decimal", fmt.Sprintf("%f", 123.0)))
@@ -121,10 +117,8 @@ var _ = Describe("Envelope", func() {
 
 			converted := conversion.ToV2(v1Envelope, false)
 
-			Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-				"SourceId":  Equal(expectedV2Envelope.SourceId),
-				"Timestamp": Equal(expectedV2Envelope.Timestamp),
-			}))
+			Expect(converted.SourceId).To(Equal(expectedV2Envelope.SourceId))
+			Expect(converted.Timestamp).To(Equal(expectedV2Envelope.Timestamp))
 			Expect(converted.DeprecatedTags["random-tag"]).To(Equal(expectedV2Envelope.DeprecatedTags["random-tag"]))
 			Expect(converted.DeprecatedTags["origin"]).To(Equal(expectedV2Envelope.DeprecatedTags["origin"]))
 			Expect(converted.DeprecatedTags["deployment"]).To(Equal(expectedV2Envelope.DeprecatedTags["deployment"]))

@@ -11,12 +11,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"golang.org/x/net/context"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
@@ -190,9 +190,8 @@ var _ = Describe("RlpGatewayClient", func() {
 		spyDoer.errs = []error{nil}
 
 		go func() {
-			m := jsonpb.Marshaler{}
 			for i := 0; i < 10; i++ {
-				s, err := m.MarshalToString(&loggregator_v2.EnvelopeBatch{
+				b, err := protojson.Marshal(&loggregator_v2.EnvelopeBatch{
 					Batch: []*loggregator_v2.Envelope{
 						{Timestamp: int64(i)},
 					},
@@ -200,7 +199,7 @@ var _ = Describe("RlpGatewayClient", func() {
 				if err != nil {
 					panic(err)
 				}
-				ch <- []byte(fmt.Sprintf("data: %s\n\n", s))
+				ch <- []byte(fmt.Sprintf("data: %s\n\n", string(b)))
 			}
 		}()
 

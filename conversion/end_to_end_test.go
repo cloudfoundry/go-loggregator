@@ -5,10 +5,8 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-	goproto "github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -59,7 +57,7 @@ var _ = Describe("Envelope conversion", func() {
 
 			v2e := conversion.ToV2(v1e, false)
 
-			_, err = goproto.Marshal(v2e)
+			_, err = proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			v1Envs := conversion.ToV1(v2e)
@@ -98,7 +96,7 @@ var _ = Describe("Envelope conversion", func() {
 
 			v2e := conversion.ToV2(v1e, false)
 
-			_, err = goproto.Marshal(v2e)
+			_, err = proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			v1Envs := conversion.ToV1(v2e)
@@ -134,7 +132,7 @@ var _ = Describe("Envelope conversion", func() {
 
 			v2e := conversion.ToV2(v1e, false)
 
-			_, err = goproto.Marshal(v2e)
+			_, err = proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			v1Envs := conversion.ToV1(v2e)
@@ -170,7 +168,7 @@ var _ = Describe("Envelope conversion", func() {
 
 			v2e := conversion.ToV2(v1e, false)
 
-			_, err = goproto.Marshal(v2e)
+			_, err = proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			v1Envs := conversion.ToV1(v2e)
@@ -206,7 +204,7 @@ var _ = Describe("Envelope conversion", func() {
 
 			v2e := conversion.ToV2(v1e, false)
 
-			_, err = goproto.Marshal(v2e)
+			_, err = proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			v1Envs := conversion.ToV1(v2e)
@@ -246,7 +244,7 @@ var _ = Describe("Envelope conversion", func() {
 
 			v2e := conversion.ToV2(v1e, false)
 
-			_, err = goproto.Marshal(v2e)
+			_, err = proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			v1Envs := conversion.ToV1(v2e)
@@ -289,9 +287,9 @@ var _ = Describe("Envelope conversion", func() {
 					"__v1_type":           ValueText("HttpStartStop"),
 				},
 			}
-			expected := goproto.Clone(v2e)
+			expected := proto.Clone(v2e)
 
-			_, err := goproto.Marshal(v2e)
+			_, err := proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			envelopes := conversion.ToV1(v2e)
@@ -326,9 +324,9 @@ var _ = Describe("Envelope conversion", func() {
 					"__v1_type":   ValueText("LogMessage"),
 				},
 			}
-			expected := goproto.Clone(v2e)
+			expected := proto.Clone(v2e)
 
-			_, err := goproto.Marshal(v2e)
+			_, err := proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			envelopes := conversion.ToV1(v2e)
@@ -362,9 +360,9 @@ var _ = Describe("Envelope conversion", func() {
 					"__v1_type":  ValueText("CounterEvent"),
 				},
 			}
-			expected := goproto.Clone(v2e)
+			expected := proto.Clone(v2e)
 
-			_, err := goproto.Marshal(v2e)
+			_, err := proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			envelopes := conversion.ToV1(v2e)
@@ -413,9 +411,9 @@ var _ = Describe("Envelope conversion", func() {
 					"__v1_type":  ValueText("ContainerMetric"),
 				},
 			}
-			expected := goproto.Clone(v2e)
+			expected := proto.Clone(v2e)
 
-			_, err := goproto.Marshal(v2e)
+			_, err := proto.Marshal(v2e)
 			Expect(err).ToNot(HaveOccurred())
 
 			envelopes := conversion.ToV1(v2e)

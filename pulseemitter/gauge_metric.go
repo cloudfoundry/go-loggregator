@@ -6,7 +6,7 @@ import (
 
 	loggregator "code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // GaugeMetric is used by the pulse emitter to emit gauge metrics to the

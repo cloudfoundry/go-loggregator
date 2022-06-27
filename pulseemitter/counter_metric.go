@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	loggregator "code.cloudfoundry.org/go-loggregator/v8"
 )

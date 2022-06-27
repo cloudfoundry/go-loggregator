@@ -5,7 +5,8 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -31,14 +32,12 @@ var _ = Describe("ValueMetric", func() {
 			Expect(len(envelopes)).To(Equal(1))
 
 			converted := envelopes[0]
-			Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-				"EventType": Equal(events.Envelope_ValueMetric.Enum()),
-				"ValueMetric": Equal(&events.ValueMetric{
-					Name:  proto.String("name"),
-					Unit:  proto.String("meters"),
-					Value: proto.Float64(123),
-				}),
-			}))
+			Expect(converted.GetEventType()).To(Equal(events.Envelope_ValueMetric))
+			Expect(proto.Equal(converted.ValueMetric, &events.ValueMetric{
+				Name:  proto.String("name"),
+				Unit:  proto.String("meters"),
+				Value: proto.Float64(123),
+			})).To(BeTrue())
 		})
 
 		It("converts multiple Gauge values", func() {
@@ -122,14 +121,12 @@ var _ = Describe("ValueMetric", func() {
 			Expect(len(envelopes)).To(Equal(1))
 
 			converted := envelopes[0]
-			Expect(*converted).To(MatchFields(IgnoreExtras, Fields{
-				"EventType": Equal(events.Envelope_ValueMetric.Enum()),
-				"ValueMetric": Equal(&events.ValueMetric{
-					Name:  proto.String("name"),
-					Unit:  proto.String(""),
-					Value: proto.Float64(0.0),
-				}),
-			}))
+			Expect(converted.GetEventType()).To(Equal(events.Envelope_ValueMetric))
+			Expect(proto.Equal(converted.ValueMetric, &events.ValueMetric{
+				Name:  proto.String("name"),
+				Unit:  proto.String(""),
+				Value: proto.Float64(0.0),
+			})).To(BeTrue())
 		})
 	})
 
