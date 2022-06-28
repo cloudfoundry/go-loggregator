@@ -14,8 +14,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v9/runtimeemitter"
 	"golang.org/x/net/context"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -398,7 +397,7 @@ var _ = Describe("IngressClient", func() {
 	// of its process, therefore we have to fight it. We need to run the
 	// sending side on a different process and have that process exit to
 	// ensure we are actually excercising the need for CloseAndRecv().
-	It("flushes current batch and sends", func() {
+	It("flushes current batch and sends", FlakeAttempts(3), func() {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		defer wg.Wait()
@@ -421,11 +420,9 @@ var _ = Describe("IngressClient", func() {
 		Expect(cmd.Start()).To(Succeed())
 		err = cmd.Wait()
 		Expect(err).ToNot(HaveOccurred())
-	}, 5)
+	})
 
-	It("does not block on an empty buffer", func(done Done) {
-		defer close(done)
-
+	It("does not block on an empty buffer", func() {
 		err := client.CloseSend()
 		Expect(err).ToNot(HaveOccurred())
 	})

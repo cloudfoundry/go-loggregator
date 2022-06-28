@@ -3,7 +3,7 @@ package pulseemitter_test
 import (
 	"code.cloudfoundry.org/go-loggregator/v9/pulseemitter"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
