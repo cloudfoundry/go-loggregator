@@ -3,9 +3,9 @@ package pulseemitter_test
 import (
 	"sync"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/v8"
-	"code.cloudfoundry.org/go-loggregator/v8/pulseemitter"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	loggregator "code.cloudfoundry.org/go-loggregator/v9"
+	"code.cloudfoundry.org/go-loggregator/v9/pulseemitter"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

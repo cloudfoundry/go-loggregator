@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v8"
-	"code.cloudfoundry.org/go-loggregator/v8/runtimeemitter"
+	"code.cloudfoundry.org/go-loggregator/v9"
+	"code.cloudfoundry.org/go-loggregator/v9/runtimeemitter"
 )
 
 func main() {
