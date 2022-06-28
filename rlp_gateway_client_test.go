@@ -18,8 +18,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"code.cloudfoundry.org/go-loggregator/v8"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v9"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 )
 
 var _ = Describe("RlpGatewayClient", func() {

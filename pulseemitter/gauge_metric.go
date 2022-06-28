@@ -4,8 +4,8 @@ import (
 	"math"
 	"sync/atomic"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/v8"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	loggregator "code.cloudfoundry.org/go-loggregator/v9"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"google.golang.org/protobuf/proto"
 )
 
