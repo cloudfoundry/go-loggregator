@@ -90,13 +90,24 @@ var _ = Describe("IngressClient", func() {
 	It("returns an error after context has been cancelled", func() {
 		client, cancel := buildIngressClient(server.addr, time.Hour, false)
 		cancel()
+
+		t := time.NewTicker(1 * time.Millisecond)
+		done := make(chan bool)
+		defer close(done)
 		go func(client *loggregator.IngressClient) {
-			for range time.Tick(1 * time.Millisecond) {
-				client.EmitLog(
-					"message",
-					loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
-					loggregator.WithStdout(),
-				)
+			for {
+				select {
+				case <-t.C:
+					client.EmitLog(
+						"message",
+						loggregator.WithAppInfo("app-id", "source-type", "source-instance"),
+						loggregator.WithStdout(),
+					)
+				case <-done:
+					t.Stop()
+					return
+				}
+
 			}
 		}(client)
 
