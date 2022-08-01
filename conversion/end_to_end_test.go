@@ -64,7 +64,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(len(v1Envs)).To(Equal(1))
 
 			newV1e := v1Envs[0]
-			Expect(newV1e).To(Equal(expected))
+			Expect(proto.Equal(newV1e, expected)).To(BeTrue())
 		})
 
 		It("converts LogMessage", func() {
@@ -103,7 +103,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(len(v1Envs)).To(Equal(1))
 
 			newV1e := v1Envs[0]
-			Expect(newV1e).To(Equal(expected))
+			Expect(proto.Equal(newV1e, expected)).To(BeTrue())
 		})
 
 		It("converts ValueMetric", func() {
@@ -139,7 +139,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(len(v1Envs)).To(Equal(1))
 
 			newV1e := v1Envs[0]
-			Expect(newV1e).To(Equal(expected))
+			Expect(proto.Equal(newV1e, expected)).To(BeTrue())
 		})
 
 		It("converts CounterEvent", func() {
@@ -175,7 +175,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(len(v1Envs)).To(Equal(1))
 
 			newV1e := v1Envs[0]
-			Expect(newV1e).To(Equal(expected))
+			Expect(proto.Equal(newV1e, expected)).To(BeTrue())
 		})
 
 		It("converts Error", func() {
@@ -211,7 +211,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(len(v1Envs)).To(Equal(1))
 
 			newV1e := v1Envs[0]
-			Expect(newV1e).To(Equal(expected))
+			Expect(proto.Equal(newV1e, expected)).To(BeTrue())
 		})
 
 		It("ContainerMetric", func() {
@@ -251,7 +251,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(len(v1Envs)).To(Equal(1))
 
 			newV1e := v1Envs[0]
-			Expect(newV1e).To(Equal(expected))
+			Expect(proto.Equal(newV1e, expected)).To(BeTrue())
 		})
 	})
 
@@ -300,7 +300,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			newV2e := conversion.ToV2(v1e, false)
-			Expect(newV2e).To(Equal(expected))
+			Expect(proto.Equal(newV2e, expected)).To(BeTrue())
 		})
 
 		It("converts Log", func() {
@@ -337,7 +337,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			newV2e := conversion.ToV2(v1e, false)
-			Expect(newV2e).To(Equal(expected))
+			Expect(proto.Equal(newV2e, expected)).To(BeTrue())
 		})
 
 		It("converts Counter", func() {
@@ -373,7 +373,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			newV2e := conversion.ToV2(v1e, false)
-			Expect(newV2e).To(Equal(expected))
+			Expect(proto.Equal(newV2e, expected)).To(BeTrue())
 		})
 
 		It("converts Gauge", func() {
@@ -424,7 +424,7 @@ var _ = Describe("Envelope conversion", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			newV2e := conversion.ToV2(v1e, false)
-			Expect(newV2e).To(Equal(expected))
+			Expect(proto.Equal(newV2e, expected)).To(BeTrue())
 		})
 	})
 })
