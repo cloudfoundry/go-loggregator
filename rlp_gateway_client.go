@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/go-loggregator/v9/logr"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"golang.org/x/net/context"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -19,7 +20,7 @@ import (
 
 type RLPGatewayClient struct {
 	addr       string
-	log        Logger
+	log        logr.Logr
 	doer       Doer
 	maxRetries int
 	errChan    chan error

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	loggregator "code.cloudfoundry.org/go-loggregator/v9"
+	"code.cloudfoundry.org/go-loggregator/v9/logr"
 
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -31,7 +32,7 @@ func WithTag(name, value string) ClientOption {
 
 // WithLogger allows for the configuration of a logger.
 // By default, the logger is disabled.
-func WithLogger(l loggregator.Logger) ClientOption {
+func WithLogger(l logr.Logr) ClientOption {
 	return func(c *Client) {
 		c.logger = l
 	}
@@ -41,7 +42,7 @@ func WithLogger(l loggregator.Logger) ClientOption {
 // the NewClient constructor.
 type Client struct {
 	tags   map[string]string
-	logger loggregator.Logger
+	logger logr.Logr
 }
 
 // NewClient creates a v1 loggregator client. This is a wrapper around the

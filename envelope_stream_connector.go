@@ -8,6 +8,7 @@ import (
 	"time"
 
 	gendiodes "code.cloudfoundry.org/go-diodes"
+	"code.cloudfoundry.org/go-loggregator/v9/logr"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -25,7 +26,7 @@ type EnvelopeStreamConnector struct {
 	bufferSize int
 	alerter    func(int)
 
-	log         Logger
+	log         logr.Logr
 	dialOptions []grpc.DialOption
 }
 
@@ -56,7 +57,7 @@ type EnvelopeStreamOption func(*EnvelopeStreamConnector)
 
 // WithEnvelopeStreamLogger allows for the configuration of a logger.
 // By default, the logger is disabled.
-func WithEnvelopeStreamLogger(l Logger) EnvelopeStreamOption {
+func WithEnvelopeStreamLogger(l logr.Logr) EnvelopeStreamOption {
 	return func(c *EnvelopeStreamConnector) {
 		c.log = l
 	}
@@ -116,7 +117,7 @@ func (c *EnvelopeStreamConnector) Stream(ctx context.Context, req *loggregator_v
 }
 
 type stream struct {
-	log    Logger
+	log    logr.Logr
 	ctx    context.Context
 	req    *loggregator_v2.EgressBatchRequest
 	client loggregator_v2.EgressClient
@@ -129,7 +130,7 @@ func newStream(
 	req *loggregator_v2.EgressBatchRequest,
 	c *tls.Config,
 	opts []grpc.DialOption,
-	log Logger,
+	log logr.Logr,
 ) *stream {
 	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(c)))
 	conn, err := grpc.Dial(

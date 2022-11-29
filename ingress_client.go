@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"code.cloudfoundry.org/go-loggregator/v9/logr"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 )
 
@@ -67,15 +68,9 @@ func WithAddr(addr string) IngressOption {
 	}
 }
 
-// Logger declares the minimal logging interface used within the v2 client
-type Logger interface {
-	Printf(string, ...interface{})
-	Panicf(string, ...interface{})
-}
-
 // WithLogger allows for the configuration of a logger.
 // By default, the logger is disabled.
-func WithLogger(l Logger) IngressOption {
+func WithLogger(l logr.Logr) IngressOption {
 	return func(c *IngressClient) {
 		c.logger = l
 	}
@@ -104,7 +99,7 @@ type IngressClient struct {
 
 	dialOpts []grpc.DialOption
 
-	logger Logger
+	logger logr.Logr
 
 	closeErrors chan error
 
