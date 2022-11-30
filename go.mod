@@ -3,8 +3,8 @@ module code.cloudfoundry.org/go-loggregator/v9
 go 1.18
 
 require (
-	code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3
-	code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3
+	code.cloudfoundry.org/go-diodes v0.0.0-20221128154616-f0ef2e038721
+	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
 	github.com/cloudfoundry/sonde-go v0.0.0-20220627221915-ff36de9c3435
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.0
@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -24,10 +25,12 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kr/text v0.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
