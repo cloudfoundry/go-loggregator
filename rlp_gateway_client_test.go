@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"sync"
@@ -43,7 +42,7 @@ var _ = Describe("RlpGatewayClient", func() {
 		defer close(ch)
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(channelReader(ch)),
+			Body:       io.NopCloser(channelReader(ch)),
 		})
 		spyDoer.errs = []error{nil}
 
@@ -79,7 +78,7 @@ var _ = Describe("RlpGatewayClient", func() {
 			defer close(ch)
 			spyDoer.resps = append(spyDoer.resps, &http.Response{
 				StatusCode: 200,
-				Body:       ioutil.NopCloser(channelReader(ch)),
+				Body:       io.NopCloser(channelReader(ch)),
 			})
 			spyDoer.errs = []error{nil}
 
@@ -184,7 +183,7 @@ var _ = Describe("RlpGatewayClient", func() {
 		defer close(ch)
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(channelReader(ch)),
+			Body:       io.NopCloser(channelReader(ch)),
 		})
 		spyDoer.errs = []error{nil}
 
@@ -222,7 +221,7 @@ var _ = Describe("RlpGatewayClient", func() {
 		ch := make(chan []byte, 100)
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(channelReader(ch)),
+			Body:       io.NopCloser(channelReader(ch)),
 		})
 		spyDoer.errs = []error{nil}
 
@@ -251,11 +250,11 @@ var _ = Describe("RlpGatewayClient", func() {
 		spyDoer.resps = append(spyDoer.resps,
 			&http.Response{
 				StatusCode: 200,
-				Body:       ioutil.NopCloser(channelReader(ch)),
+				Body:       io.NopCloser(channelReader(ch)),
 			},
 			&http.Response{
 				StatusCode: 200,
-				Body:       ioutil.NopCloser(channelReader(noCloseCh)),
+				Body:       io.NopCloser(channelReader(noCloseCh)),
 			})
 		spyDoer.errs = []error{nil, nil}
 
@@ -278,7 +277,7 @@ var _ = Describe("RlpGatewayClient", func() {
 		spyDoer.resps = append(spyDoer.resps, &http.Response{StatusCode: 500})
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(channelReader(ch)),
+			Body:       io.NopCloser(channelReader(ch)),
 		})
 		spyDoer.errs = []error{nil, nil, nil}
 		ctx, cancel := context.WithCancel(context.Background())
@@ -300,7 +299,7 @@ var _ = Describe("RlpGatewayClient", func() {
 		defer close(ch)
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(channelReader(ch)),
+			Body:       io.NopCloser(channelReader(ch)),
 		})
 		spyDoer.errs = append(spyDoer.errs, nil)
 		ctx, cancel := context.WithCancel(context.Background())
@@ -395,7 +394,7 @@ var _ = Describe("RlpGatewayClient", func() {
 		ch := make(chan []byte, 100)
 		spyDoer.resps = append(spyDoer.resps, &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(channelReader(ch)),
+			Body:       io.NopCloser(channelReader(ch)),
 		})
 		spyDoer.errs = append(spyDoer.errs, nil)
 
@@ -446,14 +445,14 @@ func (s *spyDoer) Do(r *http.Request) (*http.Response, error) {
 	if s.onlyErrs {
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+			Body:       io.NopCloser(bytes.NewReader(nil)),
 		}, errors.New("default error")
 	}
 
 	if len(s.resps) == 0 {
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+			Body:       io.NopCloser(bytes.NewReader(nil)),
 		}, nil
 	}
 
@@ -461,7 +460,7 @@ func (s *spyDoer) Do(r *http.Request) (*http.Response, error) {
 	s.resps, s.errs = s.resps[1:], s.errs[1:]
 
 	if resp.Body == nil {
-		resp.Body = ioutil.NopCloser(bytes.NewReader(nil))
+		resp.Body = io.NopCloser(bytes.NewReader(nil))
 	}
 
 	return resp, err
