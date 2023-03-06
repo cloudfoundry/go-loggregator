@@ -159,6 +159,8 @@ var _ = Describe("Connector", func() {
 	It("won't panic when context canceled", func() {
 		producer, err := newFakeEventProducer()
 		Expect(err).NotTo(HaveOccurred())
+		producer.start()
+		defer producer.stop()
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
 			fixture("CA.crt"),
