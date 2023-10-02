@@ -9,7 +9,7 @@ require (
 	github.com/cloudfoundry/sonde-go v0.0.0-20220627221915-ff36de9c3435
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.12.1
-	github.com/onsi/gomega v1.27.10
+	github.com/onsi/gomega v1.28.0
 	golang.org/x/net v0.15.0
 	google.golang.org/grpc v1.58.2
 	google.golang.org/protobuf v1.31.0
