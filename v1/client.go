@@ -7,7 +7,7 @@
 package v1
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"strconv"
 	"time"
@@ -50,7 +50,7 @@ type Client struct {
 func NewClient(opts ...ClientOption) (*Client, error) {
 	c := &Client{
 		tags:   make(map[string]string),
-		logger: log.New(ioutil.Discard, "", 0),
+		logger: log.New(io.Discard, "", 0),
 	}
 
 	for _, o := range opts {
