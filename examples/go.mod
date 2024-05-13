@@ -7,7 +7,7 @@ replace code.cloudfoundry.org/go-loggregator/v9 => ../
 require (
 	code.cloudfoundry.org/go-loggregator/v9 v9.0.0-00010101000000-000000000000
 	github.com/cloudfoundry/dropsonde v1.1.0
-	google.golang.org/protobuf v1.34.0
+	google.golang.org/protobuf v1.34.1
 )
 
 require (
