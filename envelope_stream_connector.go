@@ -132,7 +132,7 @@ func newStream(
 	log Logger,
 ) *stream {
 	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(c)))
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		addr,
 		opts...,
 	)
