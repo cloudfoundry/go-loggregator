@@ -1,8 +1,8 @@
 package conversion_test
 
 import (
-	"code.cloudfoundry.org/go-loggregator/v9/conversion"
-	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v10/conversion"
+	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 
 	"github.com/cloudfoundry/sonde-go/events"
 	"google.golang.org/protobuf/proto"

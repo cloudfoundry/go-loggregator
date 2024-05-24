@@ -6,8 +6,8 @@ import (
 
 	"github.com/cloudfoundry/dropsonde"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/v9"
-	v1 "code.cloudfoundry.org/go-loggregator/v9/v1"
+	loggregator "code.cloudfoundry.org/go-loggregator/v10"
+	v1 "code.cloudfoundry.org/go-loggregator/v10/v1"
 )
 
 func main() {

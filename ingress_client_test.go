@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v9"
-	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/v9/runtimeemitter"
+	"code.cloudfoundry.org/go-loggregator/v10"
+	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v10/runtimeemitter"
 	"golang.org/x/net/context"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -22,7 +22,7 @@ import (
 // instead of just buffering them. It seems to buffer up until 2000.
 const logCount = 3000
 
-//TestMain acts as the log emitter for gRPC SendRecv() test.
+// TestMain acts as the log emitter for gRPC SendRecv() test.
 func TestMain(m *testing.M) {
 	if os.Getenv("INGRESS_CLIENT_TEST_PROCESS") != "" {
 		client, _ := buildIngressClient(os.Getenv("INGRESS_CLIENT_TEST_PROCESS"), time.Hour, false)
