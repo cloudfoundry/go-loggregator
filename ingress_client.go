@@ -134,7 +134,7 @@ func NewIngressClient(tlsConfig *tls.Config, opts ...IngressOption) (*IngressCli
 
 	c.dialOpts = append(c.dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		c.addr,
 		c.dialOpts...,
 	)
