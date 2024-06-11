@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v9"
+	"code.cloudfoundry.org/go-loggregator/v10"
 )
 
 // Emitter will emit a gauge with runtime stats via the sender on the given

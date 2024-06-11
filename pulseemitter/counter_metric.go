@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	"google.golang.org/protobuf/proto"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/v9"
+	loggregator "code.cloudfoundry.org/go-loggregator/v10"
 )
 
 // MetricOption defines a function type that can be used to configure tags for

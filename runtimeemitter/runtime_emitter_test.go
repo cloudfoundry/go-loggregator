@@ -4,9 +4,9 @@ import (
 	"runtime"
 	"time"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/v9"
-	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
-	"code.cloudfoundry.org/go-loggregator/v9/runtimeemitter"
+	loggregator "code.cloudfoundry.org/go-loggregator/v10"
+	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v10/runtimeemitter"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

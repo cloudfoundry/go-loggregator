@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/v9"
+	loggregator "code.cloudfoundry.org/go-loggregator/v10"
 
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/cloudfoundry/sonde-go/events"

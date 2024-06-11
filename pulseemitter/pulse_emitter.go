@@ -3,7 +3,7 @@ package pulseemitter
 import (
 	"time"
 
-	loggregator "code.cloudfoundry.org/go-loggregator/v9"
+	loggregator "code.cloudfoundry.org/go-loggregator/v10"
 )
 
 // LogClient is the client used by PulseEmitter to emit metrics. This would
