@@ -6,7 +6,7 @@ toolchain go1.22.5
 require (
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.0-00010101000000-000000000000
 	github.com/cloudfoundry/dropsonde v1.1.0
-	google.golang.org/protobuf v1.36.3
+	google.golang.org/protobuf v1.36.4
 )
 
 require (
