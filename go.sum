@@ -1,7 +1,7 @@
 code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3 h1:oHsfl5AaineZubAUOXg2Vxcdu/TzgN/Q+/65lN70LZk=
 code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3/go.mod h1:Jzi+ccHgo/V/PLQUaQ6hnZcC1c4BS790gx21LRRui4g=
-code.cloudfoundry.org/tlsconfig v0.15.0 h1:hio3k6sDncLRkI1R3cM21wGZ01tHknAIGIQN0P/bl6A=
-code.cloudfoundry.org/tlsconfig v0.15.0/go.mod h1:XyJDLJLOYeWgtdiiryJD6sdXtIl6PYKO03UhvtwZjtU=
+code.cloudfoundry.org/tlsconfig v0.16.0 h1:Um3CgBYlTCF0Ekv/Lbb5quz9R/VzNyWG4TkhGtBvUX8=
+code.cloudfoundry.org/tlsconfig v0.16.0/go.mod h1:61aVWrqc57J1e0MWeCuWKfBmGSm8DbpndFyo2ml6jsE=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/apoydence/eachers v0.0.0-20181020210610-23942921fe77 h1:afT88tB6u9JCKQZVAAaa9ICz/uGn5Uw9ekn6P22mYKM=
@@ -65,8 +65,8 @@ go.opentelemetry.io/otel/sdk/metric v1.32.0 h1:rZvFnvmvawYb0alrYkjraqJq0Z4ZUJAiy
 go.opentelemetry.io/otel/sdk/metric v1.32.0/go.mod h1:PWeZlq0zt9YkYAp3gjKZ0eicRYvOh1Gd+X99x6GHpCQ=
 go.opentelemetry.io/otel/trace v1.32.0 h1:WIC9mYrXf8TmY/EXuULKc8hR17vE+Hjv2cssQDe03fM=
 go.opentelemetry.io/otel/trace v1.32.0/go.mod h1:+i4rkvCraA+tG6AzwloGaCtkx53Fa+L+V8e9a7YvhT8=
-go.step.sm/crypto v0.56.0 h1:KcFfV76cI9Xaw8bdSc9x55skyuSdcHcTdL37vvVZnvY=
-go.step.sm/crypto v0.56.0/go.mod h1:snWNloxY9s1W+HsFqcviq55nvzbqqX6LxVt0Vktv5mw=
+go.step.sm/crypto v0.57.0 h1:YjoRQDaJYAxHLVwjst0Bl0xcnoKzVwuHCJtEo2VSHYU=
+go.step.sm/crypto v0.57.0/go.mod h1:+Lwp5gOVPaTa3H/Ul/TzGbxQPXZZcKIUGMS0lG6n9Go=
 golang.org/x/crypto v0.32.0 h1:euUpcYgM8WcP71gNpTqQCn6rC2t6ULUPiOzfWaXVVfc=
 golang.org/x/crypto v0.32.0/go.mod h1:ZnnJkOaASj8g0AjIduWNlq2NRxL0PlBrbKVyZ6V/Ugc=
 golang.org/x/net v0.34.0 h1:Mb7Mrk043xzHgnRM88suvJFwzVrRfHEHJEl5/71CKw0=
