@@ -6,12 +6,12 @@ toolchain go1.22.5
 require (
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.0-00010101000000-000000000000
 	github.com/cloudfoundry/dropsonde v1.1.0
-	google.golang.org/protobuf v1.36.4
+	google.golang.org/protobuf v1.36.5
 )
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3 // indirect
-	code.cloudfoundry.org/tlsconfig v0.15.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.16.0 // indirect
 	github.com/cloudfoundry/sonde-go v0.0.0-20220627221915-ff36de9c3435 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -20,8 +20,8 @@ require (
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
-	google.golang.org/grpc v1.69.4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241202173237-19429a94021a // indirect
+	google.golang.org/grpc v1.70.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
 
