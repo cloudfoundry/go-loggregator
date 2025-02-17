@@ -1,7 +1,7 @@
 code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3 h1:oHsfl5AaineZubAUOXg2Vxcdu/TzgN/Q+/65lN70LZk=
 code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3/go.mod h1:Jzi+ccHgo/V/PLQUaQ6hnZcC1c4BS790gx21LRRui4g=
-code.cloudfoundry.org/tlsconfig v0.17.0 h1:/w/w20YNuKokq5MIAP1wlCkP5htEppSBQARNlrSWCTA=
-code.cloudfoundry.org/tlsconfig v0.17.0/go.mod h1:Bfew/wvxUNgj0w8GLGSipaZ1ljVtZScy1BeEWjfTBKA=
+code.cloudfoundry.org/tlsconfig v0.18.0 h1:p2SSvVYOqBXKbFD8f8A+Uky5zdlTSJgSWfpk71q7wts=
+code.cloudfoundry.org/tlsconfig v0.18.0/go.mod h1:bhzn8qKcq9voqMOWrCoLuDSpbek31TtcUONu1GDjbDY=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/apoydence/eachers v0.0.0-20181020210610-23942921fe77 h1:afT88tB6u9JCKQZVAAaa9ICz/uGn5Uw9ekn6P22mYKM=
