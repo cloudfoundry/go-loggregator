@@ -1,8 +1,7 @@
 module code.cloudfoundry.org/go-loggregator/v10
 
 go 1.22.0
-
-toolchain go1.22.8
+toolchain go1.23.7
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3
@@ -10,7 +9,7 @@ require (
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/cloudfoundry/sonde-go v0.0.0-20220627221915-ff36de9c3435
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/onsi/ginkgo/v2 v2.22.2
+	github.com/onsi/ginkgo/v2 v2.23.0
 	github.com/onsi/gomega v1.36.2
 	golang.org/x/net v0.35.0
 	google.golang.org/grpc v1.71.0
@@ -30,7 +29,7 @@ require (
 	github.com/nxadm/tail v1.4.8 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
-	golang.org/x/tools v0.28.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
