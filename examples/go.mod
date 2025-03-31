@@ -1,17 +1,17 @@
 module code.cloudfoundry.org/go-loggregator/v10/examples
 
 go 1.21
-toolchain go1.23.7
+toolchain go1.24.1
 
 require (
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.0-00010101000000-000000000000
 	github.com/cloudfoundry/dropsonde v1.1.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3 // indirect
-	code.cloudfoundry.org/tlsconfig v0.20.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.21.0 // indirect
 	github.com/cloudfoundry/sonde-go v0.0.0-20220627221915-ff36de9c3435 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
