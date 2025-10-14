@@ -9,8 +9,8 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.35.0
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/cloudfoundry/sonde-go v0.0.0-20220627221915-ff36de9c3435
-	github.com/kr/pretty v0.1.0 // indirect
-	github.com/onsi/ginkgo/v2 v2.25.3
+	github.com/kr/pretty v0.3.1 // indirect
+	github.com/onsi/ginkgo/v2 v2.26.0
 	github.com/onsi/gomega v1.38.2
 	golang.org/x/net v0.46.0
 	google.golang.org/grpc v1.76.0
@@ -29,8 +29,11 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/mod v0.28.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect
