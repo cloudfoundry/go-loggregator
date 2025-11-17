@@ -2,6 +2,7 @@ package loggregator_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,7 +14,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	"golang.org/x/net/context"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"code.cloudfoundry.org/go-loggregator/v10"

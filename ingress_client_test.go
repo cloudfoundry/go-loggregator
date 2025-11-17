@@ -1,6 +1,7 @@
 package loggregator_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v10"
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/v10/runtimeemitter"
-	"golang.org/x/net/context"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -1,10 +1,10 @@
 package loggregator_test
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
