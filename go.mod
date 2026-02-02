@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3
-	code.cloudfoundry.org/tlsconfig v0.43.0
+	code.cloudfoundry.org/tlsconfig v0.44.0
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/cloudfoundry/sonde-go v0.0.0-20220627221915-ff36de9c3435
 	github.com/kr/pretty v0.3.1 // indirect
