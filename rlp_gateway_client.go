@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
@@ -173,10 +174,13 @@ func (c *RLPGatewayClient) connect(
 	}
 
 	rawBatches := make(chan string, 100)
-	defer close(rawBatches)
-	c.initWorkerPool(rawBatches, es)
+	var wg sync.WaitGroup
+	c.initWorkerPool(rawBatches, es, &wg)
 
-	return c.readStream(resp.Body, rawBatches)
+	result := c.readStream(resp.Body, rawBatches)
+	close(rawBatches)
+	wg.Wait()
+	return result
 }
 
 func (c *RLPGatewayClient) readStream(r io.Reader, rawBatches chan string) bool {
@@ -213,10 +217,12 @@ func (c *RLPGatewayClient) readStream(r io.Reader, rawBatches chan string) bool 
 	}
 }
 
-func (c *RLPGatewayClient) initWorkerPool(rawBatches chan string, batches chan<- []*loggregator_v2.Envelope) {
+func (c *RLPGatewayClient) initWorkerPool(rawBatches chan string, batches chan<- []*loggregator_v2.Envelope, wg *sync.WaitGroup) {
 	workerCount := 1000
 	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
 		go func(rawBatches chan string, es chan<- []*loggregator_v2.Envelope) {
+			defer wg.Done()
 			for batch := range rawBatches {
 				var eb loggregator_v2.EnvelopeBatch
 				if err := protojson.Unmarshal([]byte(batch), &eb); err != nil {
