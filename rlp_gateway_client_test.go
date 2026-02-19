@@ -187,7 +187,10 @@ var _ = Describe("RlpGatewayClient", func() {
 		})
 		spyDoer.errs = []error{nil}
 
+		var senderDone sync.WaitGroup
+		senderDone.Add(1)
 		go func() {
+			defer senderDone.Done()
 			for i := 0; i < 10; i++ {
 				b, err := protojson.Marshal(&loggregator_v2.EnvelopeBatch{
 					Batch: []*loggregator_v2.Envelope{
@@ -215,6 +218,7 @@ var _ = Describe("RlpGatewayClient", func() {
 		}()
 
 		Eventually(envelopes).Should(HaveLen(10))
+		senderDone.Wait()
 	})
 
 	It("handles heartbeats", func() {
