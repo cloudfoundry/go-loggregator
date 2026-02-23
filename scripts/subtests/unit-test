@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -eux
+set -o pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+flags='-r --randomize-all --randomize-suites --fail-on-pending --keep-going --race --trace'
+if [ "${CI:-false}" = 'false' ]; then
+    flags="${flags} -p"
+fi
+pushd "${SCRIPT_DIR}/../.." > /dev/null
+    if ! command -v ginkgo &> /dev/null; then
+      go install github.com/onsi/ginkgo/v2/ginkgo@latest
+    fi
+    ginkgo $flags 
+popd > /dev/null
