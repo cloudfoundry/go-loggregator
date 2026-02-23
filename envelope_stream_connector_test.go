@@ -16,6 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"code.cloudfoundry.org/go-loggregator/v10"
+	"code.cloudfoundry.org/go-loggregator/v10/internal/testhelper"
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	"code.cloudfoundry.org/tlsconfig"
 	. "github.com/onsi/ginkgo/v2"
@@ -23,15 +24,25 @@ import (
 )
 
 var _ = Describe("Connector", func() {
+
+	var (
+		certs *testhelper.TestCerts
+	)
+
+	BeforeEach(func() {
+		certs = testhelper.GenerateCerts("loggregatorCA")
+	})
+
 	It("initiates a connection to receive envelopes", func() {
-		producer, err := newFakeEventProducer()
+		producer, err := newFakeEventProducer(certs)
 		Expect(err).NotTo(HaveOccurred())
 		producer.start()
 		defer producer.stop()
+
 		tlsConf, err := loggregator.NewIngressTLSConfig(
-			fixture("CA.crt"),
-			fixture("server.crt"),
-			fixture("server.key"),
+			certs.CA(),
+			certs.Cert("reverselogproxy"),
+			certs.Key("reverselogproxy"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -49,7 +60,7 @@ var _ = Describe("Connector", func() {
 	})
 
 	It("reconnects if the stream fails", func() {
-		producer, err := newFakeEventProducer()
+		producer, err := newFakeEventProducer(certs)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Producer will grab a port on start. When the producer is restarted,
@@ -57,9 +68,9 @@ var _ = Describe("Connector", func() {
 		producer.start()
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
-			fixture("CA.crt"),
-			fixture("server.crt"),
-			fixture("server.key"),
+			certs.CA(),
+			certs.Cert("reverselogproxy"),
+			certs.Key("reverselogproxy"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -94,7 +105,7 @@ var _ = Describe("Connector", func() {
 	})
 
 	It("enables buffering", func() {
-		producer, err := newFakeEventProducer()
+		producer, err := newFakeEventProducer(certs)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Producer will grab a port on start. When the producer is restarted,
@@ -103,9 +114,9 @@ var _ = Describe("Connector", func() {
 		defer producer.stop()
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
-			fixture("CA.crt"),
-			fixture("server.crt"),
-			fixture("server.key"),
+			certs.CA(),
+			certs.Cert("reverselogproxy"),
+			certs.Key("reverselogproxy"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -157,15 +168,15 @@ var _ = Describe("Connector", func() {
 	})
 
 	It("won't panic when context canceled", func() {
-		producer, err := newFakeEventProducer()
+		producer, err := newFakeEventProducer(certs)
 		Expect(err).NotTo(HaveOccurred())
 		producer.start()
 		defer producer.stop()
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
-			fixture("CA.crt"),
-			fixture("server.crt"),
-			fixture("server.key"),
+			certs.CA(),
+			certs.Cert("reverselogproxy"),
+			certs.Key("reverselogproxy"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -189,14 +200,17 @@ type fakeEventProducer struct {
 
 	server *grpc.Server
 	addr   string
+	certs  *testhelper.TestCerts
 
 	mu                  sync.Mutex
 	connectionAttempts_ int
 	actualReq_          *loggregator_v2.EgressBatchRequest
 }
 
-func newFakeEventProducer() (*fakeEventProducer, error) {
-	f := &fakeEventProducer{}
+func newFakeEventProducer(certs *testhelper.TestCerts) (*fakeEventProducer, error) {
+	f := &fakeEventProducer{
+		certs: certs,
+	}
 
 	return f, nil
 }
@@ -261,7 +275,7 @@ func (f *fakeEventProducer) start() {
 		break
 	}
 	f.addr = lis.Addr().String()
-	c, err := newServerMutualTLSConfig()
+	c, err := newServerMutualTLSConfig(f.certs)
 	if err != nil {
 		panic(err)
 	}
@@ -298,15 +312,11 @@ func (f *fakeEventProducer) connectionAttempts() int {
 	return f.connectionAttempts_
 }
 
-func newServerMutualTLSConfig() (*tls.Config, error) {
-	certFile := fixture("server.crt")
-	keyFile := fixture("server.key")
-	caCertFile := fixture("CA.crt")
-
+func newServerMutualTLSConfig(certs *testhelper.TestCerts) (*tls.Config, error) {
 	return tlsconfig.Build(
 		tlsconfig.WithInternalServiceDefaults(),
-		tlsconfig.WithIdentityFromFile(certFile, keyFile),
+		tlsconfig.WithIdentityFromFile(certs.Cert("reverselogproxy"), certs.Key("reverselogproxy")),
 	).Server(
-		tlsconfig.WithClientAuthenticationFromFile(caCertFile),
+		tlsconfig.WithClientAuthenticationFromFile(certs.CA()),
 	)
 }

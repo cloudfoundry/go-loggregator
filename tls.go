@@ -9,7 +9,7 @@ import (
 // NewIngressTLSConfig provides a convenient means for creating a *tls.Config
 // which uses the CA, cert, and key for the ingress endpoint.
 func NewIngressTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
-	return newTLSConfig(caPath, certPath, keyPath, "metron")
+	return newTLSConfig(caPath, certPath, keyPath, "reverselogproxy")
 }
 
 // NewEgressTLSConfig provides a convenient means for creating a *tls.Config
