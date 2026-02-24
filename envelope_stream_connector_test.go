@@ -39,7 +39,7 @@ var _ = Describe("Connector", func() {
 		producer.start()
 		defer producer.stop()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := testhelper.NewIngressTLSConfig(
 			certs.CA(),
 			certs.Cert("reverselogproxy"),
 			certs.Key("reverselogproxy"),
@@ -67,7 +67,7 @@ var _ = Describe("Connector", func() {
 		// it will grab the same port.
 		producer.start()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := testhelper.NewIngressTLSConfig(
 			certs.CA(),
 			certs.Cert("reverselogproxy"),
 			certs.Key("reverselogproxy"),
@@ -113,7 +113,7 @@ var _ = Describe("Connector", func() {
 		producer.start()
 		defer producer.stop()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := testhelper.NewIngressTLSConfig(
 			certs.CA(),
 			certs.Cert("reverselogproxy"),
 			certs.Key("reverselogproxy"),
@@ -173,7 +173,7 @@ var _ = Describe("Connector", func() {
 		producer.start()
 		defer producer.stop()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := testhelper.NewIngressTLSConfig(
 			certs.CA(),
 			certs.Cert("reverselogproxy"),
 			certs.Key("reverselogproxy"),
