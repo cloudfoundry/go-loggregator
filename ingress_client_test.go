@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/go-loggregator/v10"
+	"code.cloudfoundry.org/go-loggregator/v10/internal/testhelper"
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	"code.cloudfoundry.org/go-loggregator/v10/runtimeemitter"
 
@@ -22,10 +23,17 @@ import (
 // instead of just buffering them. It seems to buffer up until 2000.
 const logCount = 3000
 
+var certs *testhelper.TestCerts
+
+var _ = BeforeSuite(func() {
+})
+
 // TestMain acts as the log emitter for gRPC SendRecv() test.
 func TestMain(m *testing.M) {
+
 	if os.Getenv("INGRESS_CLIENT_TEST_PROCESS") != "" {
-		client, _ := buildIngressClient(os.Getenv("INGRESS_CLIENT_TEST_PROCESS"), time.Hour, false)
+		certs = testhelper.LoadCertsFromEnv()
+		client, _ := buildIngressClient(os.Getenv("INGRESS_CLIENT_TEST_PROCESS"), time.Hour, false, certs)
 		for i := 0; i < logCount; i++ {
 			client.EmitLog(fmt.Sprint("message", i))
 		}
@@ -33,10 +41,17 @@ func TestMain(m *testing.M) {
 		return
 	}
 
+	// Parent process: generate and pass paths to child
+	certs = testhelper.GenerateCerts("loggregatorCA")
+	os.Setenv("TEST_CA_FILE", certs.CA())
+	os.Setenv("TEST_CERT_FILE", certs.Cert("metron"))
+	os.Setenv("TEST_KEY_FILE", certs.Key("metron"))
+
 	os.Exit(m.Run())
 }
 
 var _ = Describe("IngressClient", func() {
+
 	var (
 		client *loggregator.IngressClient
 		server *testIngressServer
@@ -45,17 +60,18 @@ var _ = Describe("IngressClient", func() {
 
 	BeforeEach(func() {
 		var err error
+
 		server, err = newTestIngressServer(
-			fixture("server.crt"),
-			fixture("server.key"),
-			fixture("CA.crt"),
+			certs.Cert("reverselogproxy"),
+			certs.Key("reverselogproxy"),
+			certs.CA(),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = server.start()
 		Expect(err).NotTo(HaveOccurred())
 
-		client, cancel = buildIngressClient(server.addr, 50*time.Millisecond, false)
+		client, cancel = buildIngressClient(server.addr, 50*time.Millisecond, false, certs)
 	})
 
 	AfterEach(func() {
@@ -87,7 +103,7 @@ var _ = Describe("IngressClient", func() {
 	})
 
 	It("returns an error after context has been cancelled", func() {
-		client, cancel := buildIngressClient(server.addr, time.Hour, false)
+		client, cancel := buildIngressClient(server.addr, time.Hour, false, certs)
 		cancel()
 
 		t := time.NewTicker(1 * time.Millisecond)
@@ -416,6 +432,9 @@ var _ = Describe("IngressClient", func() {
 		cmd := exec.Command(path)
 		cmd.Env = []string{
 			"INGRESS_CLIENT_TEST_PROCESS=" + server.addr,
+			"TEST_CA_FILE=" + os.Getenv("TEST_CA_FILE"),
+			"TEST_CERT_FILE=" + os.Getenv("TEST_CERT_FILE"),
+			"TEST_KEY_FILE=" + os.Getenv("TEST_KEY_FILE"),
 		}
 		Expect(cmd.Start()).To(Succeed())
 		err = cmd.Wait()
@@ -464,11 +483,11 @@ func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx 
 	return envBatch.Batch[idx], nil
 }
 
-func buildIngressClient(serverAddr string, flushInterval time.Duration, addContext bool) (*loggregator.IngressClient, func()) {
-	tlsConfig, err := loggregator.NewIngressTLSConfig(
-		fixture("CA.crt"),
-		fixture("client.crt"),
-		fixture("client.key"),
+func buildIngressClient(serverAddr string, flushInterval time.Duration, addContext bool, certs *testhelper.TestCerts) (*loggregator.IngressClient, func()) {
+	tlsConfig, err := testhelper.NewIngressTLSConfig(
+		certs.CA(),
+		certs.Cert("metron"),
+		certs.Key("metron"),
 	)
 	if err != nil {
 		panic(err)
