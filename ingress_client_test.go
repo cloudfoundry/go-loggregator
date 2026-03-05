@@ -41,8 +41,8 @@ func TestMain(m *testing.M) {
 	// Parent process: generate and pass paths to child
 	certs = testhelper.GenerateCerts("loggregatorCA")
 	os.Setenv("TEST_CA_FILE", certs.CA())
-	os.Setenv("TEST_CERT_FILE", certs.Cert("metron"))
-	os.Setenv("TEST_KEY_FILE", certs.Key("metron"))
+	os.Setenv("TEST_CERT_FILE", certs.Cert("reverselogproxy"))
+	os.Setenv("TEST_KEY_FILE", certs.Key("reverselogproxy"))
 
 	os.Exit(m.Run())
 }
@@ -59,8 +59,8 @@ var _ = Describe("IngressClient", func() {
 		var err error
 
 		server, err = newTestIngressServer(
-			certs.Cert("reverselogproxy"),
-			certs.Key("reverselogproxy"),
+			certs.Cert("metron"),
+			certs.Key("metron"),
 			certs.CA(),
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -481,10 +481,10 @@ func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx 
 }
 
 func buildIngressClient(serverAddr string, flushInterval time.Duration, addContext bool, certs *testhelper.TestCerts) (*loggregator.IngressClient, func()) {
-	tlsConfig, err := loggregator.NewEgressTLSConfig(
+	tlsConfig, err := loggregator.NewIngressTLSConfig(
 		certs.CA(),
-		certs.Cert("metron"),
-		certs.Key("metron"),
+		certs.Cert("reverselogproxy"),
+		certs.Key("reverselogproxy"),
 	)
 	if err != nil {
 		panic(err)
