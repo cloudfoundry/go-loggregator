@@ -53,7 +53,7 @@ func LoadCertsFromEnv() *TestCerts {
 	return &TestCerts{
 		caFile: caFile,
 		certKeyPairs: map[string]certKeyPair{
-			"metron": {
+			"reverselogproxy": {
 				certFile: certFile,
 				keyFile:  keyFile,
 			},

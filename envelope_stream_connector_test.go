@@ -41,8 +41,8 @@ var _ = Describe("Connector", func() {
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
 			certs.CA(),
-			certs.Cert("reverselogproxy"),
-			certs.Key("reverselogproxy"),
+			certs.Cert("metron"),
+			certs.Key("metron"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -69,8 +69,8 @@ var _ = Describe("Connector", func() {
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
 			certs.CA(),
-			certs.Cert("reverselogproxy"),
-			certs.Key("reverselogproxy"),
+			certs.Cert("metron"),
+			certs.Key("metron"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -115,8 +115,8 @@ var _ = Describe("Connector", func() {
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
 			certs.CA(),
-			certs.Cert("reverselogproxy"),
-			certs.Key("reverselogproxy"),
+			certs.Cert("metron"),
+			certs.Key("metron"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -175,8 +175,8 @@ var _ = Describe("Connector", func() {
 
 		tlsConf, err := loggregator.NewIngressTLSConfig(
 			certs.CA(),
-			certs.Cert("reverselogproxy"),
-			certs.Key("reverselogproxy"),
+			certs.Cert("metron"),
+			certs.Key("metron"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -315,7 +315,7 @@ func (f *fakeEventProducer) connectionAttempts() int {
 func newServerMutualTLSConfig(certs *testhelper.TestCerts) (*tls.Config, error) {
 	return tlsconfig.Build(
 		tlsconfig.WithInternalServiceDefaults(),
-		tlsconfig.WithIdentityFromFile(certs.Cert("reverselogproxy"), certs.Key("reverselogproxy")),
+		tlsconfig.WithIdentityFromFile(certs.Cert("metron"), certs.Key("metron")),
 	).Server(
 		tlsconfig.WithClientAuthenticationFromFile(certs.CA()),
 	)
