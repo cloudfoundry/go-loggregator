@@ -481,7 +481,7 @@ func getEnvelopeAt(receivers chan loggregator_v2.Ingress_BatchSenderServer, idx 
 }
 
 func buildIngressClient(serverAddr string, flushInterval time.Duration, addContext bool, certs *testhelper.TestCerts) (*loggregator.IngressClient, func()) {
-	tlsConfig, err := testhelper.NewIngressTLSConfig(
+	tlsConfig, err := loggregator.NewEgressTLSConfig(
 		certs.CA(),
 		certs.Cert("metron"),
 		certs.Key("metron"),
