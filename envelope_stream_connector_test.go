@@ -39,10 +39,10 @@ var _ = Describe("Connector", func() {
 		producer.start()
 		defer producer.stop()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := loggregator.NewEgressTLSConfig(
 			certs.CA(),
-			certs.Cert("metron"),
-			certs.Key("metron"),
+			certs.Cert("rlp_client"),
+			certs.Key("rlp_client"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -67,10 +67,10 @@ var _ = Describe("Connector", func() {
 		// it will grab the same port.
 		producer.start()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := loggregator.NewEgressTLSConfig(
 			certs.CA(),
-			certs.Cert("metron"),
-			certs.Key("metron"),
+			certs.Cert("rlp_client"),
+			certs.Key("rlp_client"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -113,10 +113,10 @@ var _ = Describe("Connector", func() {
 		producer.start()
 		defer producer.stop()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := loggregator.NewEgressTLSConfig(
 			certs.CA(),
-			certs.Cert("metron"),
-			certs.Key("metron"),
+			certs.Cert("rlp_client"),
+			certs.Key("rlp_client"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -173,10 +173,10 @@ var _ = Describe("Connector", func() {
 		producer.start()
 		defer producer.stop()
 
-		tlsConf, err := loggregator.NewIngressTLSConfig(
+		tlsConf, err := loggregator.NewEgressTLSConfig(
 			certs.CA(),
-			certs.Cert("metron"),
-			certs.Key("metron"),
+			certs.Cert("rlp_client"),
+			certs.Key("rlp_client"),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -315,7 +315,7 @@ func (f *fakeEventProducer) connectionAttempts() int {
 func newServerMutualTLSConfig(certs *testhelper.TestCerts) (*tls.Config, error) {
 	return tlsconfig.Build(
 		tlsconfig.WithInternalServiceDefaults(),
-		tlsconfig.WithIdentityFromFile(certs.Cert("metron"), certs.Key("metron")),
+		tlsconfig.WithIdentityFromFile(certs.Cert("reverselogproxy"), certs.Key("reverselogproxy")),
 	).Server(
 		tlsconfig.WithClientAuthenticationFromFile(certs.CA()),
 	)
