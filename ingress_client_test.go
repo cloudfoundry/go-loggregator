@@ -25,9 +25,6 @@ const logCount = 3000
 
 var certs *testhelper.TestCerts
 
-var _ = BeforeSuite(func() {
-})
-
 // TestMain acts as the log emitter for gRPC SendRecv() test.
 func TestMain(m *testing.M) {
 
