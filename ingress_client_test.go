@@ -490,7 +490,7 @@ func buildIngressClient(serverAddr string, flushInterval time.Duration, addConte
 		panic(err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background()) // nolint:gosec
 
 	opts := []loggregator.IngressOption{
 		loggregator.WithAddr(serverAddr),
