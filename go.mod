@@ -4,7 +4,7 @@ go 1.25.1
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978
-	code.cloudfoundry.org/tlsconfig v0.57.0
+	code.cloudfoundry.org/tlsconfig v0.58.0
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/cloudfoundry/sonde-go v0.0.0-20251217143644-d1670a435f2a
 	github.com/onsi/ginkgo/v2 v2.29.0
