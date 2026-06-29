@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.60.0
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/cloudfoundry/sonde-go v0.0.0-20251217143644-d1670a435f2a
-	github.com/onsi/ginkgo/v2 v2.31.0
+	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.0
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
