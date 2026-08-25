@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/go-loggregator/v10
 
-go 1.25.8
+go 1.26
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978
