@@ -19,78 +19,70 @@ permissions:
   pull-requests: write
 
 jobs:
-  protoc:
-    if: github.event_name == 'schedule' || inputs.component == 'protoc'
+  update:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: protoc
+            label: protoc
+            branch: automated/protoc-update
+          - component: loggregator-api
+            label: loggregator-api
+            branch: automated/loggregator-api-update
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
         with:
           go-version-file: go.mod
-      - name: Update protoc version
+      - name: Update input
         id: update
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
         env:
+          COMPONENT: ${{ matrix.component }}
           GH_TOKEN: ${{ github.token }}
         run: |
           source rpc/loggregator_v2/.protobuf-versions
-          old_version="$PROTOC_VERSION"
-          PROTOC_VERSION="$(gh api repos/protocolbuffers/protobuf/releases/latest --jq '.tag_name' | sed 's/^v//')"
+          case "$COMPONENT" in
+            protoc)
+              old_value="$PROTOC_VERSION"
+              new_value="$(gh api repos/protocolbuffers/protobuf/releases/latest --jq '.tag_name' | sed 's/^v//')"
+              PROTOC_VERSION="$new_value"
+              ;;
+            loggregator-api)
+              old_value="$LOGGREGATOR_API_REF"
+              new_value="$(git ls-remote https://github.com/cloudfoundry/loggregator-api.git HEAD | cut -f1)"
+              LOGGREGATOR_API_REF="$new_value"
+              ;;
+          esac
           echo "PROTOC_VERSION=$PROTOC_VERSION" > rpc/loggregator_v2/.protobuf-versions
           echo "LOGGREGATOR_API_REF=$LOGGREGATOR_API_REF" >> rpc/loggregator_v2/.protobuf-versions
+          echo "old_value=$old_value" >> "$GITHUB_OUTPUT"
+          echo "new_value=$new_value" >> "$GITHUB_OUTPUT"
+      - name: Install protoc
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: |
+          source rpc/loggregator_v2/.protobuf-versions
           curl --fail --location --silent --show-error \
             --output /tmp/protoc.zip \
             "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
           unzip -q /tmp/protoc.zip -d /tmp/protoc
           echo "/tmp/protoc/bin" >> "$GITHUB_PATH"
-          echo "old_version=$old_version" >> "$GITHUB_OUTPUT"
-          echo "new_version=$PROTOC_VERSION" >> "$GITHUB_OUTPUT"
-      - run: go generate ./rpc/loggregator_v2
-      - run: go test ./...
-      - run: ./scripts/subtests/lint
+      - if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: go generate ./rpc/loggregator_v2
+      - if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: go test ./...
+      - if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: ./scripts/subtests/lint
       - uses: peter-evans/create-pull-request@v8
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
         with:
-          branch: automated/protoc-update
-          commit-message: "chore: update protoc to v${{ steps.update.outputs.new_version }}"
-          title: "chore: update protoc to v${{ steps.update.outputs.new_version }}"
+          branch: ${{ matrix.branch }}
+          commit-message: "chore: update ${{ matrix.label }}"
+          title: "chore: update ${{ matrix.label }}"
           body: |
-            Updates protoc from v${{ steps.update.outputs.old_version }} to v${{ steps.update.outputs.new_version }}.
-          add-paths: |
-            rpc/loggregator_v2/.protobuf-versions
-            rpc/loggregator_v2/*.pb.go
-
-  loggregator-api:
-    if: github.event_name == 'schedule' || inputs.component == 'loggregator-api'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-      - id: protoc
-        run: source rpc/loggregator_v2/.protobuf-versions && echo "version=$PROTOC_VERSION" >> "$GITHUB_OUTPUT"
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: ${{ steps.protoc.outputs.version }}
-      - name: Update loggregator-api reference
-        id: update
-        run: |
-          source rpc/loggregator_v2/.protobuf-versions
-          old_ref="$LOGGREGATOR_API_REF"
-          LOGGREGATOR_API_REF="$(git ls-remote https://github.com/cloudfoundry/loggregator-api.git HEAD | cut -f1)"
-          echo "PROTOC_VERSION=$PROTOC_VERSION" > rpc/loggregator_v2/.protobuf-versions
-          echo "LOGGREGATOR_API_REF=$LOGGREGATOR_API_REF" >> rpc/loggregator_v2/.protobuf-versions
-          echo "old_ref=$old_ref" >> "$GITHUB_OUTPUT"
-          echo "new_ref=$LOGGREGATOR_API_REF" >> "$GITHUB_OUTPUT"
-      - run: go generate ./rpc/loggregator_v2
-      - run: go test ./...
-      - run: ./scripts/subtests/lint
-      - uses: peter-evans/create-pull-request@v8
-        with:
-          branch: automated/loggregator-api-update
-          commit-message: "chore: update loggregator-api"
-          title: "chore: update loggregator-api"
-          body: |
-            Updates loggregator-api from ${{ steps.update.outputs.old_ref }} to ${{ steps.update.outputs.new_ref }}.
+            Updates ${{ matrix.label }} from ${{ steps.update.outputs.old_value }} to ${{ steps.update.outputs.new_value }}.
           add-paths: |
             rpc/loggregator_v2/.protobuf-versions
             rpc/loggregator_v2/*.pb.go
