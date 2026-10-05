@@ -11,6 +11,21 @@ on:
     - v[0-9]*
 
 jobs:
+  protobuf-generation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: "go.mod"
+      - id: protoc
+        run: source rpc/loggregator_v2/.protobuf-versions && echo "version=$PROTOC_VERSION" >> "$GITHUB_OUTPUT"
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: ${{ steps.protoc.outputs.version }}
+      - run: go generate ./rpc/loggregator_v2
+      - run: git diff --exit-code -- rpc/loggregator_v2
+
   unit-test:
     runs-on: ubuntu-latest
     steps:
