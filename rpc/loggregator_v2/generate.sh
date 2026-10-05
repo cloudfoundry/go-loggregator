@@ -11,8 +11,9 @@ TMP_DIR=$(mktemp -d)
 git clone https://github.com/cloudfoundry/loggregator-api.git $TMP_DIR/loggregator-api
 
 pushd $SCRIPT_DIR/../..
+    # protoc installation guide can be found under https://protobuf.dev/installation/
     protoc -I=$TMP_DIR --go_out=. --go-grpc_out=. $TMP_DIR/loggregator-api/v2/*.proto
-    mv code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2/* rpc/loggregator_v2/
+    mv code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2/* rpc/loggregator_v2/
     rm -rf code.cloudfoundry.org
 popd
 
