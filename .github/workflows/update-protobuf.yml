@@ -1,0 +1,105 @@
+name: update protobuf inputs
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      component:
+        description: Input to update
+        required: true
+        default: protoc
+        type: choice
+        options:
+          - protoc
+          - loggregator-api
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: protoc
+            label: protoc
+            branch: automated/protoc-update
+          - component: loggregator-api
+            label: loggregator-api
+            branch: automated/loggregator-api-update
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
+        with:
+          go-version-file: go.mod
+      - name: Update input
+        id: update
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
+        env:
+          COMPONENT: ${{ matrix.component }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source rpc/loggregator_v2/.protobuf-versions
+          case "$COMPONENT" in
+            protoc)
+              old_value="$PROTOC_VERSION"
+              release="$(gh api repos/protocolbuffers/protobuf/releases/latest)"
+              new_value="$(jq -r '.tag_name | ltrimstr("v")' <<< "$release")"
+              PROTOC_VERSION="$new_value"
+              ;;
+            loggregator-api)
+              old_value="$LOGGREGATOR_API_REF"
+              new_value="$(git ls-remote https://github.com/cloudfoundry/loggregator-api.git HEAD | cut -f1)"
+              LOGGREGATOR_API_REF="$new_value"
+              release="$(gh api "repos/protocolbuffers/protobuf/releases/tags/v${PROTOC_VERSION}")"
+              ;;
+          esac
+          protoc_asset="protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          protoc_sha256="$(jq -r --arg asset "$protoc_asset" '.assets[] | select(.name == $asset) | .digest | ltrimstr("sha256:")' <<< "$release")"
+          [[ "$protoc_sha256" =~ ^[[:xdigit:]]{64}$ ]]
+          {
+            echo "PROTOC_VERSION=$PROTOC_VERSION"
+            echo "PROTOC_SHA256=$protoc_sha256"
+            echo "LOGGREGATOR_API_REF=$LOGGREGATOR_API_REF"
+          } > rpc/loggregator_v2/.protobuf-versions
+          {
+            echo "old_value=$old_value"
+            echo "new_value=$new_value"
+            echo "protoc_asset=$protoc_asset"
+            echo "protoc_version=$PROTOC_VERSION"
+            echo "protoc_sha256=$protoc_sha256"
+          } >> "$GITHUB_OUTPUT"
+      - name: Install protoc
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: |
+          source rpc/loggregator_v2/.protobuf-versions
+          curl --fail --location --silent --show-error \
+            --output /tmp/protoc.zip \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          printf '%s  %s\n' "$PROTOC_SHA256" /tmp/protoc.zip | sha256sum --check --status
+          unzip -q /tmp/protoc.zip -d /tmp/protoc
+          echo "/tmp/protoc/bin" >> "$GITHUB_PATH"
+      - if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: go generate ./rpc/loggregator_v2
+      - if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: go test ./...
+      - if: github.event_name == 'schedule' || inputs.component == matrix.component
+        run: ./scripts/subtests/lint
+      - uses: peter-evans/create-pull-request@v8
+        if: github.event_name == 'schedule' || inputs.component == matrix.component
+        with:
+          branch: ${{ matrix.branch }}
+          commit-message: "chore: update ${{ matrix.label }}"
+          title: "chore: update ${{ matrix.label }}"
+          body: |
+            Updates ${{ matrix.label }} from ${{ steps.update.outputs.old_value }} to ${{ steps.update.outputs.new_value }}.
+
+            protoc asset: [${{ steps.update.outputs.protoc_asset }}](https://github.com/protocolbuffers/protobuf/releases/tag/v${{ steps.update.outputs.protoc_version }})
+            SHA-256: `${{ steps.update.outputs.protoc_sha256 }}`
+          add-paths: |
+            rpc/loggregator_v2/.protobuf-versions
+            rpc/loggregator_v2/*.pb.go
