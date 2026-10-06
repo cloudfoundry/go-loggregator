@@ -61,15 +61,20 @@ jobs:
           protoc_asset="protoc-${PROTOC_VERSION}-linux-x86_64.zip"
           protoc_sha256="$(jq -r --arg asset "$protoc_asset" '.assets[] | select(.name == $asset) | .digest | ltrimstr("sha256:")' <<< "$release")"
           [[ "$protoc_sha256" =~ ^[[:xdigit:]]{64}$ ]]
-          echo "PROTOC_VERSION=$PROTOC_VERSION" > rpc/loggregator_v2/.protobuf-versions
-          echo "LOGGREGATOR_API_REF=$LOGGREGATOR_API_REF" >> rpc/loggregator_v2/.protobuf-versions
-          echo "old_value=$old_value" >> "$GITHUB_OUTPUT"
-          echo "new_value=$new_value" >> "$GITHUB_OUTPUT"
-          echo "protoc_sha256=$protoc_sha256" >> "$GITHUB_OUTPUT"
+          {
+            echo "PROTOC_VERSION=$PROTOC_VERSION"
+            echo "PROTOC_SHA256=$protoc_sha256"
+            echo "LOGGREGATOR_API_REF=$LOGGREGATOR_API_REF"
+          } > rpc/loggregator_v2/.protobuf-versions
+          {
+            echo "old_value=$old_value"
+            echo "new_value=$new_value"
+            echo "protoc_asset=$protoc_asset"
+            echo "protoc_version=$PROTOC_VERSION"
+            echo "protoc_sha256=$protoc_sha256"
+          } >> "$GITHUB_OUTPUT"
       - name: Install protoc
         if: github.event_name == 'schedule' || inputs.component == matrix.component
-        env:
-          PROTOC_SHA256: ${{ steps.update.outputs.protoc_sha256 }}
         run: |
           source rpc/loggregator_v2/.protobuf-versions
           curl --fail --location --silent --show-error \
@@ -92,6 +97,9 @@ jobs:
           title: "chore: update ${{ matrix.label }}"
           body: |
             Updates ${{ matrix.label }} from ${{ steps.update.outputs.old_value }} to ${{ steps.update.outputs.new_value }}.
+
+            protoc asset: [${{ steps.update.outputs.protoc_asset }}](https://github.com/protocolbuffers/protobuf/releases/tag/v${{ steps.update.outputs.protoc_version }})
+            SHA-256: `${{ steps.update.outputs.protoc_sha256 }}`
           add-paths: |
             rpc/loggregator_v2/.protobuf-versions
             rpc/loggregator_v2/*.pb.go
