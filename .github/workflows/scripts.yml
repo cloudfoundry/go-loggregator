@@ -18,11 +18,20 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
-      - id: protoc
-        run: source rpc/loggregator_v2/.protobuf-versions && echo "version=$PROTOC_VERSION" >> "$GITHUB_OUTPUT"
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: ${{ steps.protoc.outputs.version }}
+      - name: Install protoc
+        run: |
+          source rpc/loggregator_v2/.protobuf-versions
+          protoc_asset="protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          protoc_sha256="$(curl --fail --location --silent --show-error \
+            "https://api.github.com/repos/protocolbuffers/protobuf/releases/tags/v${PROTOC_VERSION}" \
+            | jq -r --arg asset "$protoc_asset" '.assets[] | select(.name == $asset) | .digest | ltrimstr("sha256:")')"
+          [[ "$protoc_sha256" =~ ^[[:xdigit:]]{64}$ ]]
+          curl --fail --location --silent --show-error \
+            --output /tmp/protoc.zip \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${protoc_asset}"
+          printf '%s  %s\n' "$protoc_sha256" /tmp/protoc.zip | sha256sum --check --status
+          unzip -q /tmp/protoc.zip -d /tmp/protoc
+          echo "/tmp/protoc/bin" >> "$GITHUB_PATH"
       - run: go generate ./rpc/loggregator_v2
       - run: git diff --exit-code -- rpc/loggregator_v2
 
