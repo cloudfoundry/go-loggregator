@@ -11,7 +11,7 @@ on:
     - v[0-9]*
 
 jobs:
-  protobuf-generation:
+  verify-protobuf-generation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

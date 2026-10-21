@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       component:
-        description: Input to update
+        description: Protobuf dependency to update
         required: true
         default: protoc
         type: choice
