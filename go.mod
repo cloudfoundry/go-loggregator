@@ -1,10 +1,10 @@
 module code.cloudfoundry.org/go-loggregator/v10
 
-go 1.26.0
+go 1.27.3
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978
-	code.cloudfoundry.org/tlsconfig v0.69.0
+	code.cloudfoundry.org/tlsconfig v0.70.0
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/cloudfoundry/sonde-go v0.0.0-20251217143644-d1670a435f2a
 	github.com/onsi/ginkgo/v2 v2.33.1
@@ -22,7 +22,7 @@ require (
 	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/square/certstrap v1.4.0 // indirect
+	github.com/square/certstrap v1.4.1 // indirect
 	go.step.sm/crypto v0.91.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
